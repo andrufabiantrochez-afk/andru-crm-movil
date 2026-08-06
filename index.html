@@ -1,4 +1,189 @@
-<!DOCTYPE html>
+                  </div>
+                    <div class="card-body">
+                        <div>🪪 Cédula: <strong>${cedula}</strong> | 📞 <strong>${celular || '---'}</strong></div>
+                        <div>🏢 ${empresa} | 📍 ${ciudad}</div>
+                        ${fechaVenta ? `<div>🗓️ Venta: <strong style="color:#fbbf24;">${String(fechaVenta).toUpperCase()}</strong></div>` : ''}
+                        
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                            <span style="font-size:11px; font-weight:bold; color:#94a3b8;">Estado:</span>
+                            <select class="select-accion" onchange="cambiarEstadoCliente('${item.idDoc}', '${item.coleccionOrigen}', this.value)">
+                                <option value="lista" ${valorSelect === 'lista' ? 'selected' : ''}>📋 En Lista / Gestión</option>
+                                <option value="no_renueva" ${valorSelect === 'no_renueva' ? 'selected' : ''}>❌ No Renueva</option>
+                                <option value="renovado" ${valorSelect === 'renovado' ? 'selected' : ''}>✅ Renovado / Venta</option>
+                            </select>
+                            <button class="btn-edit-note" title="Editar Nota" onclick="editarNotaEspecial('${item.idDoc}', '${item.coleccionOrigen}')">✏️ Editar Nota</button>
+                        </div>
+
+                        <div id="nota-text-${item.idDoc}" style="color:#f472b6; font-style:italic; margin-top:2px;">
+                            ${notaCobro ? `📝 ${notaCobro}` : '📝 Sin observaciones.'}
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="${urlWpp}" target="_blank" class="btn btn-wpp">💬 WhatsApp</a>
+                        <a href="tel:${celular}" class="btn btn-call">📞 Llamar</a>
+                        <button class="btn btn-cal" onclick="agendarEnCalendar(${index})">📅 Agendar</button>
+                    </div>
+                `;
+                contenedor.appendChild(card);
+            });
+        }
+
+        async function cambiarEstadoCliente(idDoc, coleccion, nuevoValor) {
+            try {
+                let textoEstadoBD = "En lista";
+                if (nuevoValor === "no_renueva") textoEstadoBD = "No renueva";
+                else if (nuevoValor === "renovado") textoEstadoBD = "Afiliado / Renovado";
+
+                await db.collection(coleccion).doc(idDoc).update({ estado: textoEstadoBD });
+
+                let tarjeta = document.getElementById(`card-doc-${idDoc}`);
+                if (tarjeta) {
+                    tarjeta.classList.remove('estado-no-renueva', 'estado-renovado');
+                    if (nuevoValor === "no_renueva") tarjeta.classList.add('estado-no-renueva');
+                    else if (nuevoValor === "renovado") tarjeta.classList.add('estado-renovado');
+                }
+                alert(`✅ Estado guardado: "${textoEstadoBD}"`);
+            } catch (err) {
+                alert("❌ Error: " + err.message);
+            }
+        }
+
+        async function editarNotaEspecial(idDoc, coleccion) {
+            let item = registrosGlobales.find(r => r.idDoc === idDoc);
+            let notaActual = item ? (item.nota_cobro || item.nota_seguimiento || item.observaciones || "") : "";
+            let nuevaNota = prompt(`📝 Escribe la nota:`, notaActual);
+            
+            if (nuevaNota === null) return;
+
+            try {
+                let campoNota = (coleccion === 'afiliados') ? 'nota_cobro' : 'nota_seguimiento';
+                let updateObj = {};
+                updateObj[campoNota] = nuevaNota.trim();
+
+                await db.collection(coleccion).doc(idDoc).update(updateObj);
+
+                let elNota = document.getElementById(`nota-text-${idDoc}`);
+                if (elNota) elNota.innerHTML = nuevaNota.trim() ? `📝 ${nuevaNota.trim()}` : '📝 Sin observaciones.';
+                alert("✅ Nota actualizada.");
+            } catch (err) {
+                alert("❌ Error: " + err.message);
+            }
+        }
+
+        function filtrarLista() {
+            let valorRaw = document.getElementById('input-buscar').value.trim();
+            let campo = document.getElementById('select-criterio').value;
+
+            let textMesAbreviado = "";
+            if (campo === "mes_compra" && valorRaw) {
+                const diccionarioMes = {
+                    'enero': 'ene', 'ene': 'ene', 'febrero': 'feb', 'feb': 'feb', 'marzo': 'mar', 'mar': 'mar',
+                    'abril': 'abr', 'abr': 'abr', 'mayo': 'may', 'may': 'may', 'junio': 'jun', 'jun': 'jun',
+                    'julio': 'jul', 'jul': 'jul', 'agosto': 'ago', 'ago': 'ago', 'septiembre': 'sep', 'sep': 'sep',
+                    'octubre': 'oct', 'oct': 'oct', 'noviembre': 'nov', 'nov': 'nov', 'diciembre': 'dic', 'dic': 'dic'
+                };
+                textMesAbreviado = diccionarioMes[valorRaw.toLowerCase().trim()] || "";
+            }
+
+            let filtrados = registrosGlobales.filter(data => {
+                if (!valorRaw) return true;
+
+                if (campo === "mes_compra") {
+                    let f = String(data.fecha_venta || data.fec_vinc || data.fecha_compra || data.mes_compra || "").toLowerCase().trim();
+                    return textMesAbreviado ? f.includes(textMesAbreviado) : f.includes(valorRaw.toLowerCase().trim());
+                } else if (campo === "titular") {
+                    let n = String(data.titular || data.nombre || data.nombreCompleto || data.cliente || "").toLowerCase().trim();
+                    return n.includes(valorRaw.toLowerCase().trim());
+                } else if (campo === "cedula") {
+                    let c = String(data.cedula || data.cedula_cliente || data.cedula_prospecto || data.idDoc || "").toLowerCase().trim();
+                    return c.includes(valorRaw.toLowerCase().trim());
+                } else if (campo === "empresa") {
+                    let e = String(data.empresa || data.convenio || data.empresa_interes || "").toLowerCase().trim();
+                    return e.includes(valorRaw.toLowerCase().trim());
+                } else if (campo === "ciudad") {
+                    let ci = String(data.ciudad || data.ciudad_prospecto || "").toLowerCase().trim();
+                    return ci.includes(valorRaw.toLowerCase().trim());
+                } else {
+                    return JSON.stringify(data).toLowerCase().includes(valorRaw.toLowerCase().trim());
+                }
+            });
+
+            filtrados.sort((a, b) => {
+                let diaA = extraerDiaNum(a);
+                let diaB = extraerDiaNum(b);
+                return ordenVencimientoAsc ? (diaA - diaB) : (diaB - diaA);
+            });
+
+            renderizarTarjetas(filtrados);
+        }
+
+        function activarHeyAndru() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return alert("Tu celular no soporta voz en navegador.");
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'es-CO';
+            const btnVoz = document.getElementById('btn-hey-andru');
+            btnVoz.style.background = '#ef4444';
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                btnVoz.style.background = '#0284c7';
+                let comando = event.results[0][0].transcript.toLowerCase().trim();
+
+                const LISTA_MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+                let mes = LISTA_MESES.find(m => comando.includes(m));
+
+                if (mes || comando.includes('renovacion') || comando.includes('renovaciones')) {
+                    document.getElementById('select-criterio').value = 'mes_compra';
+                    document.getElementById('input-buscar').value = mes || "";
+                    cambiarVista('renovaciones');
+                } else {
+                    document.getElementById('select-criterio').value = 'todo';
+                    document.getElementById('input-buscar').value = comando;
+                    cambiarVista('afiliados');
+                }
+            };
+
+            recognition.onerror = () => { btnVoz.style.background = '#0284c7'; };
+            recognition.onend = () => { btnVoz.style.background = '#0284c7'; };
+        }
+
+        function abrirModalNuevo() { document.getElementById('modal-prospecto').style.display = 'flex'; }
+        function cerrarModalNuevo() { document.getElementById('modal-prospecto').style.display = 'none'; }
+
+        async function guardarProspecto() {
+            let nombre = document.getElementById('nuevo-nombre').value.trim();
+            let celular = document.getElementById('nuevo-celular').value.trim();
+            let ciudad = document.getElementById('nuevo-ciudad').value.trim();
+            let empresa = document.getElementById('nuevo-empresa').value.trim();
+            let nota = document.getElementById('nuevo-nota').value.trim();
+
+            if (!nombre || !celular) return alert("Ingresa Nombre y Celular.");
+
+            try {
+                await db.collection("prospectos").add({
+                    nombre: nombre,
+                    celular: celular,
+                    ciudad_prospecto: ciudad || "Palmira",
+                    empresa_interes: empresa || "Independiente",
+                    nota_seguimiento: nota || "Ingresado desde App Móvil",
+                    fecha_registro: new Date().toISOString(),
+                    origen: "App Movil"
+                });
+                alert("✅ Guardado en Firebase.");
+                cerrarModalNuevo();
+                if (vistaActual === 'prospectos') cargarDatosMovil();
+            } catch (err) {
+                alert("❌ Error: " + err.message);
+            }
+        }
+
+        cargarDatosMovil();
+    </script>
+</body>
+</html>
+ html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -270,83 +455,54 @@
 
         function agendarEnCalendar(nombre, celular, empresa, ciudad, nota) {
             let primerNombre = nombre.split(' ')[0];
-            primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
-            
-            let titulo = `📞 Llamar a ${primerNombre} (${empresa || 'Previser'})`;
-            let detalles = `👤 Cliente: ${nombre}\n📱 Celular: ${celular}\n🏢 Empresa: ${empresa}\n📍 Ciudad: ${ciudad}\n📝 Nota: ${nota || 'Sin nota'}`;
-            
-            let ahora = new Date();
-            ahora.setHours(ahora.getHours() + 1);
-            let isoInicio = ahora.toISOString().replace(/-|:|\.\d\d\d/g, "");
-            
-            let enTreintaMin = new Date(ahora.getTime() + 30 * 60000);
-            let isoFin = enTreintaMin.toISOString().replace(/-|:|\.\d\d\d/g, "");
-            
-            let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titulo)}&details=${encodeURIComponent(detalles)}&dates=${isoInicio}/${isoFin}`;
-            
-            window.open(url, '_blank');
-        }
+   <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Andru CRM - Móvil</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 
-        async function cargarDatosMovil() {
-            const contenedor = document.getElementById('lista-tarjetas');
-            contenedor.innerHTML = `<div class="loading">⏳ Consultando datos de Firebase...</div>`;
+    <!-- Firebase SDKs Estables -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #0f172a; color: #f8fafc; padding-bottom: 90px; }
+        header { background: #1e293b; padding: 15px; border-bottom: 2px solid #6366f1; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 16px; color: #818cf8; display: flex; align-items: center; gap: 6px; }
+        
+        .search-container { padding: 10px 15px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; gap: 8px; flex-direction: column; }
+        .search-row { display: flex; gap: 8px; }
+        .filter-select { background: #0f172a; color: #38bdf8; border: 1px solid #475569; border-radius: 8px; padding: 8px 10px; font-size: 12px; font-weight: bold; outline: none; }
+        .search-input { flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 13px; outline: none; }
 
-            let coleccion = 'afiliados';
-            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
-            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
-            else if (vistaActual === 'difusion') coleccion = 'afiliados';
+        .btn-orden { background: #312e81; color: #38bdf8; border: 1px solid #4338ca; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
-            try {
-                let mapaCedulasAfiliados = {};
-                if (vistaActual === 'renovaciones' || vistaActual === 'ganados') {
-                    const snapAfiliados = await db.collection("afiliados").get();
-                    snapAfiliados.forEach(docA => {
-                        let dataA = docA.data();
-                        let ced = String(dataA.cedula || dataA.cedula_cliente || "").trim().replace(/^0+/, '');
-                        if (ced) mapaCedulasAfiliados[ced] = true;
-                    });
-                }
-
-                const snapshot = await db.collection(coleccion).get();
-                registrosGlobales = [];
-
-                let fechaHoy = new Date();
-                let diaActualNum = fechaHoy.getDate();
-
-                snapshot.forEach(doc => {
-                    let d = doc.data();
-                    d.idDoc = doc.id;
-                    d.coleccionOrigen = coleccion;
-
-                    let est = (d.estado || "").toLowerCase();
-                    let cedulaLimpia = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
-                    
-                    let yaRenovo = (mapaCedulasAfiliados[cedulaLimpia] === true) || d.archivado === true || est.includes("afiliado") || est.includes("exitosa") || est.includes("renovado");
-                    
-                    d.yaRenovoComprado = yaRenovo;
-
-                    if (vistaActual === 'cobros') {
-                        let rawDia = String(d.dia_pago || "").trim();
-                        let diaCobroNum = parseInt(rawDia, 10);
-                        let esNumeroValido = !isNaN(diaCobroNum) && diaCobroN        
+        .nav-tabs { display: flex; background: #1e293b; padding: 8px 15px; gap: 8px; overflow-x: auto; border-bottom: 1px solid #334155; }
+        .tab-btn { background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; cursor: pointer; }
+        .tab-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+        
         .sub-nav { display: flex; gap: 6px; padding: 8px 15px; background: #0f172a; border-bottom: 1px solid #1e293b; }
         .sub-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
         .sub-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
 
         .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         
-        .card { background: #1e293b; border-radius: 12px; padding: 14px; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
-        
+        .card { background: #1e293b; border-radius: 12px; padding: 14px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 8px; }
         .card.estado-no-renueva { background: rgba(249, 115, 22, 0.15) !important; border: 1px solid #ea580c !important; }
         .card.estado-renovado { background: rgba(16, 185, 129, 0.15) !important; border: 1px solid #059669 !important; }
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
-        .card-title-group { display: flex; align-items: center; gap: 6px; flex: 1; }
-        .card-title { font-size: 14px; font-weight: bold; color: #fff; word-break: break-word; }
-        
-        .btn-edit-note { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px; }
+        .card-title { font-size: 14px; font-weight: bold; color: #fff; }
+        .btn-edit-note { background: none; border: none; cursor: pointer; font-size: 14px; }
 
-        .select-accion { background: #0f172a; color: #fbbf24; border: 1px solid #475569; border-radius: 6px; padding: 3px 6px; font-size: 10px; font-weight: bold; outline: none; cursor: pointer; }
+        .select-accion { background: #0f172a; color: #fbbf24; border: 1px solid #475569; border-radius: 6px; padding: 3px 6px; font-size: 10px; font-weight: bold; outline: none; }
 
         .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: bold; white-space: nowrap; }
         .badge-red { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
@@ -357,34 +513,23 @@
         
         .card-body { font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px; }
         .card-actions { display: flex; gap: 6px; margin-top: 6px; }
-        .btn { flex: 1; padding: 8px 4px; border-radius: 8px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 3px; text-decoration: none; }
+        .btn { flex: 1; padding: 8px 4px; border-radius: 8px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; text-decoration: none; }
         .btn-wpp { background: #059669; color: white; }
         .btn-call { background: #0284c7; color: white; }
         .btn-cal { background: #7c3aed; color: white; }
-        
-        .fab-btn { position: fixed; bottom: 20px; right: 20px; background: #6366f1; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 10px 15px -3px rgba(99,102,241,0.5); border: none; cursor: pointer; z-index: 99; }
-        .voice-btn { position: fixed; bottom: 20px; left: 20px; background: #0284c7; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 10px 15px -3px rgba(2,132,199,0.5); border: none; cursor: pointer; z-index: 99; transition: all 0.3s ease; }
-        .voice-btn.listening { background: #ef4444; box-shadow: 0 0 20px #ef4444; animation: pulse 1.2s infinite; }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.12); }
-            100% { transform: scale(1); }
-        }
 
-        .difusion-panel { background: #1e293b; border-radius: 12px; padding: 15px; border: 1px solid #3b82f6; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-        .difusion-title { font-size: 14px; font-weight: bold; color: #60a5fa; display: flex; align-items: center; gap: 6px; }
-        .textarea-msg { width: 100%; height: 90px; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 8px; padding: 10px; font-size: 12px; outline: none; resize: none; }
-        .textarea-msg:focus { border-color: #3b82f6; }
+        .difusion-panel { background: #1e293b; border-radius: 12px; padding: 12px; border: 1px solid #3b82f6; display: flex; flex-direction: column; gap: 8px; }
+        .textarea-msg { width: 100%; height: 80px; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; }
 
+        .fab-btn { position: fixed; bottom: 20px; right: 20px; background: #6366f1; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: none; z-index: 99; }
+        .voice-btn { position: fixed; bottom: 20px; left: 20px; background: #0284c7; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; border: none; z-index: 99; }
+        
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index: 1000; align-items:center; justify-content:center; padding:15px; }
         .modal-content { background: #1e293b; width:100%; max-width:400px; border-radius:14px; padding:20px; border:1px solid #475569; display:flex; flex-direction:column; gap:12px; }
-        .modal-title { font-size:16px; color:#fff; font-weight:bold; display:flex; justify-content:space-between; align-items:center; }
         .form-group { display:flex; flex-direction:column; gap:4px; }
         .form-group label { font-size:11px; color:#94a3b8; font-weight:bold; }
         .form-input { padding:9px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; font-size:13px; outline:none; }
-        .form-input:focus { border-color:#6366f1; }
-        .btn-save { background:#6366f1; color:white; padding:10px; border-radius:8px; border:none; font-weight:bold; font-size:13px; cursor:pointer; margin-top:5px; }
+        .btn-save { background:#6366f1; color:white; padding:10px; border-radius:8px; border:none; font-weight:bold; font-size:13px; cursor:pointer; }
         
         .loading { text-align: center; padding: 30px; color: #38bdf8; font-size: 13px; }
     </style>
@@ -416,6 +561,230 @@
     <div class="nav-tabs">
         <button class="tab-btn active" id="tab-btn-cobros" onclick="cambiarVista('cobros')">💰 Cobros del Día</button>
         <button class="tab-btn" id="tab-btn-afiliados" onclick="cambiarVista('afiliados')">🗂️ Base Afiliados</button>
+        <button class="tab-btn" id="tab-btn-renovaciones" onclick="cambiarVista('renovaciones')">⏳ Renovaciones</button>
+        <button class="tab-btn" id="tab-btn-prospectos" onclick="cambiarVista('prospectos')">👤 Prospectos</button>
+        <button class="tab-btn" id="tab-btn-ganados" onclick="cambiarVista('ganados')">✅ Ventas Logradas</button>
+        <button class="tab-btn" id="tab-btn-difusion" style="color:#60a5fa;" onclick="cambiarVista('difusion')">📢 Difusión Comercial</button>
+    </div>
+
+    <div class="sub-nav" id="subnav-cobros">
+        <button class="sub-btn active" id="btn-sub-dia" onclick="cambiarSubFiltroCobros('DIA_ACTUAL')">📅 Del Día</button>
+        <button class="sub-btn" id="btn-sub-postergados" onclick="cambiarSubFiltroCobros('POSTERGADOS')">⏳ Postergados</button>
+        <button class="sub-btn" id="btn-sub-todos" onclick="cambiarSubFiltroCobros('TODOS_PENDIENTES')">📋 Todos con Día</button>
+    </div>
+
+    <div class="container">
+        <div id="panel-difusion-comercial" class="difusion-panel" style="display:none;">
+            <div style="font-size:13px; font-weight:bold; color:#60a5fa;">📢 Redactar Mensaje de Campaña</div>
+            <textarea id="texto-difusion-custom" class="textarea-msg" placeholder="Escribe tu mensaje... Usa {nombre} para personalizar."></textarea>
+            <button class="btn btn-wpp" style="padding:8px;" onclick="aplicarMensajeDifusion()">🚀 Generar Lista de Envío</button>
+        </div>
+
+        <div id="lista-tarjetas">
+            <div class="loading">⏳ Conectando con Firebase...</div>
+        </div>
+    </div>
+
+    <button class="voice-btn" id="btn-hey-andru" title="Dictar Comando" onclick="activarHeyAndru()">🎙️</button>
+    <button class="fab-btn" title="Nuevo Prospecto" onclick="abrirModalNuevo()">＋</button>
+
+    <div class="modal" id="modal-prospecto">
+        <div class="modal-content">
+            <div style="font-size:15px; font-weight:bold; color:#fff; display:flex; justify-between; align-items:center;">
+                <span>👤 Nuevo Prospecto</span>
+                <span style="cursor:pointer;" onclick="cerrarModalNuevo()">✕</span>
+            </div>
+            <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="nuevo-nombre" class="form-input" placeholder="Ej: Maria Lopez">
+            </div>
+            <div class="form-group">
+                <label>Celular / WhatsApp *</label>
+                <input type="tel" id="nuevo-celular" class="form-input" placeholder="Ej: 3181234567">
+            </div>
+            <div class="form-group">
+                <label>Ciudad</label>
+                <input type="text" id="nuevo-ciudad" class="form-input" value="Palmira">
+            </div>
+            <div class="form-group">
+                <label>Empresa / Convenio</label>
+                <input type="text" id="nuevo-empresa" class="form-input" placeholder="Ej: PROMEDICOS">
+            </div>
+            <div class="form-group">
+                <label>Observaciones / Nota</label>
+                <input type="text" id="nuevo-nota" class="form-input" placeholder="Nota rápida...">
+            </div>
+            <button class="btn-save" onclick="guardarProspecto()">💾 Guardar en Firebase</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBP4F7vQAMmXTWTRMSUSn7m4jdsiFRhnHU",
+          authDomain: "andru-cmr-previser.firebaseapp.com",
+          projectId: "andru-cmr-previser",
+          storageBucket: "andru-cmr-previser.firebasestorage.app",
+          messagingSenderId: "29995729300",
+          appId: "1:29995729300:web:627108678d6c57eebe8f81"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let vistaActual = 'cobros';
+        let subFiltroCobros = 'DIA_ACTUAL';
+        let registrosGlobales = [];
+        let ordenVencimientoAsc = true;
+        let mensajeDifusionCustom = "";
+
+        function cambiarVista(vista) {
+            vistaActual = vista;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            let btnActivo = document.getElementById(`tab-btn-${vista}`);
+            if(btnActivo) btnActivo.classList.add('active');
+            
+            document.getElementById('subnav-cobros').style.display = (vista === 'cobros') ? 'flex' : 'none';
+            document.getElementById('panel-difusion-comercial').style.display = (vista === 'difusion') ? 'flex' : 'none';
+
+            if (vista === 'renovaciones') {
+                document.getElementById('select-criterio').value = 'mes_compra';
+            } else {
+                document.getElementById('select-criterio').value = 'todo';
+            }
+
+            cargarDatosMovil();
+        }
+
+        function cambiarSubFiltroCobros(subFiltro) {
+            subFiltroCobros = subFiltro;
+            document.querySelectorAll('.sub-btn').forEach(btn => btn.classList.remove('active'));
+            if (subFiltro === 'DIA_ACTUAL') document.getElementById('btn-sub-dia').classList.add('active');
+            if (subFiltro === 'POSTERGADOS') document.getElementById('btn-sub-postergados').classList.add('active');
+            if (subFiltro === 'TODOS_PENDIENTES') document.getElementById('btn-sub-todos').classList.add('active');
+            cargarDatosMovil();
+        }
+
+        function alternarOrdenVencimiento() {
+            ordenVencimientoAsc = !ordenVencimientoAsc;
+            let btn = document.getElementById('btn-ordenar-dia');
+            btn.innerText = ordenVencimientoAsc ? '📅 Ordenar por Día Vencimiento (1 al 31)' : '📅 Ordenar por Día Vencimiento (31 al 1)';
+            filtrarLista();
+        }
+
+        function extraerDiaNum(item) {
+            let dia = parseInt(item.dia_pago, 10);
+            if (!isNaN(dia)) return dia;
+            let fechaStr = String(item.fecha_venta || item.fec_vinc || item.fecha_compra || "");
+            let match = fechaStr.match(/\b([0-2]?[0-9]|3[01])\b/);
+            if (match) return parseInt(match[1], 10);
+            return 99;
+        }
+
+        function aplicarMensajeDifusion() {
+            let txt = document.getElementById('texto-difusion-custom').value.trim();
+            if (!txt) return alert("Ingresa un mensaje.");
+            mensajeDifusionCustom = txt;
+            filtrarLista();
+        }
+
+        function agendarEnCalendar(itemIndex) {
+            let item = registrosGlobales[itemIndex];
+            if (!item) return;
+            let nombre = String(item.titular || item.nombre || item.nombreCompleto || "Cliente").toUpperCase();
+            let primerNombre = nombre.split(' ')[0];
+            primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+            
+            let celular = item.celular || item.telefono || "";
+            let empresa = item.empresa || item.convenio || "Previser";
+            let ciudad = item.ciudad || "Palmira";
+            let nota = item.nota_cobro || item.nota_seguimiento || item.observaciones || "";
+
+            let titulo = `📞 Llamar a ${primerNombre} (${empresa})`;
+            let detalles = `👤 Cliente: ${nombre}\n📱 Celular: ${celular}\n🏢 Empresa: ${empresa}\n📍 Ciudad: ${ciudad}\n📝 Nota: ${nota}`;
+            
+            let ahora = new Date();
+            ahora.setHours(ahora.getHours() + 1);
+            let isoInicio = ahora.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            let enTreinta = new Date(ahora.getTime() + 30 * 60000);
+            let isoFin = enTreinta.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            
+            let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titulo)}&details=${encodeURIComponent(detalles)}&dates=${isoInicio}/${isoFin}`;
+            window.open(url, '_blank');
+        }
+
+        async function cargarDatosMovil() {
+            const contenedor = document.getElementById('lista-tarjetas');
+            contenedor.innerHTML = `<div class="loading">⏳ Consultando datos de Firebase...</div>`;
+
+            let coleccion = 'afiliados';
+            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
+            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+            else if (vistaActual === 'difusion') coleccion = 'afiliados';
+
+            try {
+                let mapaCedulas = {};
+                if (vistaActual === 'renovaciones' || vistaActual === 'ganados') {
+                    const snapA = await db.collection("afiliados").get();
+                    snapA.forEach(docA => {
+                        let dataA = docA.data();
+                        let ced = String(dataA.cedula || dataA.cedula_cliente || "").trim().replace(/^0+/, '');
+                        if (ced) mapaCedulas[ced] = true;
+                    });
+                }
+
+                const snapshot = await db.collection(coleccion).get();
+                registrosGlobales = [];
+                let diaActualNum = (new Date()).getDate();
+
+                snapshot.forEach(doc => {
+                    let d = doc.data();
+                    d.idDoc = doc.id;
+                    d.coleccionOrigen = coleccion;
+
+                    let est = (d.estado || "").toLowerCase();
+                    let cedulaLimpia = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
+                    let yaRenovo = (mapaCedulas[cedulaLimpia] === true) || d.archivado === true || est.includes("afiliado") || est.includes("renovado");
+                    d.yaRenovoComprado = yaRenovo;
+
+                    if (vistaActual === 'cobros') {
+                        let diaCobroNum = parseInt(String(d.dia_pago || "").trim(), 10);
+                        let estadoCobro = (d.estado_cobro || "").toLowerCase();
+
+                        if (!isNaN(diaCobroNum) && diaCobroNum >= 1 && diaCobroNum <= 31) {
+                            let esDelDia = diaCobroNum === diaActualNum;
+                            let esPostergado = estadoCobro.includes("postergado") || estadoCobro.includes("pendiente") || diaCobroNum < diaActualNum;
+
+                            let incluir = false;
+                            if (subFiltroCobros === 'DIA_ACTUAL' && esDelDia && !estadoCobro.includes("pagado")) incluir = true;
+                            else if (subFiltroCobros === 'POSTERGADOS' && esPostergado && !esDelDia && !estadoCobro.includes("pagado")) incluir = true;
+                            else if (subFiltroCobros === 'TODOS_PENDIENTES' && !estadoCobro.includes("pagado")) incluir = true;
+
+                            if (incluir) registrosGlobales.push(d);
+                        }
+                    } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
+                        registrosGlobales.push(d);
+                    } else {
+                        if (vistaActual === 'ganados' && yaRenovo) registrosGlobales.push(d);
+                        else if (vistaActual === 'renovaciones') registrosGlobales.push(d);
+                        else if (vistaActual === 'prospectos') registrosGlobales.push(d);
+                    }
+                });
+
+                filtrarLista();
+
+            } catch (err) {
+                contenedor.innerHTML = `<div class="loading" style="color:#f87171;">❌ Error al cargar: ${err.message}</div>`;
+            }
+        }
+
+        function renderizarTarjetas(lista) {
+            const contenedor = document.getElementById('lista-tarjetas');
+            const contador = document.getElementById('total-registros');
+            contenedor.innerHTML = '';
+            contador.innerText = `${lista.length} registros`;
+
+            if (lista.length === 0) {
+                contenedor.innerHTML = `<div class="loading" style="color:#94a3b8;">🎉 No hay registros para " id="tab-btn-afiliados" onclick="cambiarVista('afiliados')">🗂️ Base Afiliados</button>
         <button class="tab-btn" id="tab-btn-renovaciones" onclick="cambiarVista('renovaciones')">⏳ Renovaciones</button>
         <button class="tab-btn" id="tab-btn-prospectos" onclick="cambiarVista('prospectos')">👤 Prospectos</button>
         <button class="tab-btn" id="tab-btn-ganados" onclick="cambiarVista('ganados')">✅ Ventas Logradas</button>
