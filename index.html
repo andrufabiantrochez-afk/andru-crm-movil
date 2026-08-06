@@ -43,6 +43,299 @@
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
         .card-title { font-size: 14px; font-weight: bold; color: #fff; }
+        .btn-edit-note { background: none; border: none; cursor: pointer; font-size: 12px; color: #38bdf8; }
+
+        .select-accion { background: #0f172a; color: #fbbf24; border: 1px solid #475569; border-radius: 6px; padding: 3px 6px; font-size: 10px; font-weight: bold; outline: none; }
+
+        .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: bold; white-space: nowrap; }
+        .badge-red { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
+        .badge-orange { background: rgba(249,115,22,0.2); color: #fb923c; border: 1px solid rgba(249,115,22,0.4); }
+        .badge-yellow { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
+        .badge-green { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.4); }
+        .badge-purple { background: rgba(168,85,247,0.2); color: #c084fc; border: 1px solid rgba(168,85,247,0.4); }
+        
+        .card-body { font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px; }
+        .card-actions { display: flex; gap: 6px; margin-top: 6px; }
+        .btn { flex: 1; padding: 8px 4px; border-radius: 8px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        .btn-wpp { background: #059669; color: white; }
+        .btn-call { background: #0284c7; color: white; }
+        .btn-cal { background: #7c3aed; color: white; }
+
+        .difusion-panel { background: #1e293b; border-radius: 12px; padding: 12px; border: 1px solid #3b82f6; display: flex; flex-direction: column; gap: 8px; }
+        .textarea-msg { width: 100%; height: 80px; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; }
+
+        .fab-btn { position: fixed; bottom: 20px; right: 20px; background: #6366f1; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: none; z-index: 99; }
+        .voice-btn { position: fixed; bottom: 20px; left: 20px; background: #0284c7; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; border: none; z-index: 99; }
+        
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index: 1000; align-items:center; justify-content:center; padding:15px; }
+        .modal-content { background: #1e293b; width:100%; max-width:400px; border-radius:14px; padding:20px; border:1px solid #475569; display:flex; flex-direction:column; gap:12px; }
+        .form-group { display:flex; flex-direction:column; gap:4px; }
+        .form-group label { font-size:11px; color:#94a3b8; font-weight:bold; }
+        .form-input { padding:9px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; font-size:13px; outline:none; }
+        .btn-save { background:#6366f1; color:white; padding:10px; border-radius:8px; border:none; font-weight:bold; font-size:13px; cursor:pointer; }
+        
+        .loading { text-align: center; padding: 30px; color: #38bdf8; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎯 Andru CRM <span style="font-size:9px; background:#6366f1; padding:1px 5px; border-radius:4px;">MÓVIL</span></h1>
+        <span id="total-registros" style="font-size:11px; color:#94a3b8;">Cargando...</span>
+    </header>
+
+    <div class="search-container">
+        <div class="search-row">
+            <select id="select-criterio" class="filter-select" onchange="filtrarLista()">
+                <option value="todo">🔍 Todo (General)</option>
+                <option value="mes_compra">📅 Mes de Compra</option>
+                <option value="titular">👤 Titular / Nombre</option>
+                <option value="cedula">🪪 Cédula</option>
+                <option value="empresa">🏢 Empresa / Convenio</option>
+                <option value="ciudad">📍 Ciudad</option>
+            </select>
+            <input type="text" id="input-buscar" class="search-input" placeholder="Escribe para buscar..." oninput="filtrarLista()">
+        </div>
+        <button id="btn-ordenar-dia" class="btn-orden" onclick="alternarOrdenVencimiento()">
+            📅 Ordenar por Día Vencimiento (1 al 31)
+        </button>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" id="tab-btn-cobros" onclick="cambiarVista('cobros')">💰 Cobros del Día</button>
+        <button class="tab-btn" id="tab-btn-afiliados" onclick="cambiarVista('afiliados')">🗂️ Base Afiliados</button>
+        <button class="tab-btn" id="tab-btn-renovaciones" onclick="cambiarVista('renovaciones')">⏳ Renovaciones</button>
+        <button class="tab-btn" id="tab-btn-prospectos" onclick="cambiarVista('prospectos')">👤 Prospectos</button>
+        <button class="tab-btn" id="tab-btn-ganados" onclick="cambiarVista('ganados')">✅ Ventas Logradas</button>
+        <button class="tab-btn" id="tab-btn-difusion" style="color:#60a5fa;" onclick="cambiarVista('difusion')">📢 Difusión Comercial</button>
+    </div>
+
+    <div class="sub-nav" id="subnav-cobros">
+        <button class="sub-btn active" id="btn-sub-dia" onclick="cambiarSubFiltroCobros('DIA_ACTUAL')">📅 Del Día</button>
+        <button class="sub-btn" id="btn-sub-postergados" onclick="cambiarSubFiltroCobros('POSTERGADOS')">⏳ Postergados</button>
+        <button class="sub-btn" id="btn-sub-todos" onclick="cambiarSubFiltroCobros('TODOS_PENDIENTES')">📋 Todos con Día</button>
+    </div>
+
+    <div class="container">
+        <div id="panel-difusion-comercial" class="difusion-panel" style="display:none;">
+            <div style="font-size:13px; font-weight:bold; color:#60a5fa;">📢 Redactar Mensaje de Campaña</div>
+            <textarea id="texto-difusion-custom" class="textarea-msg" placeholder="Escribe tu mensaje... Usa {nombre} para personalizar."></textarea>
+            <button class="btn btn-wpp" style="padding:8px;" onclick="aplicarMensajeDifusion()">🚀 Generar Lista de Envío</button>
+        </div>
+
+        <div id="lista-tarjetas">
+            <div class="loading">⏳ Conectando con Firebase...</div>
+        </div>
+    </div>
+
+    <button class="voice-btn" id="btn-hey-andru" title="Dictar Comando" onclick="activarHeyAndru()">🎙️</button>
+    <button class="fab-btn" title="Nuevo Prospecto" onclick="abrirModalNuevo()">＋</button>
+
+    <div class="modal" id="modal-prospecto">
+        <div class="modal-content">
+            <div style="font-size:15px; font-weight:bold; color:#fff; display:flex; justify-between; align-items:center;">
+                <span>👤 Nuevo Prospecto</span>
+                <span style="cursor:pointer;" onclick="cerrarModalNuevo()">✕</span>
+            </div>
+            <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="nuevo-nombre" class="form-input" placeholder="Ej: Maria Lopez">
+            </div>
+            <div class="form-group">
+                <label>Celular / WhatsApp *</label>
+                <input type="tel" id="nuevo-celular" class="form-input" placeholder="Ej: 3181234567">
+            </div>
+            <div class="form-group">
+                <label>Ciudad</label>
+                <input type="text" id="nuevo-ciudad" class="form-input" value="Palmira">
+            </div>
+            <div class="form-group">
+                <label>Empresa / Convenio</label>
+                <input type="text" id="nuevo-empresa" class="form-input" placeholder="Ej: PROMEDICOS">
+            </div>
+            <div class="form-group">
+                <label>Observaciones / Nota</label>
+                <input type="text" id="nuevo-nota" class="form-input" placeholder="Nota rápida...">
+            </div>
+            <button class="btn-save" onclick="guardarProspecto()">💾 Guardar en Firebase</button>
+        </div>
+    </div>
+
+    <script>
+        var firebaseConfig = {
+          apiKey: "AIzaSyBP4F7vQAMmXTWTRMSUSn7m4jdsiFRhnHU",
+          authDomain: "andru-cmr-previser.firebaseapp.com",
+          projectId: "andru-cmr-previser",
+          storageBucket: "andru-cmr-previser.firebasestorage.app",
+          messagingSenderId: "29995729300",
+          appId: "1:29995729300:web:627108678d6c57eebe8f81"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.firestore();
+
+        var vistaActual = 'cobros';
+        var subFiltroCobros = 'DIA_ACTUAL';
+        var registrosGlobales = [];
+        var ordenVencimientoAsc = true;
+        var mensajeDifusionCustom = "";
+
+        function cambiarVista(vista) {
+            vistaActual = vista;
+            var btns = document.querySelectorAll('.tab-btn');
+            for(var i=0; i<btns.length; i++) { btns[i].classList.remove('active'); }
+            
+            var btnActivo = document.getElementById('tab-btn-' + vista);
+            if(btnActivo) btnActivo.classList.add('active');
+            
+            document.getElementById('subnav-cobros').style.display = (vista === 'cobros') ? 'flex' : 'none';
+            document.getElementById('panel-difusion-comercial').style.display = (vista === 'difusion') ? 'flex' : 'none';
+
+            if (vista === 'renovaciones') {
+                document.getElementById('select-criterio').value = 'mes_compra';
+            } else {
+                document.getElementById('select-criterio').value = 'todo';
+            }
+
+            cargarDatosMovil();
+        }
+
+        function cambiarSubFiltroCobros(subFiltro) {
+            subFiltroCobros = subFiltro;
+            var btns = document.querySelectorAll('.sub-btn');
+            for(var i=0; i<btns.length; i++) { btns[i].classList.remove('active'); }
+            
+            if (subFiltro === 'DIA_ACTUAL') document.getElementById('btn-sub-dia').classList.add('active');
+            if (subFiltro === 'POSTERGADOS') document.getElementById('btn-sub-postergados').classList.add('active');
+            if (subFiltro === 'TODOS_PENDIENTES') document.getElementById('btn-sub-todos').classList.add('active');
+            cargarDatosMovil();
+        }
+
+        function alternarOrdenVencimiento() {
+            ordenVencimientoAsc = !ordenVencimientoAsc;
+            var btn = document.getElementById('btn-ordenar-dia');
+            btn.innerText = ordenVencimientoAsc ? '📅 Ordenar por Día Vencimiento (1 al 31)' : '📅 Ordenar por Día Vencimiento (31 al 1)';
+            filtrarLista();
+        }
+
+        function extraerDiaNum(item) {
+            var dia = parseInt(item.dia_pago, 10);
+            if (!isNaN(dia)) return dia;
+            var fechaStr = String(item.fecha_venta || item.fec_vinc || item.fecha_compra || "");
+            var match = fechaStr.match(/\b([0-2]?[0-9]|3[01])\b/);
+            if (match) return parseInt(match[1], 10);
+            return 99;
+        }
+
+        function aplicarMensajeDifusion() {
+            var txt = document.getElementById('texto-difusion-custom').value.trim();
+            if (!txt) return alert("Ingresa un mensaje.");
+            mensajeDifusionCustom = txt;
+            filtrarLista();
+        }
+
+        function agendarEnCalendar(itemIndex) {
+            var item = registrosGlobales[itemIndex];
+            if (!item) return;
+            var nombre = String(item.titular || item.nombre || item.nombreCompleto || "Cliente").toUpperCase();
+            var primerNombre = nombre.split(' ')[0];
+            primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+            
+            var celular = item.celular || item.telefono || "";
+            var empresa = item.empresa || item.convenio || "Previser";
+            var ciudad = item.ciudad || "Palmira";
+            var nota = item.nota_cobro || item.nota_seguimiento || item.observaciones || "";
+
+            var titulo = "📞 Llamar a " + primerNombre + " (" + empresa + ")";
+            var detalles = "👤 Cliente: " + nombre + "\n📱 Celular: " + celular + "\n🏢 Empresa: " + empresa + "\n📍 Ciudad: " + ciudad + "\n📝 Nota: " + nota;
+            
+            var ahora = new Date();
+            ahora.setHours(ahora.getHours() + 1);
+            var isoInicio = ahora.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            var enTreinta = new Date(ahora.getTime() + 30 * 60000);
+            var isoFin = enTreinta.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            
+            var url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(titulo) + "&details=" + encodeURIComponent(detalles) + "&dates=" + isoInicio + "/" + isoFin;
+            window.open(url, '_blank');
+        }
+
+        async function cargarDatosMovil() {
+            var contenedor = document.getElementById('lista-tarjetas');
+            contenedor.innerHTML = '<div class="loading">⏳ Consultando datos de Firebase...</div>';
+
+            var coleccion = 'afiliados';
+            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
+            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+            else if (vistaActual === 'difusion') coleccion = 'afiliados';
+
+            try {
+                var mapaCedulas = {};
+                if (vistaActual === 'renovaciones' || vistaActual === 'ganados') {
+                    var snapA = await db.collection("afiliados").get();
+                    snapA.forEach(function(docA) {
+                        var dataA = docA.data();
+                        var ced = String(dataA.cedula || dataA.cedula_cliente || "").trim().replace(/^0+/, '');
+                        if (ced) mapaCedulas[ced] = true;
+                    });
+                }
+
+                var snapshot = await db.collection(coleccion).get();
+                registrosGlobales = [];
+                var diaActualNum = (new Date()).getDate();
+
+                snapshot.forEach(function(doc) {
+                    var d = doc.data();
+                    d.idDoc = doc.id;
+                    d.coleccionOrigen = coleccion;
+
+                    var est = (d.estado || "").toLowerCase();
+                    var cedulaLimpia = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
+                    var yaRenovo = (mapaCedulas[cedulaLimpia] === true) || d.archivado === true || est.indexOf("afiliado") !== -1 || est.indexOf("renovado") !== -1;
+                    d.yaRenovoComprado = yaRenovo;
+
+                    if (vistaActual === 'cobros') {
+                        var diaCobroNum = parseInt(String(d.dia_pago || "").trim(), 10);
+                        var estadoCobro = (d.estado_cobro || "").toLowerCase();
+
+                        if (!isNaN(diaCobroNum) && diaCobroNum >= 1 && diaCobroNum <= 31) {
+                            var esDelDia = diaCobroNum === diaActualNum;
+                            var esPostergado = estadoCobro.indexOf("postergado") !== -1 || estadoCobro.indexOf("pendiente") !== -1 || diaCobroNum < diaActualNum;
+
+                            var incluir = false;
+                            if (subFiltroCobros === 'DIA_ACTUAL' && esDelDia && estadoCobro.indexOf("pagado") === -1) incluir = true;
+                            else if (subFiltroCobros === 'POSTERGADOS' && esPostergado && !esDelDia && estadoCobro.indexOf("pagado") === -1) incluir = true;
+                            else if (subFiltroCobros === 'TODOS_PENDIENTES' && estadoCobro.indexOf("pagado") === -1) incluir = true;
+
+                            if (incluir) registrosGlobales.push(d);
+                        }
+                    } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
+                        registrosGlobales.push(d);
+                    } else {
+                        if (vistaActual === 'ganados' && yaRenovo) registrosGlobales.push(d);
+                        else if (vistaActual === 'renovaciones') registrosGlobales.push(d);
+                        else if (vistaActual === 'prospectos') registrosGlobales.push(d);
+                    }
+                });
+
+                filtrarLista();
+
+            } catch (err) {
+                contenedor.innerHTML = '<div class="loading" style="color:#f87171;">❌ Error al cargar: ' + err.message + '</div>';
+            }
+        }
+
+        function renderizarTarjetas(lista) {
+            var contenedor = document.getElementById('lista-tarjetas');
+            var contador = document.getElementById('total-registros');
+            contened
+        .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .card { background: #1e293b; border-radius: 12px; padding: 14px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 8px; }
+        .card.estado-no-renueva { background: rgba(249, 115, 22, 0.15) !important; border: 1px solid #ea580c !important; }
+        .card.estado-renovado { background: rgba(16, 185, 129, 0.15) !important; border: 1px solid #059669 !important; }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+        .card-title { font-size: 14px; font-weight: bold; color: #fff; }
         .btn-edit-note { background: none; border: none; cursor: pointer; font-size: 14px; }
 
         .select-accion { background: #0f172a; color: #fbbf24; border: 1px solid #475569; border-radius: 6px; padding: 3px 6px; font-size: 10px; font-weight: bold; outline: none; }
