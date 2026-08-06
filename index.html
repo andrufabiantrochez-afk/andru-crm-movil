@@ -77,6 +77,12 @@
             100% { transform: scale(1); }
         }
 
+        /* ESTILOS PARA DIFUSIÓN */
+        .difusion-panel { background: #1e293b; border-radius: 12px; padding: 15px; border: 1px solid #3b82f6; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .difusion-title { font-size: 14px; font-weight: bold; color: #60a5fa; display: flex; align-items: center; gap: 6px; }
+        .textarea-msg { width: 100%; height: 90px; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 8px; padding: 10px; font-size: 12px; outline: none; resize: none; }
+        .textarea-msg:focus { border-color: #3b82f6; }
+
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index: 1000; align-items:center; justify-content:center; padding:15px; }
         .modal-content { background: #1e293b; width:100%; max-width:400px; border-radius:14px; padding:20px; border:1px solid #475569; display:flex; flex-direction:column; gap:12px; }
         .modal-title { font-size:16px; color:#fff; font-weight:bold; display:flex; justify-content:space-between; align-items:center; }
@@ -119,6 +125,7 @@
         <button class="tab-btn" id="tab-btn-renovaciones" onclick="cambiarVista('renovaciones')">⏳ Renovaciones</button>
         <button class="tab-btn" id="tab-btn-prospectos" onclick="cambiarVista('prospectos')">👤 Prospectos</button>
         <button class="tab-btn" id="tab-btn-ganados" onclick="cambiarVista('ganados')">✅ Ventas Logradas</button>
+        <button class="tab-btn" id="tab-btn-difusion" style="color:#60a5fa;" onclick="cambiarVista('difusion')">📢 Difusión Comercial</button>
     </div>
 
     <div class="sub-nav" id="subnav-cobros">
@@ -127,8 +134,20 @@
         <button class="sub-btn" id="btn-sub-todos" onclick="cambiarSubFiltroCobros('TODOS_PENDIENTES')">📋 Todos con Día</button>
     </div>
 
-    <div class="container" id="lista-tarjetas">
-        <div class="loading">⏳ Conectando con Firebase...</div>
+    <div class="container">
+        <!-- 📢 PANEL DE DIFUSIÓN COMERCIAL (Se muestra al presionar la pestaña Difusión) -->
+        <div id="panel-difusion-comercial" class="difusion-panel" style="display:none;">
+            <div class="difusion-title">📢 Redactar Mensaje de Campaña Comercial</div>
+            <textarea id="texto-difusion-custom" class="textarea-msg" placeholder="Escribe tu mensaje comercial aquí... Usa {nombre} para que el sistema ponga el nombre del cliente automáticamente."></textarea>
+            <div style="font-size:10px; color:#94a3b8;">
+                💡 <em>Usa <strong>{nombre}</strong> en el texto para personalizar el saludo de cada cliente.</em>
+            </div>
+            <button class="btn btn-wpp" style="padding:10px;" onclick="aplicarMensajeDifusion()">🚀 Generar Lista de Envío Personalizada</button>
+        </div>
+
+        <div id="lista-tarjetas">
+            <div class="loading">⏳ Conectando con Firebase...</div>
+        </div>
     </div>
 
     <button class="voice-btn" id="btn-hey-andru" title="Dictar Comando (Hey Andru)" onclick="activarHeyAndru()">🎙️</button>
@@ -183,6 +202,7 @@
         let subFiltroCobros = 'DIA_ACTUAL';
         let registrosGlobales = [];
         let ordenVencimientoAsc = true;
+        let mensajeDifusionCustom = "";
 
         function cambiarVista(vista) {
             vistaActual = vista;
@@ -191,7 +211,8 @@
             if(btnActivo) btnActivo.classList.add('active');
             
             document.getElementById('subnav-cobros').style.display = (vista === 'cobros') ? 'flex' : 'none';
-            
+            document.getElementById('panel-difusion-comercial').style.display = (vista === 'difusion') ? 'flex' : 'none';
+
             if (vista === 'renovaciones') {
                 document.getElementById('select-criterio').value = 'mes_compra';
             } else {
@@ -228,6 +249,16 @@
             return 99;
         }
 
+        function aplicarMensajeDifusion() {
+            let txt = document.getElementById('texto-difusion-custom').value.trim();
+            if (!txt) {
+                alert("Por favor escribe un mensaje para la difusión.");
+                return;
+            }
+            mensajeDifusionCustom = txt;
+            filtrarLista();
+        }
+
         async function cargarDatosMovil() {
             const contenedor = document.getElementById('lista-tarjetas');
             contenedor.innerHTML = `<div class="loading">⏳ Consultando datos de Firebase...</div>`;
@@ -235,6 +266,7 @@
             let coleccion = 'afiliados';
             if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
             else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+            else if (vistaActual === 'difusion') coleccion = 'afiliados'; // Por defecto carga afiliados para campaña
 
             try {
                 let mapaCedulasAfiliados = {};
@@ -283,7 +315,7 @@
                             if (incluir) registrosGlobales.push(d);
                         }
 
-                    } else if (vistaActual === 'afiliados') {
+                    } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
                         registrosGlobales.push(d);
 
                     } else {
@@ -351,9 +383,9 @@
                         badgeClass = "badge-red";
                         badgeText = `💳 DÍA DE COBRO: ${diaPago}`;
                     }
-                } else if (vistaActual === 'afiliados') {
+                } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
                     badgeClass = "badge-purple";
-                    badgeText = `🗂️ ESTADO / DÍA: ${diaPago.toUpperCase()}`;
+                    badgeText = `🗂️ BASE COMERCIAL`;
                 } else if (vistaActual === 'renovaciones') {
                     badgeClass = "badge-yellow";
                     badgeText = fechaVenta ? `🗓️ COMPRA: ${String(fechaVenta).toUpperCase()}` : `⏳ RENOVACIÓN`;
@@ -365,7 +397,7 @@
                 let primerNombre = nombre.split(' ')[0];
                 primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
 
-                // 🎯 CONSTRUCCIÓN DE MENSAJE SEGÚN LÓGICA DE LA EXTENSIÓN
+                // CONSTRUCCIÓN DE MENSAJE
                 let msgWpp = "";
                 let hora = fechaHoy.getHours();
                 let saludoTiempo = "¡Feliz día! ☀️";
@@ -379,10 +411,12 @@
                     deseoCobro = "feliz noche";
                 }
 
-                if (vistaActual === 'cobros') {
+                if (vistaActual === 'difusion' && mensajeDifusionCustom) {
+                    // Mensaje de difusión personalizado redactado por el usuario
+                    msgWpp = mensajeDifusionCustom.replace(/{nombre}/g, `*${primerNombre}*`);
+                } else if (vistaActual === 'cobros') {
                     msgWpp = `hola ${primerNombre} 👋 espero estes muy bien ${deseoCobro}\nquedamos en que te recordara del pago hoy ${diaActualNum}.\n\nsi necesitas que te envie alguna cuenta o que te oriente con esto me avisas. 🙌`;
                 } else {
-                    // PLANTILLA UNIFICADA DE RENOVACIONES / PROSPECTOS DE LA EXTENSIÓN
                     msgWpp = `Hola, *${primerNombre}*. 😊 ¡Espero que te encuentres muy bien! ${saludoTiempo}\n\nEstaba revisando las afiliaciones que se renuevan este mes y vi que la tuya ya está próxima, por eso quise escribirte con tiempo.\n\nMe gustaría ayudarte para que continúes disfrutando de todos los beneficios, descuentos y auxilios de tu membresía Previser. 💙\n\nAntes de continuar, cuéntame una cosita. 😊\n\n¿Tu grupo familiar continúa igual o hubo algún cambio que quieras incluir este año?\n\nSi te parece, lo hacemos por aquí mismo o, si prefieres, agendamos una llamada. ¿Qué te queda más cómodo? 🤝`;
                 }
 
@@ -423,7 +457,7 @@
                         </div>
                     </div>
                     <div class="card-actions">
-                        <a href="${urlWpp}" target="_blank" class="btn btn-wpp">💬 WhatsApp</a>
+                        <a href="${urlWpp}" target="_blank" class="btn btn-wpp">💬 WhatsApp ${vistaActual === 'difusion' ? 'Campañá' : ''}</a>
                         <a href="tel:${celular}" class="btn btn-call">📞 Llamar</a>
                     </div>
                 `;
