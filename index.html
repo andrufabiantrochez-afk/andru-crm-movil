@@ -648,3 +648,29 @@
     </script>
 </body>
 </html>
+// Función para cargar la Base Comercial en tu aplicación
+async function cargarBaseComercialWeb() {
+  try {
+    // 1. Consulta a la colección exacta que usa tu extensión
+    const snapshot = await db.collection("prospectos_comerciales").get();
+
+    if (snapshot.empty) {
+      console.log("No hay prospectos comerciales registrados.");
+      return [];
+    }
+
+    let contactos = [];
+    snapshot.forEach((doc) => {
+      contactos.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    console.log("✅ Contactos cargados con éxito:", contactos);
+    return contactos;
+
+  } catch (error) {
+    console.error("❌ Error al consultar la colección prospectos_comerciales:", error);
+  }
+}
