@@ -264,12 +264,6 @@
             var contenedor = document.getElementById('lista-tarjetas');
             contenedor.innerHTML = '<div class="loading">⏳ Consultando datos de Firebase...</div>';
 
-            var coleccion = 'afiliados';
-            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
-            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
-            else if (vistaActual === 'comercial') coleccion = 'base_comercial'; // Pestaña de Bonos / Base Comercial
-            else if (vistaActual === 'difusion') coleccion = 'afiliados';
-
             try {
                 var mapaCedulas = {};
                 if (vistaActual === 'renovaciones' || vistaActual === 'ganados') {
@@ -281,43 +275,82 @@
                     });
                 }
 
-                var snapshot = await db.collection(coleccion).get();
                 registrosGlobales = [];
                 var diaActualNum = (new Date()).getDate();
 
-                snapshot.forEach(function(doc) {
-                    var d = doc.data();
-                    d.idDoc = doc.id;
-                    d.coleccionOrigen = coleccion;
-
-                    var est = (d.estado || "").toLowerCase();
-                    var cedulaLimpia = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
-                    var yaRenovo = (mapaCedulas[cedulaLimpia] === true) || d.archivado === true || est.indexOf("afiliado") !== -1 || est.indexOf("renovado") !== -1;
-                    d.yaRenovoComprado = yaRenovo;
-
-                    if (vistaActual === 'cobros') {
-                        var diaCobroNum = parseInt(String(d.dia_pago || "").trim(), 10);
-                        var estadoCobro = (d.estado_cobro || "").toLowerCase();
-
-                        if (!isNaN(diaCobroNum) && diaCobroNum >= 1 && diaCobroNum <= 31) {
-                            var esDelDia = diaCobroNum === diaActualNum;
-                            var esPostergado = estadoCobro.indexOf("postergado") !== -1 || estadoCobro.indexOf("pendiente") !== -1 || diaCobroNum < diaActualNum;
-
-                            var incluir = false;
-                            if (subFiltroCobros === 'DIA_ACTUAL' && esDelDia && estadoCobro.indexOf("pagado") === -1) incluir = true;
-                            else if (subFiltroCobros === 'POSTERGADOS' && esPostergado && !esDelDia && estadoCobro.indexOf("pagado") === -1) incluir = true;
-                            else if (subFiltroCobros === 'TODOS_PENDIENTES' && estadoCobro.indexOf("pagado") === -1) incluir = true;
-
-                            if (incluir) registrosGlobales.push(d);
+                // MULTI-CONSULTA PARA LA VISTA COMERCIAL (baseComercial / bonos)
+                if (vistaActual === 'comercial') {
+                    var coleccionesComerciales = ["baseComercial", "bonos", "base_comercial"];
+                    for (var c = 0; c < coleccionesComerciales.length; c++) {
+                        try {
+                            var snapC = await db.collection(coleccionesComerciales[c]).get();
+                            snapC.forEach(function(doc) {
+                                var d = doc.data();
+                                d.idDoc = doc.id;
+                                d.coleccionOrigen = coleccionesComerciales[c];
+                                registrosGlobales.push(d);
+                            });
+                        } catch (eCom) {
+                            console.log("Colección " + coleccionesComerciales[c] + " no encontrada o vacía.");
                         }
-                    } else if (vistaActual === 'afiliados' || vistaActual === 'comercial' || vistaActual === 'difusion') {
-                        registrosGlobales.push(d);
-                    } else {
-                        if (vistaActual === 'ganados' && yaRenovo) registrosGlobales.push(d);
-                        else if (vistaActual === 'renovaciones') registrosGlobales.push(d);
-                        else if (vistaActual === 'prospectos') registrosGlobales.push(d);
                     }
-                });
+
+                    // Si no hay documentos en colecciones independientes, consulta 'afiliados' con origen comercial
+                    if (registrosGlobales.length === 0) {
+                        var snapAf = await db.collection("afiliados").get();
+                        snapAf.forEach(function(doc) {
+                            var d = doc.data();
+                            var tipo = (d.tipo || d.origen || d.categoria || "").toLowerCase();
+                            if (tipo.indexOf("bono") !== -1 || tipo.indexOf("comercial") !== -1 || d.bono) {
+                                d.idDoc = doc.id;
+                                d.coleccionOrigen = "afiliados";
+                                registrosGlobales.push(d);
+                            }
+                        });
+                    }
+
+                } else {
+                    var coleccion = 'afiliados';
+                    if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
+                    else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+                    else if (vistaActual === 'difusion') coleccion = 'afiliados';
+
+                    var snapshot = await db.collection(coleccion).get();
+
+                    snapshot.forEach(function(doc) {
+                        var d = doc.data();
+                        d.idDoc = doc.id;
+                        d.coleccionOrigen = coleccion;
+
+                        var est = (d.estado || "").toLowerCase();
+                        var cedulaLimpia = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
+                        var yaRenovo = (mapaCedulas[cedulaLimpia] === true) || d.archivado === true || est.indexOf("afiliado") !== -1 || est.indexOf("renovado") !== -1;
+                        d.yaRenovoComprado = yaRenovo;
+
+                        if (vistaActual === 'cobros') {
+                            var diaCobroNum = parseInt(String(d.dia_pago || "").trim(), 10);
+                            var estadoCobro = (d.estado_cobro || "").toLowerCase();
+
+                            if (!isNaN(diaCobroNum) && diaCobroNum >= 1 && diaCobroNum <= 31) {
+                                var esDelDia = diaCobroNum === diaActualNum;
+                                var esPostergado = estadoCobro.indexOf("postergado") !== -1 || estadoCobro.indexOf("pendiente") !== -1 || diaCobroNum < diaActualNum;
+
+                                var incluir = false;
+                                if (subFiltroCobros === 'DIA_ACTUAL' && esDelDia && estadoCobro.indexOf("pagado") === -1) incluir = true;
+                                else if (subFiltroCobros === 'POSTERGADOS' && esPostergado && !esDelDia && estadoCobro.indexOf("pagado") === -1) incluir = true;
+                                else if (subFiltroCobros === 'TODOS_PENDIENTES' && estadoCobro.indexOf("pagado") === -1) incluir = true;
+
+                                if (incluir) registrosGlobales.push(d);
+                            }
+                        } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
+                            registrosGlobales.push(d);
+                        } else {
+                            if (vistaActual === 'ganados' && yaRenovo) registrosGlobales.push(d);
+                            else if (vistaActual === 'renovaciones') registrosGlobales.push(d);
+                            else if (vistaActual === 'prospectos') registrosGlobales.push(d);
+                        }
+                    });
+                }
 
                 filtrarLista();
 
@@ -376,7 +409,7 @@
                     }
                 } else if (vistaActual === 'comercial') {
                     badgeClass = "badge-yellow";
-                    badgeText = "🎁 PROSPECCIÓN BONOS";
+                    badgeText = "🎁 BASE COMERCIAL / BONOS";
                 } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
                     badgeClass = "badge-purple";
                     badgeText = "🗂️ BASE AFILIADOS";
