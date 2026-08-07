@@ -645,34 +645,488 @@
         }
 
         cargarDatosMovil();
-    </script> <!-- 1. Aquí cerramos correctamente el script principal -->
-
-    <!-- 2. Aquí abrimos el nuevo script limpio para la función que necesitas -->
     <script>
-      async function cargarBaseComercialWeb() {
-        try {
-          const snapshot = await db.collection("prospectos_comerciales").get();
+        var firebaseConfig = {
+          apiKey: "AIzaSyBP4F7vQAMmXTWTRMSUSn7m4jdsiFRhnHU",
+          authDomain: "andru-cmr-previser.firebaseapp.com",
+          projectId: "andru-cmr-previser",
+          storageBucket: "andru-cmr-previser.firebasestorage.app",
+          messagingSenderId: "29995729300",
+          appId: "1:29995729300:web:627108678d6c57eebe8f81"
+        };
 
-          if (snapshot.empty) {
-            console.log("No hay prospectos comerciales registrados.");
-            return [];
-          }
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.firestore();
 
-          let contactos = [];
-          snapshot.forEach((doc) => {
-            contactos.push({
-              id: doc.id,
-              ...doc.data()
-            });
-          });
+        var vistaActual = 'cobros';
+        var subFiltroCobros = 'DIA_ACTUAL';
+        var registrosGlobales = [];
+        var ordenVencimientoAsc = true;
+        var mensajeDifusionCustom = "";
 
-          console.log("✅ Contactos cargados con éxito:", contactos);
-          return contactos;
+        function cambiarVista(vista) {
+            vistaActual = vista;
+            var btns = document.querySelectorAll('.tab-btn');
+            for(var i=0; i<btns.length; i++) { btns[i].classList.remove('active'); }
+            
+            var btnActivo = document.getElementById('tab-btn-' + vista);
+            if(btnActivo) btnActivo.classList.add('active');
+            
+            document.getElementById('subnav-cobros').style.display = (vista === 'cobros') ? 'flex' : 'none';
+            document.getElementById('panel-difusion-comercial').style.display = (vista === 'difusion') ? 'flex' : 'none';
 
-        } catch (error) {
-          console.error("❌ Error al consultar la colección prospectos_comerciales:", error);
+            if (vista === 'renovaciones') {
+                document.getElementById('select-criterio').value = 'mes_compra';
+            } else {
+                document.getElementById('select-criterio').value = 'todo';
+            }
+
+            cargarDatosMovil();
         }
-      }
+
+        function cambiarSubFiltroCobros(subFiltro) {
+            subFiltroCobros = subFiltro;
+            var btns = document.querySelectorAll('.sub-btn');
+            for(var i=0; i<btns.length; i++) { btns[i].classList.remove('active'); }
+            
+            if (subFiltro === 'DIA_ACTUAL') document.getElementById('btn-sub-dia').classList.add('active');
+            if (subFiltro === 'POSTERGADOS') document.getElementById('btn-sub-postergados').classList.add('active');
+            if (subFiltro === 'TODOS_PENDIENTES') document.getElementById('btn-sub-todos').classList.add('active');
+            cargarDatosMovil();
+        }
+
+        function alternarOrdenVencimiento() {
+            ordenVencimientoAsc = !ordenVencimientoAsc;
+            var btn = document.getElementById('btn-ordenar-dia');
+            btn.innerText = ordenVencimientoAsc ? '📅 Ordenar por Día Vencimiento (1 al 31)' : '📅 Ordenar por Día Vencimiento (31 al 1)';
+            filtrarLista();
+        }
+
+        function extraerDiaNum(item) {
+            var dia = parseInt(item.dia_pago, 10);
+            if (!isNaN(dia)) return dia;
+            var fechaStr = String(item.fecha_venta || item.fec_vinc || item.fecha_compra || "");
+            var match = fechaStr.match(/\b([0-2]?[0-9]|3[01])\b/);
+            if (match) return parseInt(match[1], 10);
+            return 99;
+        }
+
+        function aplicarMensajeDifusion() {
+            var txt = document.getElementById('texto-difusion-custom').value.trim();
+            if (!txt) return alert("Ingresa un mensaje.");
+            mensajeDifusionCustom = txt;
+            filtrarLista();
+        }
+
+        function agendarEnCalendar(itemIndex) {
+            var item = registrosGlobales[itemIndex];
+            if (!item) return;
+            var nombre = String(item.titular || item.nombre || item.nombreCompleto || "Cliente").toUpperCase();
+            var primerNombre = nombre.split(' ')[0];
+            primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+            
+            var celular = item.celular || item.telefono || "";
+            var empresa = item.empresa || item.convenio || "Previser";
+            var ciudad = item.ciudad || "Palmira";
+            var nota = item.nota_cobro || item.nota_seguimiento || item.observaciones || "";
+
+            var titulo = "📞 Llamar a " + primerNombre + " (" + empresa + ")";
+            var detalles = "👤 Cliente: " + nombre + "\n📱 Celular: " + celular + "\n🏢 Empresa: " + empresa + "\n📍 Ciudad: " + ciudad + "\n📝 Nota: " + nota;
+            
+            var ahora = new Date();
+            ahora.setHours(ahora.getHours() + 1);
+            var isoInicio = ahora.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            var enTreinta = new Date(ahora.getTime() + 30 * 60000);
+            var isoFin = enTreinta.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            
+            var url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(titulo) + "&details=" + encodeURIComponent(detalles) + "&dates=" + isoInicio + "/" + isoFin;
+            window.open(url, '_blank');
+        }
+
+        async function cargarDatosMovil() {
+            var contenedor = document.getElementById('lista-tarjetas');
+            contenedor.innerHTML = '<div class="loading">⏳ Consultando datos de Firebase...</div>';
+
+            try {
+                var mapaCedulas = {};
+                if (vistaActual === 'renovaciones' || vistaActual === 'ganados') {
+                    var snapA = await db.collection("afiliados").get();
+                    snapA.forEach(function(docA) {
+                        var dataA = docA.data();
+                        var ced = String(dataA.cedula || dataA.cedula_cliente || "").trim().replace(/^0+/, '');
+                        if (ced) mapaCedulas[ced] = true;
+                    });
+                }
+
+                registrosGlobales = [];
+                var diaActualNum = (new Date()).getDate();
+
+                // MULTI-CONSULTA PARA LA VISTA COMERCIAL (Incorpóro "prospectos_comerciales")
+                if (vistaActual === 'comercial') {
+                    var coleccionesComerciales = ["prospectos_comerciales", "baseComercial", "bonos", "base_comercial"];
+                    for (var c = 0; c < coleccionesComerciales.length; c++) {
+                        try {
+                            var snapC = await db.collection(coleccionesComerciales[c]).get();
+                            snapC.forEach(function(doc) {
+                                var d = doc.data();
+                                d.idDoc = doc.id;
+                                d.coleccionOrigen = coleccionesComerciales[c];
+                                registrosGlobales.push(d);
+                            });
+                        } catch (eCom) {
+                            console.log("Colección " + coleccionesComerciales[c] + " no encontrada o vacía.");
+                        }
+                    }
+
+                    if (registrosGlobales.length === 0) {
+                        var snapAf = await db.collection("afiliados").get();
+                        snapAf.forEach(function(doc) {
+                            var d = doc.data();
+                            var tipo = (d.tipo || d.origen || d.categoria || "").toLowerCase();
+                            if (tipo.indexOf("bono") !== -1 || tipo.indexOf("comercial") !== -1 || d.bono) {
+                                d.idDoc = doc.id;
+                                d.coleccionOrigen = "afiliados";
+                                registrosGlobales.push(d);
+                            }
+                        });
+                    }
+
+                } else {
+                    var coleccion = 'afiliados';
+                    if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
+                    else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+                    else if (vistaActual === 'difusion') coleccion = 'afiliados';
+
+                    var snapshot = await db.collection(coleccion).get();
+
+                    snapshot.forEach(function(doc) {
+                        var d = doc.data();
+                        d.idDoc = doc.id;
+                        d.coleccionOrigen = coleccion;
+
+                        var est = (d.estado || "").toLowerCase();
+                        var cedulaLimpia = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
+                        var yaRenovo = (mapaCedulas[cedulaLimpia] === true) || d.archivado === true || est.indexOf("afiliado") !== -1 || est.indexOf("renovado") !== -1;
+                        d.yaRenovoComprado = yaRenovo;
+
+                        if (vistaActual === 'cobros') {
+                            var diaCobroNum = parseInt(String(d.dia_pago || "").trim(), 10);
+                            var estadoCobro = (d.estado_cobro || "").toLowerCase();
+
+                            if (!isNaN(diaCobroNum) && diaCobroNum >= 1 && diaCobroNum <= 31) {
+                                var esDelDia = diaCobroNum === diaActualNum;
+                                var esPostergado = estadoCobro.indexOf("postergado") !== -1 || estadoCobro.indexOf("pendiente") !== -1 || diaCobroNum < diaActualNum;
+
+                                var incluir = false;
+                                if (subFiltroCobros === 'DIA_ACTUAL' && esDelDia && estadoCobro.indexOf("pagado") === -1) incluir = true;
+                                else if (subFiltroCobros === 'POSTERGADOS' && esPostergado && !esDelDia && estadoCobro.indexOf("pagado") === -1) incluir = true;
+                                else if (subFiltroCobros === 'TODOS_PENDIENTES' && estadoCobro.indexOf("pagado") === -1) incluir = true;
+
+                                if (incluir) registrosGlobales.push(d);
+                            }
+                        } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
+                            registrosGlobales.push(d);
+                        } else {
+                            if (vistaActual === 'ganados' && yaRenovo) registrosGlobales.push(d);
+                            else if (vistaActual === 'renovaciones') registrosGlobales.push(d);
+                            else if (vistaActual === 'prospectos') registrosGlobales.push(d);
+                        }
+                    });
+                }
+
+                filtrarLista();
+
+            } catch (err) {
+                contenedor.innerHTML = '<div class="loading" style="color:#f87171;">❌ Error al cargar: ' + err.message + '</div>';
+            }
+        }
+
+        function renderizarTarjetas(lista) {
+            var contenedor = document.getElementById('lista-tarjetas');
+            var contador = document.getElementById('total-registros');
+            contenedor.innerHTML = '';
+            contador.innerText = lista.length + ' registros';
+
+            if (lista.length === 0) {
+                contenedor.innerHTML = '<div class="loading" style="color:#94a3b8;">🎉 No hay registros para este filtro.</div>';
+                return;
+            }
+
+            var diaActualNum = (new Date()).getDate();
+
+            lista.forEach(function(item, index) {
+                var nombre = String(item.titular || item.nombre || item.nombreCompleto || item.cliente || "Sin Nombre").toUpperCase();
+                var cedula = item.cedula || item.cedula_cliente || item.cedula_prospecto || item.idDoc || "---";
+                var celular = String(item.celular || item.telefono || item.movil || "");
+                var empresa = item.empresa || item.convenio || item.empresa_interes || "No vinculado";
+                var ciudad = item.ciudad || item.ciudad_prospecto || "Palmira";
+                var diaPago = item.dia_pago || "---";
+                var fechaVenta = item.fecha_venta || item.fec_vinc || item.fecha_compra || item.mes_compra || "";
+                var notaCobro = item.nota_cobro || item.nota_seguimiento || item.observaciones || "";
+                var estadoStr = (item.estado || "").toLowerCase();
+
+                var badgeClass = "badge-yellow";
+                var badgeText = "EN GESTIÓN";
+                var tarjetaEstiloClase = "";
+
+                var esNoRenueva = estadoStr.indexOf("no renueva") !== -1 || estadoStr.indexOf("no interesado") !== -1 || estadoStr.indexOf("cancelado") !== -1;
+                var esRenovado = item.yaRenovoComprado === true;
+
+                if (esRenovado) {
+                    tarjetaEstiloClase = "estado-renovado";
+                    badgeClass = "badge-green";
+                    badgeText = "✅ RENOVADO";
+                } else if (esNoRenueva) {
+                    tarjetaEstiloClase = "estado-no-renueva";
+                    badgeClass = "badge-orange";
+                    badgeText = "❌ NO RENUEVA";
+                } else if (vistaActual === 'cobros') {
+                    var diaNum = parseInt(diaPago, 10);
+                    if (!isNaN(diaNum) && diaNum === diaActualNum) {
+                        badgeClass = "badge-green";
+                        badgeText = "📅 COBRO HOY (" + diaPago + ")";
+                    } else {
+                        badgeClass = "badge-red";
+                        badgeText = "💳 DÍA COBRO: " + diaPago;
+                    }
+                } else if (vistaActual === 'comercial') {
+                    badgeClass = "badge-yellow";
+                    badgeText = "🎁 BASE COMERCIAL / BONOS";
+                } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
+                    badgeClass = "badge-purple";
+                    badgeText = "🗂️ BASE AFILIADOS";
+                } else if (vistaActual === 'renovaciones') {
+                    badgeClass = "badge-yellow";
+                    badgeText = fechaVenta ? "🗓️ COMPRA: " + String(fechaVenta).toUpperCase() : "⏳ RENOVACIÓN";
+                }
+
+                var numLimpio = String(celular).replace(/\D/g, '');
+                if (numLimpio.length === 10) numLimpio = '57' + numLimpio;
+                
+                var primerNombre = nombre.split(' ')[0];
+                primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+
+                var msgWpp = "";
+                var hora = (new Date()).getHours();
+                var saludoTiempo = "¡Feliz día! ☀️";
+                var deseoCobro = "feliz día";
+
+                if (hora >= 12 && hora < 19) {
+                    saludoTiempo = "¡Feliz tarde! ☀️";
+                    deseoCobro = "feliz tarde";
+                } else if (hora >= 19 || hora < 5) {
+                    saludoTiempo = "¡Feliz noche! 🌙";
+                    deseoCobro = "feliz noche";
+                }
+
+                if (vistaActual === 'comercial') {
+                    msgWpp = "Hola, *" + primerNombre + "*. 😊 ¡Espero que te encuentres muy bien! " + saludoTiempo + "\n\nTe escribo para compartirte de primera mano los beneficios y auxilios especiales de tu membresía Previser para este periodo.\n\n¿Tienes un momento para que te oriente con las opciones disponibles para ti y tu familia? 🤝";
+                } else if (vistaActual === 'difusion' && mensajeDifusionCustom) {
+                    msgWpp = mensajeDifusionCustom.replace(/{nombre}/g, "*" + primerNombre + "*");
+                } else if (vistaActual === 'cobros') {
+                    msgWpp = "hola " + primerNombre + " 👋 espero estes muy bien " + deseoCobro + "\nquedamos en que te recordara del pago hoy " + diaActualNum + ".\n\nsi necesitas que te envie alguna cuenta o que te oriente con esto me avisas. 🙌";
+                } else {
+                    msgWpp = "Hola, *" + primerNombre + "*. 😊 ¡Espero que te encuentres muy bien! " + saludoTiempo + "\n\nEstaba revisando las afiliaciones que se renuevan este mes y vi que la tuya ya está próxima, por eso quise escribirte con tiempo.\n\nMe gustaría ayudarte para que continúes disfrutando de todos los beneficios, descuentos y auxilios de tu membresía Previser. 💙\n\nAntes de continuar, cuéntame una cosita. 😊\n\n¿Tu grupo familiar continúa igual o hubo algún cambio que quieras incluir este año?\n\nSi te parece, lo hacemos por aquí mismo o, si prefieres, agendamos una llamada. ¿Qué te queda más cómodo? 🤝";
+                }
+
+                var urlWpp = "https://api.whatsapp.com/send?phone=" + numLimpio + "&text=" + encodeURIComponent(msgWpp);
+
+                var valorSelect = "lista";
+                if (esRenovado) valorSelect = "renovado";
+                else if (esNoRenueva) valorSelect = "no_renueva";
+
+                var card = document.createElement('div');
+                card.className = "card " + tarjetaEstiloClase;
+                card.id = "card-doc-" + item.idDoc;
+                
+                var htmlCard = '<div class="card-header">';
+                htmlCard += '<span class="card-title">👤 ' + nombre + '</span>';
+                htmlCard += '<span class="badge ' + badgeClass + '">' + badgeText + '</span>';
+                htmlCard += '</div>';
+                htmlCard += '<div class="card-body">';
+                htmlCard += '<div>🪪 Cédula: <strong>' + cedula + '</strong> | 📞 <strong>' + (celular || '---') + '</strong></div>';
+                htmlCard += '<div>🏢 ' + empresa + ' | 📍 ' + ciudad + '</div>';
+                if (fechaVenta) { htmlCard += '<div>🗓️ Venta: <strong style="color:#fbbf24;">' + String(fechaVenta).toUpperCase() + '</strong></div>'; }
+                
+                htmlCard += '<div style="display:flex; align-items:center; gap:6px; margin-top:4px;">';
+                htmlCard += '<span style="font-size:11px; font-weight:bold; color:#94a3b8;">Estado:</span>';
+                htmlCard += '<select class="select-accion" onchange="cambiarEstadoCliente(\'' + item.idDoc + '\', \'' + item.coleccionOrigen + '\', this.value)">';
+                htmlCard += '<option value="lista" ' + (valorSelect === 'lista' ? 'selected' : '') + '>📋 En Lista / Gestión</option>';
+                htmlCard += '<option value="no_renueva" ' + (valorSelect === 'no_renueva' ? 'selected' : '') + '>❌ No Renueva</option>';
+                htmlCard += '<option value="renovado" ' + (valorSelect === 'renovado' ? 'selected' : '') + '>✅ Renovado / Venta</option>';
+                htmlCard += '</select>';
+                htmlCard += '<button class="btn-edit-note" onclick="editarNotaEspecial(\'' + item.idDoc + '\', \'' + item.coleccionOrigen + '\')">✏️ Editar Nota</button>';
+                htmlCard += '</div>';
+
+                htmlCard += '<div id="nota-text-' + item.idDoc + '" style="color:#f472b6; font-style:italic; margin-top:2px;">';
+                htmlCard += notaCobro ? '📝 ' + notaCobro : '📝 Sin observaciones.';
+                htmlCard += '</div></div>';
+                
+                htmlCard += '<div class="card-actions">';
+                htmlCard += '<a href="' + urlWpp + '" target="_blank" class="btn btn-wpp">💬 WhatsApp</a>';
+                htmlCard += '<a href="tel:' + celular + '" class="btn btn-call">📞 Llamar</a>';
+                htmlCard += '<button class="btn btn-cal" onclick="agendarEnCalendar(' + index + ')">📅 Agendar</button>';
+                htmlCard += '</div>';
+
+                card.innerHTML = htmlCard;
+                contenedor.appendChild(card);
+            });
+        }
+
+        async function cambiarEstadoCliente(idDoc, coleccion, nuevoValor) {
+            try {
+                var textoEstadoBD = "En lista";
+                if (nuevoValor === "no_renueva") textoEstadoBD = "No renueva";
+                else if (nuevoValor === "renovado") textoEstadoBD = "Afiliado / Renovado";
+
+                await db.collection(coleccion).doc(idDoc).update({ estado: textoEstadoBD });
+
+                var tarjeta = document.getElementById('card-doc-' + idDoc);
+                if (tarjeta) {
+                    tarjeta.classList.remove('estado-no-renueva', 'estado-renovado');
+                    if (nuevoValor === "no_renueva") tarjeta.classList.add('estado-no-renueva');
+                    else if (nuevoValor === "renovado") tarjeta.classList.add('estado-renovado');
+                }
+                alert('✅ Estado guardado: "' + textoEstadoBD + '"');
+            } catch (err) {
+                alert("❌ Error: " + err.message);
+            }
+        }
+
+        async function editarNotaEspecial(idDoc, coleccion) {
+            var item = registrosGlobales.find(function(r) { return r.idDoc === idDoc; });
+            var notaActual = item ? (item.nota_cobro || item.nota_seguimiento || item.observaciones || "") : "";
+            var nuevaNota = prompt("📝 Escribe la nota:", notaActual);
+            
+            if (nuevaNota === null) return;
+
+            try {
+                var campoNota = (coleccion === 'afiliados') ? 'nota_cobro' : 'nota_seguimiento';
+                var updateObj = {};
+                updateObj[campoNota] = nuevaNota.trim();
+
+                await db.collection(coleccion).doc(idDoc).update(updateObj);
+
+                var elNota = document.getElementById('nota-text-' + idDoc);
+                if (elNota) elNota.innerHTML = nuevaNota.trim() ? "📝 " + nuevaNota.trim() : "📝 Sin observaciones.";
+                alert("✅ Nota actualizada.");
+            } catch (err) {
+                alert("❌ Error: " + err.message);
+            }
+        }
+
+        function filtrarLista() {
+            var valorRaw = document.getElementById('input-buscar').value.trim();
+            var campo = document.getElementById('select-criterio').value;
+
+            var textMesAbreviado = "";
+            if (campo === "mes_compra" && valorRaw) {
+                var diccionarioMes = {
+                    'enero': 'ene', 'ene': 'ene', 'febrero': 'feb', 'feb': 'feb', 'marzo': 'mar', 'mar': 'mar',
+                    'abril': 'abr', 'abr': 'abr', 'mayo': 'may', 'may': 'may', 'junio': 'jun', 'jun': 'jun',
+                    'julio': 'jul', 'jul': 'jul', 'agosto': 'ago', 'ago': 'ago', 'septiembre': 'sep', 'sep': 'sep',
+                    'octubre': 'oct', 'oct': 'oct', 'noviembre': 'nov', 'nov': 'nov', 'diciembre': 'dic', 'dic': 'dic'
+                };
+                textMesAbreviado = diccionarioMes[valorRaw.toLowerCase().trim()] || "";
+            }
+
+            var filtrados = registrosGlobales.filter(function(data) {
+                if (!valorRaw) return true;
+
+                if (campo === "mes_compra") {
+                    var f = String(data.fecha_venta || data.fec_vinc || data.fecha_compra || data.mes_compra || "").toLowerCase().trim();
+                    return textMesAbreviado ? f.indexOf(textMesAbreviado) !== -1 : f.indexOf(valorRaw.toLowerCase().trim()) !== -1;
+                } else if (campo === "titular") {
+                    var n = String(data.titular || data.nombre || data.nombreCompleto || data.cliente || "").toLowerCase().trim();
+                    return n.indexOf(valorRaw.toLowerCase().trim()) !== -1;
+                } else if (campo === "cedula") {
+                    var c = String(data.cedula || data.cedula_cliente || data.cedula_prospecto || data.idDoc || "").toLowerCase().trim();
+                    return c.indexOf(valorRaw.toLowerCase().trim()) !== -1;
+                } else if (campo === "empresa") {
+                    var e = String(data.empresa || data.convenio || data.empresa_interes || "").toLowerCase().trim();
+                    return e.indexOf(valorRaw.toLowerCase().trim()) !== -1;
+                } else if (campo === "ciudad") {
+                    var ci = String(data.ciudad || data.ciudad_prospecto || "").toLowerCase().trim();
+                    return ci.indexOf(valorRaw.toLowerCase().trim()) !== -1;
+                } else {
+                    return JSON.stringify(data).toLowerCase().indexOf(valorRaw.toLowerCase().trim()) !== -1;
+                }
+            });
+
+            filtrados.sort(function(a, b) {
+                var diaA = extraerDiaNum(a);
+                var diaB = extraerDiaNum(b);
+                return ordenVencimientoAsc ? (diaA - diaB) : (diaB - diaA);
+            });
+
+            renderizarTarjetas(filtrados);
+        }
+
+        function activarHeyAndru() {
+            var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return alert("Tu celular no soporta voz en navegador.");
+
+            var recognition = new SpeechRecognition();
+            recognition.lang = 'es-CO';
+            var btnVoz = document.getElementById('btn-hey-andru');
+            btnVoz.style.background = '#ef4444';
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                btnVoz.style.background = '#0284c7';
+                var comando = event.results[0][0].transcript.toLowerCase().trim();
+
+                var LISTA_MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+                var mes = LISTA_MESES.find(function(m) { return comando.indexOf(m) !== -1; });
+
+                if (mes || comando.indexOf('renovacion') !== -1 || comando.indexOf('renovaciones') !== -1) {
+                    document.getElementById('select-criterio').value = 'mes_compra';
+                    document.getElementById('input-buscar').value = mes || "";
+                    cambiarVista('renovaciones');
+                } else if (comando.indexOf('bono') !== -1 || comando.indexOf('comercial') !== -1) {
+                    cambiarVista('comercial');
+                } else {
+                    document.getElementById('select-criterio').value = 'todo';
+                    document.getElementById('input-buscar').value = comando;
+                    cambiarVista('afiliados');
+                }
+            };
+
+            recognition.onerror = function() { btnVoz.style.background = '#0284c7'; };
+            recognition.onend = function() { btnVoz.style.background = '#0284c7'; };
+        }
+
+        function abrirModalNuevo() { document.getElementById('modal-prospecto').style.display = 'flex'; }
+        function cerrarModalNuevo() { document.getElementById('modal-prospecto').style.display = 'none'; }
+
+        async function guardarProspecto() {
+            var nombre = document.getElementById('nuevo-nombre').value.trim();
+            var celular = document.getElementById('nuevo-celular').value.trim();
+            var ciudad = document.getElementById('nuevo-ciudad').value.trim();
+            var empresa = document.getElementById('nuevo-empresa').value.trim();
+            var nota = document.getElementById('nuevo-nota').value.trim();
+
+            if (!nombre || !celular) return alert("Ingresa Nombre y Celular.");
+
+            try {
+                await db.collection("prospectos").add({
+                    nombre: nombre,
+                    celular: celular,
+                    ciudad_prospecto: ciudad || "Palmira",
+                    empresa_interes: empresa || "Independiente",
+                    nota_seguimiento: nota || "Ingresado desde App Móvil",
+                    fecha_registro: new Date().toISOString(),
+                    origen: "App Movil"
+                });
+                alert("✅ Guardado en Firebase.");
+                cerrarModalNuevo();
+                if (vistaActual === 'prospectos') cargarDatosMovil();
+            } catch (err) {
+                alert("❌ Error: " + err.message);
+            }
+        }
+
+        cargarDatosMovil();
     </script>
 </body>
 </html>
