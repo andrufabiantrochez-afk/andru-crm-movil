@@ -104,6 +104,7 @@
     <div class="nav-tabs">
         <button class="tab-btn active" id="tab-btn-cobros" onclick="cambiarVista('cobros')">💰 Cobros del Día</button>
         <button class="tab-btn" id="tab-btn-afiliados" onclick="cambiarVista('afiliados')">🗂️ Base Afiliados</button>
+        <button class="tab-btn" id="tab-btn-comercial" style="color:#fbbf24;" onclick="cambiarVista('comercial')">🎁 Base Comercial (Bonos)</button>
         <button class="tab-btn" id="tab-btn-renovaciones" onclick="cambiarVista('renovaciones')">⏳ Renovaciones</button>
         <button class="tab-btn" id="tab-btn-prospectos" onclick="cambiarVista('prospectos')">👤 Prospectos</button>
         <button class="tab-btn" id="tab-btn-ganados" onclick="cambiarVista('ganados')">✅ Ventas Logradas</button>
@@ -266,6 +267,7 @@
             var coleccion = 'afiliados';
             if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
             else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+            else if (vistaActual === 'comercial') coleccion = 'base_comercial'; // Pestaña de Bonos / Base Comercial
             else if (vistaActual === 'difusion') coleccion = 'afiliados';
 
             try {
@@ -308,7 +310,7 @@
 
                             if (incluir) registrosGlobales.push(d);
                         }
-                    } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
+                    } else if (vistaActual === 'afiliados' || vistaActual === 'comercial' || vistaActual === 'difusion') {
                         registrosGlobales.push(d);
                     } else {
                         if (vistaActual === 'ganados' && yaRenovo) registrosGlobales.push(d);
@@ -372,9 +374,12 @@
                         badgeClass = "badge-red";
                         badgeText = "💳 DÍA COBRO: " + diaPago;
                     }
+                } else if (vistaActual === 'comercial') {
+                    badgeClass = "badge-yellow";
+                    badgeText = "🎁 PROSPECCIÓN BONOS";
                 } else if (vistaActual === 'afiliados' || vistaActual === 'difusion') {
                     badgeClass = "badge-purple";
-                    badgeText = "🗂️ BASE COMERCIAL";
+                    badgeText = "🗂️ BASE AFILIADOS";
                 } else if (vistaActual === 'renovaciones') {
                     badgeClass = "badge-yellow";
                     badgeText = fechaVenta ? "🗓️ COMPRA: " + String(fechaVenta).toUpperCase() : "⏳ RENOVACIÓN";
@@ -399,7 +404,9 @@
                     deseoCobro = "feliz noche";
                 }
 
-                if (vistaActual === 'difusion' && mensajeDifusionCustom) {
+                if (vistaActual === 'comercial') {
+                    msgWpp = "Hola, *" + primerNombre + "*. 😊 ¡Espero que te encuentres muy bien! " + saludoTiempo + "\n\nTe escribo para compartirte de primera mano los beneficios y auxilios especiales de tu membresía Previser para este periodo.\n\n¿Tienes un momento para que te oriente con las opciones disponibles para ti y tu familia? 🤝";
+                } else if (vistaActual === 'difusion' && mensajeDifusionCustom) {
                     msgWpp = mensajeDifusionCustom.replace(/{nombre}/g, "*" + primerNombre + "*");
                 } else if (vistaActual === 'cobros') {
                     msgWpp = "hola " + primerNombre + " 👋 espero estes muy bien " + deseoCobro + "\nquedamos en que te recordara del pago hoy " + diaActualNum + ".\n\nsi necesitas que te envie alguna cuenta o que te oriente con esto me avisas. 🙌";
@@ -561,6 +568,8 @@
                     document.getElementById('select-criterio').value = 'mes_compra';
                     document.getElementById('input-buscar').value = mes || "";
                     cambiarVista('renovaciones');
+                } else if (comando.indexOf('bono') !== -1 || comando.indexOf('comercial') !== -1) {
+                    cambiarVista('comercial');
                 } else {
                     document.getElementById('select-criterio').value = 'todo';
                     document.getElementById('input-buscar').value = comando;
