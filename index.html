@@ -645,31 +645,34 @@
         }
 
         cargarDatosMovil();
-  <script>
-    async function cargarBaseComercialWeb() {
-      try {
-        const snapshot = await db.collection("prospectos_comerciales").get();
+    </script> <!-- 1. Aquí cerramos correctamente el script principal -->
 
-        if (snapshot.empty) {
-          console.log("No hay prospectos comerciales registrados.");
-          return [];
-        }
+    <!-- 2. Aquí abrimos el nuevo script limpio para la función que necesitas -->
+    <script>
+      async function cargarBaseComercialWeb() {
+        try {
+          const snapshot = await db.collection("prospectos_comerciales").get();
 
-        let contactos = [];
-        snapshot.forEach((doc) => {
-          contactos.push({
-            id: doc.id,
-            ...doc.data()
+          if (snapshot.empty) {
+            console.log("No hay prospectos comerciales registrados.");
+            return [];
+          }
+
+          let contactos = [];
+          snapshot.forEach((doc) => {
+            contactos.push({
+              id: doc.id,
+              ...doc.data()
+            });
           });
-        });
 
-        console.log("✅ Contactos cargados con éxito:", contactos);
-        return contactos;
+          console.log("✅ Contactos cargados con éxito:", contactos);
+          return contactos;
 
-      } catch (error) {
-        console.error("❌ Error al consultar la colección prospectos_comerciales:", error);
+        } catch (error) {
+          console.error("❌ Error al consultar la colección prospectos_comerciales:", error);
+        }
       }
-    }
-  </script>
+    </script>
 </body>
 </html>
