@@ -76,7 +76,7 @@
         header { background: var(--bg-header); padding: 14px 15px; border-bottom: 3px solid var(--border-header); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; color: var(--text-header); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
         h1 { font-size: 16px; color: #ffffff; display: flex; align-items: center; gap: 6px; font-weight: 800; }
         
-        .theme-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        .theme-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .theme-btn:active { transform: scale(0.92); }
 
         .search-container { padding: 10px 15px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; flex-direction: column; }
@@ -94,6 +94,30 @@
         .sub-nav { display: flex; gap: 6px; padding: 8px 15px; background: var(--bg-body); border-bottom: 1px solid var(--border-color); overflow-x: auto; }
         .sub-btn { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; }
         .sub-btn.active { background: #f59e0b; color: #0f172a; border-color: #d97706; font-weight: 800; }
+
+        /* BANNER DE VOZ ACTIVA */
+        .voice-banner {
+            display: none;
+            background: #1e3a8a;
+            color: #ffffff;
+            padding: 8px 15px;
+            font-size: 12px;
+            font-weight: bold;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            border-bottom: 2px solid #f59e0b;
+        }
+        .voice-banner button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
         .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         
@@ -200,6 +224,10 @@
         .form-input:focus { border-color: var(--brand-blue); }
         .btn-save { background: #003380; color:white; padding:11px; border-radius:8px; border:none; font-weight:bold; font-size:13px; cursor:pointer; margin-top:5px; }
         
+        .cmd-list { font-size: 12px; display: flex; flex-direction: column; gap: 8px; line-height: 1.4; }
+        .cmd-item { background: var(--bg-input); padding: 8px 10px; border-radius: 8px; border-left: 3px solid #f59e0b; }
+        .cmd-item strong { color: var(--text-accent); display: block; margin-bottom: 2px; }
+
         .loading { text-align: center; padding: 30px; color: var(--text-accent); font-size: 13px; font-weight: bold; }
     </style>
 </head>
@@ -207,11 +235,18 @@
 
     <header>
         <h1>🎯 Andru CRM <span style="font-size:9px; background:#f59e0b; color:#0f172a; padding:2px 6px; border-radius:4px; font-weight:900;">PREVISER</span></h1>
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
             <span id="total-registros" style="font-size:11px;">Cargando...</span>
+            <button class="theme-btn" title="Ver Comandos de Voz" onclick="abrirModalComandos()">?</button>
             <button id="btn-toggle-tema" class="theme-btn" title="Cambiar Modo Claro / Oscuro" onclick="alternarTemaVisual()">🌙</button>
         </div>
     </header>
+
+    <!-- BANNER DE FILTRO POR VOZ ACTIVO -->
+    <div class="voice-banner" id="voice-banner">
+        <span id="voice-banner-text">🎙️ Filtro de voz activo</span>
+        <button onclick="limpiarFiltrosCompletos()">✕ Limpiar</button>
+    </div>
 
     <div class="search-container">
         <div class="search-row">
@@ -222,6 +257,7 @@
                 <option value="cedula">🪪 Cédula</option>
                 <option value="empresa">🏢 Empresa / Convenio</option>
                 <option value="ciudad">📍 Ciudad / Dir.</option>
+                <option value="con_saldo">💸 Con Saldo Pendiente</option>
             </select>
             <input type="text" id="input-buscar" class="search-input" placeholder="Escribe para buscar..." oninput="filtrarLista()">
         </div>
@@ -268,6 +304,7 @@
     <button class="voice-btn" id="btn-hey-andru" title="Dictar Comando (Hey Andru)" onclick="activarHeyAndru()">🎙️</button>
     <button class="fab-btn" title="Nuevo Prospecto" onclick="abrirModalNuevo()">＋</button>
 
+    <!-- MODAL NUEVO PROSPECTO -->
     <div class="modal" id="modal-prospecto">
         <div class="modal-content">
             <div class="modal-title">
@@ -299,6 +336,43 @@
                 <input type="text" id="nuevo-nota" class="form-input" placeholder="Interesado en plan familiar...">
             </div>
             <button class="btn-save" onclick="guardarProspecto()">💾 Guardar en Firebase</button>
+        </div>
+    </div>
+
+    <!-- MODAL GUÍA DE COMANDOS DE VOZ -->
+    <div class="modal" id="modal-comandos">
+        <div class="modal-content">
+            <div class="modal-title">
+                <span>🎙️ Comandos de Voz "Hey Andru"</span>
+                <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalComandos()">✕</span>
+            </div>
+            <div class="cmd-list">
+                <div class="cmd-item">
+                    <strong>👤 Buscar por nombre exacto en cualquier pestaña:</strong>
+                    "Muéstrame cliente que se llame Andrés"<br>
+                    "Muéstrame una renovación que se llame Andrés"<br>
+                    "Prospecto que se llame María"
+                </div>
+                <div class="cmd-item">
+                    <strong>📅 Renovaciones por mes y estado (Combinados):</strong>
+                    "Muéstrame las renovaciones de octubre"<br>
+                    "Renovaciones pendientes por renovar de octubre"<br>
+                    "Renovaciones que no se han renovado de noviembre"<br>
+                    "Renovadas o ventas logradas de octubre"
+                </div>
+                <div class="cmd-item">
+                    <strong>💰 Cobros y Saldos Pendientes:</strong>
+                    "Cobros de hoy" / "Cobros postergados" / "Todos los cobros"<br>
+                    "Quiénes tienen saldo pendiente" / "Clientes que deben"
+                </div>
+                <div class="cmd-item">
+                    <strong>🏢 Empresas, Ciudades y Acciones Rápidas:</strong>
+                    "Empresa PROMEDICOS" / "Clientes en Palmira"<br>
+                    "Nuevo prospecto" (abre el formulario)<br>
+                    "Mostrar todo" o "Limpiar búsqueda"
+                </div>
+            </div>
+            <button class="btn-save" onclick="cerrarModalComandos()">Entendido</button>
         </div>
     </div>
 
@@ -356,10 +430,19 @@
         let vistaActual = 'cobros';
         let subFiltroCobros = 'DIA_ACTUAL';
         let subFiltroRenovaciones = 'TODOS';
+        let filtroMesAdicional = ''; // Permite combinar mes + nombre o mes + estado
         let registrosGlobales = [];
         let tipoOrdenActual = 'dia';
         let ordenVencimientoAsc = true;
         let ordenNombreAsc = true;
+
+        function normalizarTexto(str) {
+            return String(str || "")
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .trim();
+        }
 
         function limpiarTextoSeguro(val) {
             if (val === undefined || val === null) return "";
@@ -382,19 +465,15 @@
             return str;
         }
 
-        // EXTRACTOR INTELIGENTE DE DATOS FINANCIEROS (BUSCA EN TODOS LOS CAMPOS POSIBLES DE FIREBASE)
         function extraerDatosFinancieros(item) {
             let pagado = item.valor_pagado ?? item.pagado ?? item.abono ?? item.monto_pagado ?? item.pago ?? item.pago_anterior ?? item.valor_anterior ?? item.vlr_pagado ?? item.total_pagado ?? item.recaudo ?? "";
             let saldo = item.saldo ?? item.debe ?? item.saldo_pendiente ?? item.valor_pendiente ?? item.pendiente ?? item.vlr_saldo ?? item.cartera ?? "";
             let total = item.valor_plan ?? item.valor_total ?? item.valor ?? item.precio ?? item.cuota ?? item.tarifa ?? item.vlr_plan ?? "";
 
-            // Búsqueda dinámica por si la extensión subió el nombre con otro formato (ej. "Valor Pagado", "Pago 2025", etc.)
             for (let key of Object.keys(item)) {
                 let val = item[key];
                 if (val === undefined || val === null || val === "" || typeof val === "object") continue;
-                let kNorm = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                
-                // Ignorar el campo "dia_pago" para no confundir el día (1-31) con plata
+                let kNorm = normalizarTexto(key);
                 if (kNorm === "dia_pago" || kNorm.includes("dia")) continue;
 
                 if (pagado === "" && (kNorm.includes("pag") || kNorm.includes("abon") || kNorm.includes("recaud") || kNorm.includes("anterior"))) {
@@ -435,7 +514,21 @@
             return "";
         }
 
-        function cambiarVista(vista) {
+        function limpiarFiltrosCompletos() {
+            document.getElementById('input-buscar').value = '';
+            document.getElementById('select-criterio').value = 'todo';
+            filtroMesAdicional = '';
+            subFiltroRenovaciones = 'TODOS';
+            document.getElementById('voice-banner').style.display = 'none';
+            
+            document.querySelectorAll('#subnav-renovaciones .sub-btn').forEach(btn => btn.classList.remove('active'));
+            let btnTodos = document.getElementById('btn-ren-todos');
+            if (btnTodos) btnTodos.classList.add('active');
+
+            filtrarLista();
+        }
+
+        function cambiarVista(vista, mantenerFiltrosVoz = false) {
             vistaActual = vista;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             let btnActivo = document.getElementById(`tab-btn-${vista}`);
@@ -444,10 +537,14 @@
             document.getElementById('subnav-cobros').style.display = (vista === 'cobros') ? 'flex' : 'none';
             document.getElementById('subnav-renovaciones').style.display = (vista === 'renovaciones') ? 'flex' : 'none';
             
-            if (vista === 'renovaciones') {
-                document.getElementById('select-criterio').value = 'mes_compra';
-            } else {
-                document.getElementById('select-criterio').value = 'todo';
+            if (!mantenerFiltrosVoz) {
+                filtroMesAdicional = '';
+                document.getElementById('voice-banner').style.display = 'none';
+                if (vista === 'renovaciones') {
+                    document.getElementById('select-criterio').value = 'mes_compra';
+                } else {
+                    document.getElementById('select-criterio').value = 'todo';
+                }
             }
 
             cargarDatosMovil();
@@ -560,7 +657,6 @@
                     let est = limpiarTextoSeguro(d.estado).toLowerCase();
                     let cedulaLimpia = limpiarTextoSeguro(d.cedula || d.cedula_cliente || d.cedula_prospecto).replace(/^0+/, '');
                     
-                    // Si el cliente también existe en afiliados, cruzar datos por si el pago o dirección está allá
                     let regAfiliadoCruzado = mapaDatosAfiliados[cedulaLimpia];
                     if (regAfiliadoCruzado) {
                         d._cruzadoAfiliado = regAfiliadoCruzado;
@@ -648,7 +744,6 @@
                     let fechaVenta = limpiarTextoSeguro(item.fecha_venta || item.fec_vinc || item.fecha_compra || item.mes_compra);
                     let notaCobro = limpiarTextoSeguro(item.nota_cobro || item.nota_seguimiento || item.observaciones);
 
-                    // EXTRACCIÓN INTELIGENTE DE PAGOS Y SALDOS (CON CRUCE DE AFILIADOS)
                     let fin = extraerDatosFinancieros(item);
                     if ((!fin.rawPagado && !fin.rawSaldo && !fin.rawTotal) && item._cruzadoAfiliado) {
                         fin = extraerDatosFinancieros(item._cruzadoAfiliado);
@@ -804,7 +899,6 @@
             });
         }
 
-        // INSPECTOR RÁPIDO PARA VER QUÉ CAMPOS TRAE ESE REGISTRO EN FIREBASE
         function verCamposFirebase(idDoc) {
             let item = registrosGlobales.find(r => r.idDoc === idDoc);
             if (!item) return;
@@ -940,48 +1034,68 @@
             }
         }
 
+        const DICCIONARIO_MESES = {
+            'enero': 'ene', 'ene': 'ene', 'febrero': 'feb', 'feb': 'feb', 'marzo': 'mar', 'mar': 'mar',
+            'abril': 'abr', 'abr': 'abr', 'mayo': 'may', 'may': 'may', 'junio': 'jun', 'jun': 'jun',
+            'julio': 'jul', 'jul': 'jul', 'agosto': 'ago', 'ago': 'ago', 'septiembre': 'sep', 'sep': 'sep',
+            'octubre': 'oct', 'oct': 'oct', 'noviembre': 'nov', 'nov': 'nov', 'diciembre': 'dic', 'dic': 'dic'
+        };
+
+        function coincideMes(data, mesBuscado) {
+            let mesNorm = normalizarTexto(mesBuscado);
+            let abrev = DICCIONARIO_MESES[mesNorm] || mesNorm;
+            let fechaVentaBD = normalizarTexto(data.fecha_venta || data.fec_vinc || data.fecha_compra || data.mes_compra);
+            return fechaVentaBD.includes(abrev) || fechaVentaBD.includes(mesNorm);
+        }
+
         function filtrarLista() {
             let valorRaw = document.getElementById('input-buscar').value.trim();
+            let valorNorm = normalizarTexto(valorRaw);
             let campo = document.getElementById('select-criterio').value;
 
-            let textMesAbreviado = "";
-            if (campo === "mes_compra" && valorRaw) {
-                const diccionarioTextoMes = {
-                    'enero': 'ene', 'ene': 'ene', 'febrero': 'feb', 'feb': 'feb', 'marzo': 'mar', 'mar': 'mar',
-                    'abril': 'abr', 'abr': 'abr', 'mayo': 'may', 'may': 'may', 'junio': 'jun', 'jun': 'jun',
-                    'julio': 'jul', 'jul': 'jul', 'agosto': 'ago', 'ago': 'ago', 'septiembre': 'sep', 'sep': 'sep',
-                    'octubre': 'oct', 'oct': 'oct', 'noviembre': 'nov', 'nov': 'nov', 'diciembre': 'dic', 'dic': 'dic'
-                };
-                textMesAbreviado = diccionarioTextoMes[valorRaw.toLowerCase().trim()] || "";
-            }
-
             let filtrados = registrosGlobales.filter(data => {
+                // 1. Subfiltro de estado en Renovaciones
                 if (vistaActual === 'renovaciones') {
                     if (subFiltroRenovaciones === 'RENOVADO' && !data.yaRenovoComprado) return false;
                     if (subFiltroRenovaciones === 'NO_RENUEVA' && (!data.esNoRenuevaFlag || data.yaRenovoComprado)) return false;
                     if (subFiltroRenovaciones === 'LISTA' && (data.yaRenovoComprado || data.esNoRenuevaFlag)) return false;
                 }
 
-                if (!valorRaw) return true;
+                // 2. Filtro combinado adicional por mes (ej. cuando buscas nombre + mes o estado + mes por voz)
+                if (filtroMesAdicional) {
+                    if (!coincideMes(data, filtroMesAdicional)) return false;
+                }
+
+                // 3. Filtro por saldo pendiente
+                if (campo === "con_saldo") {
+                    let fin = extraerDatosFinancieros(data);
+                    let numSaldo = parseFloat(String(fin.rawSaldo || "0").replace(/[^0-9.-]+/g, ""));
+                    let tieneDeuda = !isNaN(numSaldo) && numSaldo > 0;
+                    if (!tieneDeuda) return false;
+                    if (!valorNorm) return true;
+                    let textoCompleto = Object.values(data).filter(v => typeof v === 'string' || typeof v === 'number').join(' ');
+                    return normalizarTexto(textoCompleto).includes(valorNorm);
+                }
+
+                if (!valorNorm) return true;
 
                 if (campo === "mes_compra") {
-                    let fechaVentaBD = limpiarTextoSeguro(data.fecha_venta || data.fec_vinc || data.fecha_compra || data.mes_compra).toLowerCase();
-                    return textMesAbreviado ? fechaVentaBD.includes(textMesAbreviado) : fechaVentaBD.includes(valorRaw.toLowerCase().trim());
+                    return coincideMes(data, valorNorm);
                 } else if (campo === "titular") {
-                    let nombreBD = limpiarTextoSeguro(data.titular || data.nombre || data.nombreCompleto || data.cliente).toLowerCase();
-                    return nombreBD.includes(valorRaw.toLowerCase().trim());
+                    let nombreBD = normalizarTexto(data.titular || data.nombre || data.nombreCompleto || data.cliente);
+                    return nombreBD.includes(valorNorm);
                 } else if (campo === "cedula") {
-                    let cedulaBD = limpiarTextoSeguro(data.cedula || data.cedula_cliente || data.cedula_prospecto || data.idDoc).toLowerCase();
-                    return cedulaBD.includes(valorRaw.toLowerCase().trim());
+                    let cedulaBD = normalizarTexto(data.cedula || data.cedula_cliente || data.cedula_prospecto || data.idDoc);
+                    return cedulaBD.includes(valorNorm);
                 } else if (campo === "empresa") {
-                    let empresaBD = limpiarTextoSeguro(data.empresa || data.convenio || data.empresa_interes).toLowerCase();
-                    return empresaBD.includes(valorRaw.toLowerCase().trim());
+                    let empresaBD = normalizarTexto(data.empresa || data.convenio || data.empresa_interes);
+                    return empresaBD.includes(valorNorm);
                 } else if (campo === "ciudad") {
-                    let ciudadBD = limpiarTextoSeguro(data.ciudad || data.ciudad_prospecto || extraerDireccionCliente(data)).toLowerCase();
-                    return ciudadBD.includes(valorRaw.toLowerCase().trim());
+                    let ciudadBD = normalizarTexto(data.ciudad || data.ciudad_prospecto || extraerDireccionCliente(data));
+                    return ciudadBD.includes(valorNorm);
                 } else {
-                    let textoCompleto = Object.values(data).filter(v => typeof v === 'string' || typeof v === 'number').join(' ').toLowerCase();
-                    return textoCompleto.includes(valorRaw.toLowerCase().trim());
+                    let textoCompleto = Object.values(data).filter(v => typeof v === 'string' || typeof v === 'number').join(' ');
+                    return normalizarTexto(textoCompleto).includes(valorNorm);
                 }
             });
 
@@ -1000,6 +1114,7 @@
             renderizarTarjetas(filtrados);
         }
 
+        // --- MOTOR DE RECONOCIMIENTO DE VOZ AVANZADO Y COMBINADO ("HEY ANDRU") ---
         function activarHeyAndru() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -1018,63 +1133,8 @@
 
             recognition.onresult = function(event) {
                 btnVoz.classList.remove('listening');
-                let comando = event.results[0][0].transcript.toLowerCase().trim();
-
-                let inputBuscar = document.getElementById('input-buscar');
-                let selectCriterio = document.getElementById('select-criterio');
-
-                const LISTA_MESES = [
-                    "enero", "febrero", "marzo", "abril", "mayo", "junio", 
-                    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
-                ];
-
-                let mesDetectado = LISTA_MESES.find(m => comando.includes(m));
-
-                if (mesDetectado || comando.includes('renovacion') || comando.includes('renovaciones')) {
-                    let mesLimpio = mesDetectado ? mesDetectado : comando
-                        .replace(/hey andrew|hey andru|andrew|andru/g, '')
-                        .replace(/muéstrame|muestrame|muestra|busca|buscar|filtra|filtrar|mis/g, '')
-                        .replace(/renovaciones del mes de|renovaciones de|renovaciones del|renovaciones/g, '')
-                        .replace(/del mes de|del mes|mes de|mes del|mes/g, '')
-                        .trim();
-
-                    selectCriterio.value = 'mes_compra';
-                    inputBuscar.value = mesLimpio;
-                    cambiarVista('renovaciones');
-
-                } else if (comando.includes('cobro') || comando.includes('cartera')) {
-                    if (comando.includes('postergado')) {
-                        subFiltroCobros = 'POSTERGADOS';
-                    } else if (comando.includes('todos') || comando.includes('pendiente')) {
-                        subFiltroCobros = 'TODOS_PENDIENTES';
-                    } else {
-                        subFiltroCobros = 'DIA_ACTUAL';
-                    }
-                    inputBuscar.value = '';
-                    selectCriterio.value = 'todo';
-                    cambiarVista('cobros');
-
-                } else if (comando.includes('empresa') || comando.includes('convenio')) {
-                    let emp = comando.replace(/hey andrew|hey andru|muéstrame|muestrame|muestra|mis clientes de la empresa|empresa|convenio/g, '').trim();
-                    selectCriterio.value = 'empresa';
-                    inputBuscar.value = emp;
-                    cambiarVista('afiliados');
-
-                } else if (comando.includes('cliente') || comando.includes('titular') || comando.includes('nombre')) {
-                    let nom = comando.replace(/hey andrew|hey andru|muéstrame|muestrame|muestra|mis clientes|cliente|titular|nombre/g, '').trim();
-                    selectCriterio.value = 'titular';
-                    inputBuscar.value = nom;
-                    cambiarVista('afiliados');
-
-                } else {
-                    let textoGen = comando
-                        .replace(/hey andrew|hey andru|andrew|andru/g, '')
-                        .replace(/muéstrame|muestrame|muestra|busca|buscar|filtra|filtrar|mis/g, '')
-                        .trim();
-                    selectCriterio.value = 'todo';
-                    inputBuscar.value = textoGen;
-                    cambiarVista('afiliados');
-                }
+                let rawTranscript = event.results[0][0].transcript;
+                procesarComandoDeVoz(rawTranscript);
             };
 
             recognition.onerror = function() {
@@ -1086,11 +1146,171 @@
             };
         }
 
+        function procesarComandoDeVoz(textoOriginal) {
+            let cmd = normalizarTexto(textoOriginal);
+            let inputBuscar = document.getElementById('input-buscar');
+            let selectCriterio = document.getElementById('select-criterio');
+            let banner = document.getElementById('voice-banner');
+            let bannerText = document.getElementById('voice-banner-text');
+
+            // 1. ACCIONES DIRECTAS (ABRIR MODAL O LIMPIAR FILTROS)
+            if (cmd.includes("nuevo prospecto") || cmd.includes("agregar prospecto") || cmd.includes("crear prospecto") || cmd.includes("registrar prospecto")) {
+                abrirModalNuevo();
+                return;
+            }
+
+            if (cmd.includes("mostrar todo") || cmd.includes("limpiar busqueda") || cmd.includes("limpiar filtro") || cmd.includes("quitar filtro") || cmd.includes("ver todos")) {
+                limpiarFiltrosCompletos();
+                return;
+            }
+
+            // Reiniciar filtros previos antes de aplicar la nueva combinación
+            filtroMesAdicional = '';
+            let targetVista = null;
+            let targetCriterio = 'todo';
+            let targetTexto = '';
+            let targetSubRenovacion = 'TODOS';
+
+            // 2. DETECTAR MES SI SE MENCIONÓ (ej. "octubre", "noviembre")
+            const LISTA_MESES = [
+                "enero", "febrero", "marzo", "abril", "mayo", "junio", 
+                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+            ];
+            let mesDetectado = LISTA_MESES.find(m => new RegExp(`\\b${m}\\b`).test(cmd));
+
+            // 3. DETECTAR PESTAÑA DESTINO
+            if (cmd.includes("prospecto")) {
+                targetVista = 'prospectos';
+            } else if (cmd.includes("cobro") || cmd.includes("cartera")) {
+                targetVista = 'cobros';
+                if (cmd.includes("postergado")) subFiltroCobros = 'POSTERGADOS';
+                else if (cmd.includes("todos") || cmd.includes("pendiente")) subFiltroCobros = 'TODOS_PENDIENTES';
+                else subFiltroCobros = 'DIA_ACTUAL';
+            } else if (cmd.includes("venta lograda") || cmd.includes("ventas logradas") || cmd.includes("ganados")) {
+                targetVista = 'ganados';
+            } else if (cmd.includes("renovacion") || cmd.includes("renovar") || cmd.includes("renovada") || cmd.includes("renovado") || mesDetectado) {
+                targetVista = 'renovaciones';
+            } else if (cmd.includes("afiliado") || cmd.includes("base de datos") || cmd.includes("red de afiliados") || cmd.includes("cliente")) {
+                targetVista = 'afiliados';
+            }
+
+            // 4. DETECTAR SUB-ESTADO DE RENOVACIÓN (COMBINABLE CON EL MES)
+            if (cmd.includes("no se han renovado") || cmd.includes("no renovado") || cmd.includes("no renueva") || cmd.includes("no renuevan")) {
+                targetVista = 'renovaciones';
+                targetSubRenovacion = 'NO_RENUEVA';
+            } else if (cmd.includes("pendiente por renovar") || cmd.includes("pendientes por renovar") || cmd.includes("en gestion") || cmd.includes("sin renovar") || cmd.includes("faltan por renovar")) {
+                targetVista = 'renovaciones';
+                targetSubRenovacion = 'LISTA';
+            } else if (cmd.includes("ya renovado") || cmd.includes("ya renovada") || cmd.includes("ya renovadas") || cmd.includes("renovadas") || cmd.includes("renovados")) {
+                // Si dice "renovadas ya ventas logradas de octubre" o "renovaciones renovadas de octubre"
+                if (cmd.includes("venta lograda") || cmd.includes("ventas logradas")) {
+                    targetVista = 'ganados';
+                } else {
+                    targetVista = 'renovaciones';
+                    targetSubRenovacion = 'RENOVADO';
+                }
+            }
+
+            // 5. DETECTAR BÚSQUEDA DE SALDO PENDIENTE
+            if (cmd.includes("saldo pendiente") || cmd.includes("que deben") || cmd.includes("con deuda") || cmd.includes("debiendo")) {
+                if (!targetVista) targetVista = 'afiliados';
+                targetCriterio = 'con_saldo';
+            }
+
+            // 6. DETECTAR PATRÓN EXPLÍCITO DE NOMBRE: "que se llame Andrés", "llamado María", "de nombre Carlos"
+            let matchNombre = cmd.match(/(?:que se llame|que se llamen|llamado|llamada|de nombre|titular|cliente)\s+([a-zñáéíóú\s]+)$/i);
+            if (matchNombre && matchNombre[1]) {
+                let nombreExtraido = matchNombre[1]
+                    .replace(/\b(en|de|del|la|el|los|las|base|datos|afiliados|renovaciones|prospectos)\b/g, '')
+                    .trim();
+                
+                // Si el nombre extraído no es solo el mes
+                if (nombreExtraido && nombreExtraido !== mesDetectado) {
+                    if (mesDetectado) {
+                        nombreExtraido = nombreExtraido.replace(new RegExp(`\\b(de\\s+)?${mesDetectado}\\b`, 'g'), '').trim();
+                    }
+                    if (nombreExtraido) {
+                        targetCriterio = 'titular';
+                        targetTexto = nombreExtraido;
+                        if (!targetVista) targetVista = 'afiliados';
+                    }
+                }
+            }
+
+            // 7. DETECTAR EMPRESA O CIUDAD SI NO SE PIDIÓ NOMBRE EXPLÍCITO
+            if (!targetTexto && targetCriterio !== 'con_saldo') {
+                if (cmd.includes("empresa") || cmd.includes("convenio")) {
+                    let emp = cmd.replace(/hey andrew|hey andru|muestrame|muestra|busca|buscar|filtra|mis|clientes|de la|del|la|empresa|convenio/g, '').trim();
+                    if (emp) {
+                        targetCriterio = 'empresa';
+                        targetTexto = emp;
+                        if (!targetVista) targetVista = 'afiliados';
+                    }
+                } else if (cmd.includes("ciudad") || cmd.includes("en palmira") || cmd.includes("en cali") || cmd.includes("en yumbo") || cmd.includes("en buga") || cmd.includes("en pradera") || cmd.includes("barrio")) {
+                    let ciu = cmd.replace(/hey andrew|hey andru|muestrame|muestra|busca|mis|clientes|afiliados|en la|en el|en|ciudad|de/g, '').trim();
+                    if (ciu) {
+                        targetCriterio = 'ciudad';
+                        targetTexto = ciu;
+                        if (!targetVista) targetVista = 'afiliados';
+                    }
+                }
+            }
+
+            // 8. APLICAR COMBINACIÓN DE MES + NOMBRE O MES + ESTADO
+            if (mesDetectado) {
+                if (targetTexto && targetCriterio === 'titular') {
+                    // Ejemplo: "renovación que se llame Andrés de octubre"
+                    filtroMesAdicional = mesDetectado;
+                } else if (!targetTexto && targetCriterio !== 'con_saldo') {
+                    // Ejemplo: "renovaciones de octubre" o "renovaciones pendientes de octubre"
+                    targetCriterio = 'mes_compra';
+                    targetTexto = mesDetectado;
+                }
+            }
+
+            // 9. FALLBACK GENERAL SI DIJO ALGO SUELTO (ej. "1113654987" o "Andrés")
+            if (!targetVista && !targetTexto && targetCriterio === 'todo') {
+                let limpio = cmd
+                    .replace(/hey andrew|hey andru|andrew|andru/g, '')
+                    .replace(/muestrame|muestra|busca|buscar|filtra|filtrar|mis|los|las|que|se|llame|llamen/g, '')
+                    .trim();
+                targetVista = 'afiliados';
+                targetCriterio = 'todo';
+                targetTexto = limpio;
+            }
+
+            if (!targetVista) targetVista = vistaActual;
+
+            // Aplicar valores en la interfaz
+            selectCriterio.value = targetCriterio;
+            inputBuscar.value = targetTexto;
+            subFiltroRenovaciones = targetSubRenovacion;
+
+            // Actualizar botones visuales del submenú de renovaciones
+            document.querySelectorAll('#subnav-renovaciones .sub-btn').forEach(btn => btn.classList.remove('active'));
+            if (targetSubRenovacion === 'TODOS') document.getElementById('btn-ren-todos').classList.add('active');
+            if (targetSubRenovacion === 'LISTA') document.getElementById('btn-ren-lista').classList.add('active');
+            if (targetSubRenovacion === 'RENOVADO') document.getElementById('btn-ren-renovado').classList.add('active');
+            if (targetSubRenovacion === 'NO_RENUEVA') document.getElementById('btn-ren-norenueva').classList.add('active');
+
+            // Mostrar banner confirmando lo que entendió el asistente
+            bannerText.innerText = `🎙️ "${textoOriginal}"`;
+            banner.style.display = 'flex';
+
+            cambiarVista(targetVista, true);
+        }
+
         function abrirModalNuevo() {
             document.getElementById('modal-prospecto').style.display = 'flex';
         }
         function cerrarModalNuevo() {
             document.getElementById('modal-prospecto').style.display = 'none';
+        }
+        function abrirModalComandos() {
+            document.getElementById('modal-comandos').style.display = 'flex';
+        }
+        function cerrarModalComandos() {
+            document.getElementById('modal-comandos').style.display = 'none';
         }
 
         async function guardarProspecto() {
