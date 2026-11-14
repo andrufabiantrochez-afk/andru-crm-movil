@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Andru CRM - Móvil</title>
+    <title>Andru CRM - Previser Móvil</title>
     
     <!-- CONFIGURACIÓN PWA / APP NATIVA -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="theme-color" content="#003380" id="meta-theme-color">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,59 +18,119 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     
     <style>
+        /* VARIABLES DE COLOR - MODO CLARO PREVISER (PREDETERMINADO) */
+        :root {
+            --bg-body: #f1f5f9;
+            --bg-header: #003380; /* Azul Institucional Previser */
+            --border-header: #f59e0b; /* Amarillo Dorado Previser */
+            --text-header: #ffffff;
+            --bg-surface: #ffffff;
+            --bg-input: #f8fafc;
+            --border-color: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-accent: #003380;
+            --brand-blue: #0044aa;
+            --brand-yellow: #f59e0b;
+            --brand-red: #dc2626;
+            --btn-orden-bg: #eff6ff;
+            --btn-orden-text: #003380;
+            --btn-orden-border: #bfdbfe;
+            --btn-orden-inactive-bg: #f8fafc;
+            --btn-orden-inactive-text: #64748b;
+            --note-color: #b91c1c;
+            --card-shadow: 0 2px 8px rgba(0, 51, 128, 0.08);
+        }
+
+        /* VARIABLES DE COLOR - MODO OSCURO */
+        body.dark-mode {
+            --bg-body: #0f172a;
+            --bg-header: #1e293b;
+            --border-header: #f59e0b;
+            --text-header: #f8fafc;
+            --bg-surface: #1e293b;
+            --bg-input: #0f172a;
+            --border-color: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-accent: #60a5fa;
+            --brand-blue: #2563eb;
+            --brand-yellow: #fbbf24;
+            --brand-red: #ef4444;
+            --btn-orden-bg: #1e3a8a;
+            --btn-orden-text: #93c5fd;
+            --btn-orden-border: #1d4ed8;
+            --btn-orden-inactive-bg: #0f172a;
+            --btn-orden-inactive-text: #94a3b8;
+            --note-color: #f472b6;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #0f172a; color: #f8fafc; padding-bottom: 90px; }
-        header { background: #1e293b; padding: 15px; border-bottom: 2px solid #6366f1; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
-        h1 { font-size: 16px; color: #818cf8; display: flex; align-items: center; gap: 6px; }
+        body { background: var(--bg-body); color: var(--text-primary); padding-bottom: 90px; transition: background 0.25s, color 0.25s; }
         
-        .search-container { padding: 10px 15px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; gap: 8px; flex-direction: column; }
+        header { background: var(--bg-header); padding: 14px 15px; border-bottom: 3px solid var(--border-header); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; color: var(--text-header); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+        h1 { font-size: 16px; color: #ffffff; display: flex; align-items: center; gap: 6px; font-weight: 800; }
+        
+        .theme-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        .theme-btn:active { transform: scale(0.92); }
+
+        .search-container { padding: 10px 15px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; flex-direction: column; }
         .search-row { display: flex; gap: 8px; }
-        .filter-select { background: #0f172a; color: #38bdf8; border: 1px solid #475569; border-radius: 8px; padding: 8px 10px; font-size: 12px; font-weight: bold; outline: none; cursor: pointer; }
-        .search-input { flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 13px; outline: none; }
-        .search-input:focus, .filter-select:focus { border-color: #6366f1; }
+        .filter-select { background: var(--bg-input); color: var(--text-accent); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-size: 12px; font-weight: bold; outline: none; cursor: pointer; }
+        .search-input { flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 13px; outline: none; }
+        .search-input:focus, .filter-select:focus { border-color: var(--brand-blue); }
 
-        .btn-orden { background: #312e81; color: #38bdf8; border: 1px solid #4338ca; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .btn-orden { background: var(--btn-orden-bg); color: var(--btn-orden-text); border: 1px solid var(--btn-orden-border); padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; }
 
-        .nav-tabs { display: flex; background: #1e293b; padding: 8px 15px; gap: 8px; overflow-x: auto; border-bottom: 1px solid #334155; }
-        .tab-btn { background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; cursor: pointer; }
-        .tab-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+        .nav-tabs { display: flex; background: var(--bg-surface); padding: 8px 15px; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--border-color); }
+        .tab-btn { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: var(--brand-blue); color: #ffffff; border-color: var(--brand-blue); box-shadow: 0 2px 6px rgba(0, 68, 170, 0.3); }
         
-        .sub-nav { display: flex; gap: 6px; padding: 8px 15px; background: #0f172a; border-bottom: 1px solid #1e293b; }
-        .sub-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
-        .sub-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .sub-nav { display: flex; gap: 6px; padding: 8px 15px; background: var(--bg-body); border-bottom: 1px solid var(--border-color); }
+        .sub-btn { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .sub-btn.active { background: #f59e0b; color: #0f172a; border-color: #d97706; font-weight: 800; }
 
         .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         
-        .card { background: #1e293b; border-radius: 12px; padding: 14px; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
+        .card { background: var(--bg-surface); border-radius: 12px; padding: 14px; border: 1px solid var(--border-color); border-left: 4px solid var(--brand-blue); box-shadow: var(--card-shadow); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
         
-        .card.estado-no-renueva { background: rgba(249, 115, 22, 0.15) !important; border: 1px solid #ea580c !important; }
-        .card.estado-renovado { background: rgba(16, 185, 129, 0.15) !important; border: 1px solid #059669 !important; }
+        .card.estado-no-renueva { background: rgba(220, 38, 38, 0.08) !important; border: 1px solid #dc2626 !important; border-left: 4px solid #dc2626 !important; }
+        .card.estado-renovado { background: rgba(16, 185, 129, 0.1) !important; border: 1px solid #059669 !important; border-left: 4px solid #059669 !important; }
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
         .card-title-group { display: flex; align-items: center; gap: 6px; flex: 1; }
-        .card-title { font-size: 14px; font-weight: bold; color: #fff; word-break: break-word; }
+        .card-title { font-size: 14px; font-weight: 800; color: var(--text-accent); word-break: break-word; }
         
         .btn-edit-note { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px; }
 
-        .select-accion { background: #0f172a; color: #fbbf24; border: 1px solid #475569; border-radius: 6px; padding: 3px 6px; font-size: 10px; font-weight: bold; outline: none; cursor: pointer; }
+        .select-accion { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: bold; outline: none; cursor: pointer; }
 
-        .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: bold; white-space: nowrap; }
-        .badge-red { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
-        .badge-orange { background: rgba(249,115,22,0.2); color: #fb923c; border: 1px solid rgba(249,115,22,0.4); }
-        .badge-yellow { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
-        .badge-green { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.4); }
-        .badge-purple { background: rgba(168,85,247,0.2); color: #c084fc; border: 1px solid rgba(168,85,247,0.4); }
+        .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 800; white-space: nowrap; }
+        .badge-red { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .badge-orange { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
+        .badge-yellow { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .badge-green { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .badge-purple { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
         
-        .card-body { font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px; }
+        body.dark-mode .badge-red { background: rgba(239,68,68,0.2); color: #f87171; border-color: rgba(239,68,68,0.4); }
+        body.dark-mode .badge-orange { background: rgba(249,115,22,0.2); color: #fb923c; border-color: rgba(249,115,22,0.4); }
+        body.dark-mode .badge-yellow { background: rgba(245,158,11,0.2); color: #fbbf24; border-color: rgba(245,158,11,0.4); }
+        body.dark-mode .badge-green { background: rgba(16,185,129,0.2); color: #34d399; border-color: rgba(16,185,129,0.4); }
+        body.dark-mode .badge-purple { background: rgba(59,130,246,0.2); color: #93c5fd; border-color: rgba(59,130,246,0.4); }
+
+        .card-body { font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
+        .card-body strong { color: var(--text-primary); }
+        
         .card-actions { display: flex; gap: 8px; margin-top: 6px; }
         .btn { flex: 1; padding: 8px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; text-decoration: none; }
-        .btn-wpp { background: #059669; color: white; }
-        .btn-call { background: #0284c7; color: white; }
-        .btn-delete { background: #ef4444; color: white; flex: 0.25; }
+        .btn-wpp { background: #16a34a; color: white; }
+        .btn-call { background: #0044aa; color: white; }
+        .btn-delete { background: #dc2626; color: white; flex: 0.25; }
         
-        .fab-btn { position: fixed; bottom: 20px; right: 20px; background: #6366f1; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 10px 15px -3px rgba(99,102,241,0.5); border: none; cursor: pointer; z-index: 99; }
-        .voice-btn { position: fixed; bottom: 20px; left: 20px; background: #0284c7; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 10px 15px -3px rgba(2,132,199,0.5); border: none; cursor: pointer; z-index: 99; transition: all 0.3s ease; }
-        .voice-btn.listening { background: #ef4444; box-shadow: 0 0 20px #ef4444; animation: pulse 1.2s infinite; }
+        .fab-btn { position: fixed; bottom: 20px; right: 20px; background: #f59e0b; color: #0f172a; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45); border: 2px solid #ffffff; cursor: pointer; z-index: 99; }
+        .voice-btn { position: fixed; bottom: 20px; left: 20px; background: #003380; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 6px 16px rgba(0, 51, 128, 0.4); border: 2px solid #f59e0b; cursor: pointer; z-index: 99; transition: all 0.3s ease; }
+        .voice-btn.listening { background: #dc2626; border-color: #ffffff; box-shadow: 0 0 20px #dc2626; animation: pulse 1.2s infinite; }
         
         @keyframes pulse {
             0% { transform: scale(1); }
@@ -78,23 +138,26 @@
             100% { transform: scale(1); }
         }
 
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index: 1000; align-items:center; justify-content:center; padding:15px; }
-        .modal-content { background: #1e293b; width:100%; max-width:400px; border-radius:14px; padding:20px; border:1px solid #475569; display:flex; flex-direction:column; gap:12px; }
-        .modal-title { font-size:16px; color:#fff; font-weight:bold; display:flex; justify-content:space-between; align-items:center; }
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index: 1000; align-items:center; justify-content:center; padding:15px; }
+        .modal-content { background: var(--bg-surface); width:100%; max-width:400px; border-radius:14px; padding:20px; border: 2px solid var(--brand-blue); display:flex; flex-direction:column; gap:12px; color: var(--text-primary); }
+        .modal-title { font-size:16px; color: var(--text-accent); font-weight:800; display:flex; justify-content:space-between; align-items:center; }
         .form-group { display:flex; flex-direction:column; gap:4px; }
-        .form-group label { font-size:11px; color:#94a3b8; font-weight:bold; }
-        .form-input { padding:9px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; font-size:13px; outline:none; }
-        .form-input:focus { border-color:#6366f1; }
-        .btn-save { background:#6366f1; color:white; padding:10px; border-radius:8px; border:none; font-weight:bold; font-size:13px; cursor:pointer; margin-top:5px; }
+        .form-group label { font-size:11px; color: var(--text-secondary); font-weight:bold; }
+        .form-input { padding:9px; border-radius:6px; border:1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size:13px; outline:none; }
+        .form-input:focus { border-color: var(--brand-blue); }
+        .btn-save { background: #003380; color:white; padding:11px; border-radius:8px; border:none; font-weight:bold; font-size:13px; cursor:pointer; margin-top:5px; }
         
-        .loading { text-align: center; padding: 30px; color: #38bdf8; font-size: 13px; }
+        .loading { text-align: center; padding: 30px; color: var(--text-accent); font-size: 13px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🎯 Andru CRM <span style="font-size:9px; background:#6366f1; padding:1px 5px; border-radius:4px;">MÓVIL</span></h1>
-        <span id="total-registros" style="font-size:11px; color:#94a3b8;">Cargando...</span>
+        <h1>🎯 Andru CRM <span style="font-size:9px; background:#f59e0b; color:#0f172a; padding:2px 6px; border-radius:4px; font-weight:900;">PREVISER</span></h1>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="total-registros" style="font-size:11px;">Cargando...</span>
+            <button id="btn-toggle-tema" class="theme-btn" title="Cambiar Modo Claro / Oscuro" onclick="alternarTemaVisual()">🌙</button>
+        </div>
     </header>
 
     <div class="search-container">
@@ -113,11 +176,11 @@
             <button id="btn-ordenar-dia" class="btn-orden" style="flex: 1;" onclick="alternarOrdenVencimiento()">
                 📅 Día (1-31)
             </button>
-            <button id="btn-ordenar-nombre" class="btn-orden" style="flex: 1; background: #1e293b; border-color: #475569; color: #94a3b8;" onclick="alternarOrdenNombre()">
+            <button id="btn-ordenar-nombre" class="btn-orden" style="flex: 1; background: var(--btn-orden-inactive-bg); border-color: var(--border-color); color: var(--btn-orden-inactive-text);" onclick="alternarOrdenNombre()">
                 🔤 Nombre (A-Z)
             </button>
         </div>
-        <button id="btn-limpiar-duplicados" class="btn-orden" style="background: #7f1d1d; color: #fca5a5; border-color: #991b1b;" onclick="depurarDuplicadosCRM()">
+        <button id="btn-limpiar-duplicados" class="btn-orden" style="background: #fee2e2; color: #b91c1c; border-color: #fca5a5;" onclick="depurarDuplicadosCRM()">
             🧹 Depurar Duplicados de esta Vista
         </button>
     </div>
@@ -174,6 +237,42 @@
     </div>
 
     <script>
+        // --- GESTIÓN DE TEMA CLARO / OSCURO ---
+        function aplicarTemaInicial() {
+            const temaGuardado = localStorage.getItem('andru_crm_tema') || 'claro';
+            const btnTema = document.getElementById('btn-toggle-tema');
+            const metaTheme = document.getElementById('meta-theme-color');
+
+            if (temaGuardado === 'oscuro') {
+                document.body.classList.add('dark-mode');
+                if (btnTema) btnTema.innerText = '☀️';
+                if (metaTheme) metaTheme.setAttribute('content', '#1e293b');
+            } else {
+                document.body.classList.remove('dark-mode');
+                if (btnTema) btnTema.innerText = '🌙';
+                if (metaTheme) metaTheme.setAttribute('content', '#003380');
+            }
+        }
+
+        function alternarTemaVisual() {
+            const esOscuro = document.body.classList.toggle('dark-mode');
+            const btnTema = document.getElementById('btn-toggle-tema');
+            const metaTheme = document.getElementById('meta-theme-color');
+
+            if (esOscuro) {
+                localStorage.setItem('andru_crm_tema', 'oscuro');
+                if (btnTema) btnTema.innerText = '☀️';
+                if (metaTheme) metaTheme.setAttribute('content', '#1e293b');
+            } else {
+                localStorage.setItem('andru_crm_tema', 'claro');
+                if (btnTema) btnTema.innerText = '🌙';
+                if (metaTheme) metaTheme.setAttribute('content', '#003380');
+            }
+        }
+
+        aplicarTemaInicial();
+
+        // --- CONFIGURACIÓN FIREBASE ---
         const firebaseConfig = {
           apiKey: "AIzaSyBP4F7vQAMmXTWTRMSUSn7m4jdsiFRhnHU",
           authDomain: "andru-cmr-previser.firebaseapp.com",
@@ -229,15 +328,15 @@
             let btnNom = document.getElementById('btn-ordenar-nombre');
             
             if (btnDia) {
-                btnDia.style.background = '#312e81';
-                btnDia.style.color = '#38bdf8';
-                btnDia.style.borderColor = '#4338ca';
+                btnDia.style.background = 'var(--btn-orden-bg)';
+                btnDia.style.color = 'var(--btn-orden-text)';
+                btnDia.style.borderColor = 'var(--btn-orden-border)';
                 btnDia.innerText = ordenVencimientoAsc ? '📅 Día (1-31)' : '📅 Día (31-1)';
             }
             if (btnNom) {
-                btnNom.style.background = '#1e293b';
-                btnNom.style.color = '#94a3b8';
-                btnNom.style.borderColor = '#475569';
+                btnNom.style.background = 'var(--btn-orden-inactive-bg)';
+                btnNom.style.color = 'var(--btn-orden-inactive-text)';
+                btnNom.style.borderColor = 'var(--border-color)';
             }
 
             filtrarLista();
@@ -251,15 +350,15 @@
             let btnNom = document.getElementById('btn-ordenar-nombre');
 
             if (btnNom) {
-                btnNom.style.background = '#312e81';
-                btnNom.style.color = '#38bdf8';
-                btnNom.style.borderColor = '#4338ca';
+                btnNom.style.background = 'var(--btn-orden-bg)';
+                btnNom.style.color = 'var(--btn-orden-text)';
+                btnNom.style.borderColor = 'var(--btn-orden-border)';
                 btnNom.innerText = ordenNombreAsc ? '🔤 Nombre (A-Z)' : '🔤 Nombre (Z-A)';
             }
             if (btnDia) {
-                btnDia.style.background = '#1e293b';
-                btnDia.style.color = '#94a3b8';
-                btnDia.style.borderColor = '#475569';
+                btnDia.style.background = 'var(--btn-orden-inactive-bg)';
+                btnDia.style.color = 'var(--btn-orden-inactive-text)';
+                btnDia.style.borderColor = 'var(--border-color)';
             }
 
             filtrarLista();
@@ -344,7 +443,7 @@
                 filtrarLista();
 
             } catch (err) {
-                contenedor.innerHTML = `<div class="loading" style="color:#f87171;">❌ Error al cargar: ${err.message}</div>`;
+                contenedor.innerHTML = `<div class="loading" style="color:#dc2626;">❌ Error al cargar: ${err.message}</div>`;
             }
         }
 
@@ -361,10 +460,10 @@
                 'ganados': 'ventas'
             };
             let palabraVista = etiquetasVista[vistaActual] || 'registros';
-            contador.innerHTML = `<span style="background: rgba(99, 102, 241, 0.25); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.5); padding: 3px 9px; border-radius: 12px; font-weight: bold;">${lista.length} ${palabraVista}</span>`;
+            contador.innerHTML = `<span style="background: #f59e0b; color: #0f172a; padding: 3px 10px; border-radius: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">${lista.length} ${palabraVista}</span>`;
 
             if (lista.length === 0) {
-                contenedor.innerHTML = `<div class="loading" style="color:#94a3b8;">🎉 No hay registros para este filtro.</div>`;
+                contenedor.innerHTML = `<div class="loading" style="color: var(--text-secondary);">🎉 No hay registros para este filtro.</div>`;
                 return;
             }
 
@@ -395,7 +494,7 @@
                     badgeText = "✅ RENOVADO / LOGRADO";
                 } else if (esNoRenueva) {
                     tarjetaEstiloClase = "estado-no-renueva";
-                    badgeClass = "badge-orange";
+                    badgeClass = "badge-red";
                     badgeText = "❌ NO RENUEVA";
                 } else if (vistaActual === 'cobros') {
                     let diaNum = parseInt(diaPago, 10);
@@ -466,10 +565,10 @@
                         <div>🪪 Cédula: <strong>${cedula}</strong></div>
                         <div>📞 <strong>${celular || 'Sin celular registrado'}</strong></div>
                         <div>🏢 ${empresa} | 📍 ${ciudad}</div>
-                        ${fechaVenta ? `<div>🗓️ Fecha / Venta: <strong style="color:#fbbf24;">${String(fechaVenta).toUpperCase()}</strong></div>` : ''}
+                        ${fechaVenta ? `<div>🗓️ Fecha / Venta: <strong style="color:#d97706;">${String(fechaVenta).toUpperCase()}</strong></div>` : ''}
                         
                         <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-                            <span style="font-size:11px; font-weight:bold; color:#94a3b8;">Estado:</span>
+                            <span style="font-size:11px; font-weight:bold; color: var(--text-secondary);">Estado:</span>
                             <select class="select-accion" onchange="cambiarEstadoCliente('${item.idDoc}', '${item.coleccionOrigen}', this.value)">
                                 <option value="lista" ${valorSelectAccion === 'lista' ? 'selected' : ''}>📋 En Lista / Gestión</option>
                                 <option value="no_renueva" ${valorSelectAccion === 'no_renueva' ? 'selected' : ''}>❌ No Renueva</option>
@@ -477,7 +576,7 @@
                             </select>
                         </div>
 
-                        <div id="nota-text-${item.idDoc}" style="color:#f472b6; font-style:italic; margin-top:4px;">
+                        <div id="nota-text-${item.idDoc}" style="color: var(--note-color); font-style:italic; margin-top:4px; font-weight: 500;">
                             ${notaCobro ? `📝 ${notaCobro}` : '📝 Sin observaciones. (Toca el ✏️ para añadir)'}
                         </div>
                     </div>
