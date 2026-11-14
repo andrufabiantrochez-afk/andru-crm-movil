@@ -412,12 +412,19 @@ window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado)
                     msgWpp = `Hola, *${primerNombre}*. 😊 ¡Espero que te encuentres muy bien! ${saludoTiempo}\n\nEstaba revisando las afiliaciones que se renuevan este mes y vi que la tuya ya está próxima, por eso quise escribirte con tiempo.\n\nMe gustaría ayudarte para que continúes disfrutando de todos los beneficios, descuentos y auxilios de tu membresía Previser. 💙\n\nAntes de continuar, cuéntame una cosita. 😊\n\n¿Tu grupo familiar continúa igual o hubo algún cambio que quieras incluir este año?\n\nSi te parece, lo hacemos por aquí mismo o, si prefieres, agendamos una llamada. ¿Qué te queda más cómodo? 🤝`;
                 }
 
-               // Extraemos estrictamente los primeros 10 dígitos del número (sea normal o pegado)
-let celularCorregido = numLimpio.substring(0, 10);
+               // Tomamos el número original, cortamos en el guion (si existe) y dejamos solo números
+let celularLimpioReal = String(celular).split('-')[0].replace(/\D/g, '');
 
-// Armamos la URL usando el número recortado
-// (Agregué el '57' al inicio para garantizar que WhatsApp reconozca que es de Colombia y no arroje error de prefijo)
-let urlWpp = `https://api.whatsapp.com/send?phone=57${celularCorregido}&text=${encodeURIComponent(msgWpp)}`;
+// Si el número traía el 57 pegado desde la base de datos (12 dígitos), lo removemos para estandarizar
+if (celularLimpioReal.length >= 12 && celularLimpioReal.startsWith('57')) {
+    celularLimpioReal = celularLimpioReal.substring(2, 12);
+} else {
+    // Nos aseguramos de tomar exactamente los 10 dígitos del celular (evitando cortar el número real)
+    celularLimpioReal = celularLimpioReal.substring(0, 10);
+}
+
+// Armamos la URL agregando un único '57' al inicio
+let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${encodeURIComponent(msgWpp)}`;
 
                 let valorSelectAccion = "lista";
                 if (esRenovado) valorSelectAccion = "renovado";
