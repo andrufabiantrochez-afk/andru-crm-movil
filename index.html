@@ -112,7 +112,9 @@
         <button id="btn-ordenar-dia" class="btn-orden" onclick="alternarOrdenVencimiento()">
             📅 Ordenar por Día Vencimiento (1 al 31)
         </button>
-    </div>
+        <button id="btn-limpiar-duplicados" class="btn-orden" style="background: #7f1d1d; color: #fca5a5; border-color: #991b1b;" onclick="depurarDuplicadosCRM()">
+            🧹 Depurar Duplicados de esta Vista
+        </button>
 
     <div class="nav-tabs">
         <button class="tab-btn active" id="tab-btn-cobros" onclick="cambiarVista('cobros')">💰 Cobros del Día</button>
@@ -228,6 +230,78 @@
 
             return 99;
         }
+// --- ASPIRADORA INTELIGENTE DE DUPLICADOS ---
+        window.depurarDuplicadosCRM = async function() {
+            let coleccion = 'afiliados';
+            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
+            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+
+            const confirmarInicio = confirm(`🔍 Se analizará toda la base de datos de "${coleccion.toUpperCase()}" buscando cédulas o nombres repetidos.\n\n¿Deseas iniciar el escaneo?`);
+            if (!confirmarInicio) return;
+
+            try {
+                const snapshot = await db.collection(coleccion).get();
+                let unicos = {};
+                let idsParaBorrar = [];
+
+                snapshot.forEach(doc => {
+                    let d = doc.data();
+                    // Usamos la cédula limpia como llave principal; si no tiene, usamos el nombre en mayúsculas
+                    let cedula = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
+                    let nombre = String(d.titular || d.nombre || d.nombreCompleto || d.cliente || "").trim().toUpperCase();
+                    
+                    let llaveUnica = cedula.length > 4 ? `CED_${cedula}` : (nombre ? `NOM_${nombre}` : null);
+
+                    if (llaveUnica) {
+                        if (!unicos[llaveUnica]) {
+                            // Es la primera vez que vemos este cliente, lo guardamos como original
+                            unicos[llaveUnica] = { id: doc.id, data: d };
+                        } else {
+                            // ¡Duplicado encontrado! Verificamos si el nuevo tiene notas o estado avanzado antes de decidir cuál borrar
+                            let prev = unicos[llaveUnica];
+                            let nuevoTieneDatos = (d.nota_seguimiento || d.nota_cobro || (d.estado && d.estado !== "En lista"));
+                            let prevTieneDatos = (prev.data.nota_seguimiento || prev.data.nota_cobro || (prev.data.estado && prev.data.estado !== "En lista"));
+
+                            if (nuevoTieneDatos && !prevTieneDatos) {
+                                // El nuevo tiene gestión hecha y el viejo no: borramos el viejo y conservamos el nuevo
+                                idsParaBorrar.push(prev.id);
+                                unicos[llaveUnica] = { id: doc.id, data: d };
+                            } else {
+                                // Conservamos el original y mandamos el repetido a la lista de borrado
+                                idsParaBorrar.push(doc.id);
+                            }
+                        }
+                    }
+                });
+
+                if (idsParaBorrar.length === 0) {
+                    alert("✨ ¡Tu base de datos está limpia! No se encontraron registros duplicados.");
+                    return;
+                }
+
+                const confirmarBorrado = confirm(`⚠️ ESCANEO COMPLETADO:\n\nSe encontraron ${idsParaBorrar.length} registros duplicados en "${coleccion.toUpperCase()}".\n\n¿Deseas eliminarlos definitivamente ahora mismo? (Se conservará 1 registro original de cada cliente).`);
+
+                if (confirmarBorrado) {
+                    // Firestore permite borrar en lotes (batch) de hasta 500 documentos en un segundo
+                    const batch = db.batch();
+                    // Procesamos en bloques de 450 por seguridad
+                    const lote = idsParaBorrar.slice(0, 450);
+                    
+                    lote.forEach(id => {
+                        const docRef = db.collection(coleccion).doc(id);
+                        batch.delete(docRef);
+                    });
+
+                    await batch.commit();
+                    alert(`🎉 ¡Limpieza exitosa! Se eliminaron ${lote.length} contactos duplicados.`);
+                    cargarDatosMovil(); // Recargamos la lista limpia
+                }
+
+            } catch (error) {
+                console.error("Error depurando duplicados:", error);
+                alert("❌ Ocurrió un error durante la limpieza: " + error.message);
+            }
+        };
 // --- FUNCIÓN PARA ELIMINAR CLIENTES ---
 window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado) {
     // 1. Lanzamos la alerta de confirmación que pediste
