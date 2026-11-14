@@ -2,969 +2,354 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reporte de Gastos - Andru Tróchez</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Andru CRM - Previser Móvil</title>
     
-    <!-- PWA Configuración -->
-    <meta name="theme-color" content="#0f172a">
+    <!-- CONFIGURACIÓN PWA / APP NATIVA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#003380" id="meta-theme-color">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Gastos Andru">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f172a'/><text x='50' y='66' font-family='Arial, sans-serif' font-weight='bold' font-size='48' fill='%2310b981' text-anchor='middle'>$</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f172a'/><text x='50' y='66' font-family='Arial, sans-serif' font-weight='bold' font-size='48' fill='%2310b981' text-anchor='middle'>$</text></svg>">
+    <meta name="apple-mobile-web-app-title" content="Andru CRM">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- html2pdf para convertir el Soporte Oficial idéntico de la extensión a PDF en el celular -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- jsPDF + AutoTable para el Soporte Oficial y Reporte Resumen PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-            color: #0f172a;
+        /* VARIABLES DE COLOR - MODO CLARO PREVISER (PREDETERMINADO) */
+        :root {
+            --bg-body: #f1f5f9;
+            --bg-header: #003380;
+            --border-header: #f59e0b;
+            --text-header: #ffffff;
+            --bg-surface: #ffffff;
+            --bg-input: #f8fafc;
+            --border-color: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-accent: #003380;
+            --brand-blue: #0044aa;
+            --brand-yellow: #f59e0b;
+            --brand-red: #dc2626;
+            --btn-orden-bg: #eff6ff;
+            --btn-orden-text: #003380;
+            --btn-orden-border: #bfdbfe;
+            --btn-orden-inactive-bg: #f8fafc;
+            --btn-orden-inactive-text: #64748b;
+            --note-color: #b91c1c;
+            --card-shadow: 0 2px 8px rgba(0, 51, 128, 0.08);
+            --finance-box-bg: #f8fafc;
+            --finance-box-border: #e2e8f0;
         }
-        #hoja-impresion {
-            width: 100%;
-            max-width: 816px;
-            background: white;
-            margin: 0 auto;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            box-sizing: border-box;
-            border-radius: 12px;
+
+        /* VARIABLES DE COLOR - MODO OSCURO */
+        body.dark-mode {
+            --bg-body: #0f172a;
+            --bg-header: #1e293b;
+            --border-header: #f59e0b;
+            --text-header: #f8fafc;
+            --bg-surface: #1e293b;
+            --bg-input: #0f172a;
+            --border-color: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-accent: #60a5fa;
+            --brand-blue: #2563eb;
+            --brand-yellow: #fbbf24;
+            --brand-red: #ef4444;
+            --btn-orden-bg: #1e3a8a;
+            --btn-orden-text: #93c5fd;
+            --btn-orden-border: #1d4ed8;
+            --btn-orden-inactive-bg: #0f172a;
+            --btn-orden-inactive-text: #94a3b8;
+            --note-color: #f472b6;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --finance-box-bg: #0f172a;
+            --finance-box-border: #334155;
         }
-        .pdf-mode #hoja-impresion {
-            width: 816px !important;
-            max-width: 816px !important;
-            margin: 0 !important;
-            padding: 15px 30px !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg-body); color: var(--text-primary); padding-bottom: 90px; transition: background 0.25s, color 0.25s; }
+        
+        header { background: var(--bg-header); padding: 14px 15px; border-bottom: 3px solid var(--border-header); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; color: var(--text-header); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+        h1 { font-size: 16px; color: #ffffff; display: flex; align-items: center; gap: 6px; font-weight: 800; }
+        
+        .theme-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .theme-btn:active { transform: scale(0.92); }
+
+        .search-container { padding: 10px 15px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; flex-direction: column; }
+        .search-row { display: flex; gap: 8px; }
+        .filter-select { background: var(--bg-input); color: var(--text-accent); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; font-size: 12px; font-weight: bold; outline: none; cursor: pointer; }
+        .search-input { flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 13px; outline: none; }
+        .search-input:focus, .filter-select:focus { border-color: var(--brand-blue); }
+
+        .btn-orden { background: var(--btn-orden-bg); color: var(--btn-orden-text); border: 1px solid var(--btn-orden-border); padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; }
+
+        .nav-tabs { display: flex; background: var(--bg-surface); padding: 8px 15px; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--border-color); }
+        .tab-btn { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: var(--brand-blue); color: #ffffff; border-color: var(--brand-blue); box-shadow: 0 2px 6px rgba(0, 68, 170, 0.3); }
+        
+        .sub-nav { display: flex; gap: 6px; padding: 8px 15px; background: var(--bg-body); border-bottom: 1px solid var(--border-color); overflow-x: auto; }
+        .sub-btn { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+        .sub-btn.active { background: #f59e0b; color: #0f172a; border-color: #d97706; font-weight: 800; }
+
+        /* PANEL DE REPORTE OFICIAL PDF */
+        .reporte-panel {
+            display: none;
+            background: var(--bg-surface);
+            padding: 12px 15px;
+            border-bottom: 2px solid #059669;
+            flex-direction: column;
+            gap: 8px;
         }
-        .pdf-mode .no-print {
-            display: none !important;
+        .reporte-resumen-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--finance-box-bg);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+            gap: 8px;
         }
-        .tabla-gastos th, .tabla-gastos td {
-            border: 1px solid #cbd5e1;
-            padding: 6px 8px;
+        .reporte-botones-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .btn-pdf-original {
+            grid-column: span 2;
+            background: #003380;
+            color: #ffffff;
+            border: 2px solid #f59e0b;
+            padding: 11px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 3px 8px rgba(0, 51, 128, 0.25);
+        }
+        .btn-pdf-oficial {
+            background: #059669;
+            color: #ffffff;
+            border: none;
+            padding: 9px;
+            border-radius: 8px;
+            font-size: 11.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-nuevo-pago-rep {
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 9px;
+            border-radius: 8px;
+            font-size: 11.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        /* BANNER DE VOZ ACTIVA */
+        .voice-banner {
+            display: none;
+            background: #1e3a8a;
+            color: #ffffff;
+            padding: 8px 15px;
+            font-size: 12px;
+            font-weight: bold;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            border-bottom: 2px solid #f59e0b;
+        }
+        .voice-banner button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .card { background: var(--bg-surface); border-radius: 12px; padding: 14px; border: 1px solid var(--border-color); border-left: 4px solid var(--brand-blue); box-shadow: var(--card-shadow); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
+        
+        .card.estado-no-renueva { background: rgba(220, 38, 38, 0.08) !important; border: 1px solid #dc2626 !important; border-left: 4px solid #dc2626 !important; }
+        .card.estado-renovado { background: rgba(16, 185, 129, 0.1) !important; border: 1px solid #059669 !important; border-left: 4px solid #059669 !important; }
+        .card.excluido-pdf { opacity: 0.55; border-left: 4px solid #94a3b8; }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+        .card-title-group { display: flex; align-items: center; gap: 6px; flex: 1; }
+        .card-title { font-size: 14px; font-weight: 800; color: var(--text-accent); word-break: break-word; }
+        
+        .btn-edit-note { background: none; border: none; cursor: pointer; font-size: 13px; padding: 2px; }
+
+        .select-accion { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: bold; outline: none; cursor: pointer; }
+
+        .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 800; white-space: nowrap; }
+        .badge-red { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .badge-orange { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
+        .badge-yellow { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .badge-green { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .badge-purple { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        
+        body.dark-mode .badge-red { background: rgba(239,68,68,0.2); color: #f87171; border-color: rgba(239,68,68,0.4); }
+        body.dark-mode .badge-orange { background: rgba(249,115,22,0.2); color: #fb923c; border-color: rgba(249,115,22,0.4); }
+        body.dark-mode .badge-yellow { background: rgba(245,158,11,0.2); color: #fbbf24; border-color: rgba(245,158,11,0.4); }
+        body.dark-mode .badge-green { background: rgba(16,185,129,0.2); color: #34d399; border-color: rgba(16,185,129,0.4); }
+        body.dark-mode .badge-purple { background: rgba(59,130,246,0.2); color: #93c5fd; border-color: rgba(59,130,246,0.4); }
+
+        .card-body { font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
+        .card-body strong { color: var(--text-primary); }
+
+        /* CAJA FINANCIERA DE PAGOS Y SALDOS */
+        .finance-box {
+            background: var(--finance-box-bg);
+            border: 1px solid var(--finance-box-border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-top: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .finance-metrics {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
             font-size: 11px;
         }
-        .tabla-gastos th {
-            background-color: #f8fafc;
-            color: #334155;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
+        .metric-paid { color: #059669; font-weight: 800; }
+        .metric-debt { color: #dc2626; font-weight: 800; }
+        .metric-plan { color: var(--text-accent); font-weight: 700; }
+        body.dark-mode .metric-paid { color: #34d399; }
+        body.dark-mode .metric-debt { color: #f87171; }
+        
+        .finance-btns { display: flex; gap: 4px; }
+        .btn-edit-finance {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+            border-radius: 6px;
+            padding: 3px 7px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
         }
-        .input-inline {
-            width: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            font-size: inherit;
-            color: inherit;
-            font-family: inherit;
-            padding: 2px;
+        .btn-inspect-bd {
+            background: #e0e7ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 3px 6px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
         }
-        .input-inline:focus {
-            background-color: #f0fdf4;
-            border-bottom: 1.5px solid #10b981;
+        
+        .card-actions { display: flex; gap: 5px; margin-top: 6px; }
+        .btn { flex: 1; padding: 8px 4px; border-radius: 8px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 3px; text-decoration: none; white-space: nowrap; }
+        .btn-wpp { background: #16a34a; color: white; }
+        .btn-call { background: #0044aa; color: white; }
+        .btn-maps { background: #ea580c; color: white; }
+        .btn-cal { background: #7c3aed; color: white; }
+        .btn-delete { background: #dc2626; color: white; flex: 0.35; }
+        
+        .fab-btn { position: fixed; bottom: 20px; right: 20px; background: #f59e0b; color: #0f172a; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45); border: 2px solid #ffffff; cursor: pointer; z-index: 99; }
+        .voice-btn { position: fixed; bottom: 20px; left: 20px; background: #003380; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 6px 16px rgba(0, 51, 128, 0.4); border: 2px solid #f59e0b; cursor: pointer; z-index: 99; transition: all 0.3s ease; }
+        .voice-btn.listening { background: #dc2626; border-color: #ffffff; box-shadow: 0 0 20px #dc2626; animation: pulse 1.2s infinite; }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+            100% { transform: scale(1); }
         }
-        .pulse-mic {
-            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-        }
-        @keyframes pulse-ring {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-        .btn-action {
-            transition: transform 0.1s ease, background-color 0.15s ease;
-        }
-        .btn-action:active {
-            transform: scale(0.96);
-        }
-        #signature-pad {
-            touch-action: none;
-            cursor: crosshair;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.68); z-index: 1000; align-items:center; justify-content:center; padding:15px; }
+        .modal-content { background: var(--bg-surface); width:100%; max-width:410px; border-radius:14px; padding:20px; border: 2px solid var(--brand-blue); display:flex; flex-direction:column; gap:10px; color: var(--text-primary); max-height: 92vh; overflow-y: auto; }
+        .modal-title { font-size:16px; color: var(--text-accent); font-weight:800; display:flex; justify-content:space-between; align-items:center; }
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .form-group { display:flex; flex-direction:column; gap:4px; }
+        .form-group label { font-size:11px; color: var(--text-secondary); font-weight:bold; }
+        .form-input { padding:9px; border-radius:6px; border:1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size:13px; outline:none; width: 100%; }
+        .form-input:focus { border-color: var(--brand-blue); }
+        .btn-save { background: #003380; color:white; padding:11px; border-radius:8px; border:none; font-weight:bold; font-size:13px; cursor:pointer; margin-top:5px; }
+        
+        .cmd-list { font-size: 12px; display: flex; flex-direction: column; gap: 8px; line-height: 1.4; }
+        .cmd-item { background: var(--bg-input); padding: 8px 10px; border-radius: 8px; border-left: 3px solid #f59e0b; }
+        .cmd-item strong { color: var(--text-accent); display: block; margin-bottom: 2px; }
+
+        .loading { text-align: center; padding: 30px; color: var(--text-accent); font-size: 13px; font-weight: bold; }
     </style>
 </head>
-<body class="pb-12">
+<body>
 
-    <!-- BARRA DE HERRAMIENTAS SUPERIOR -->
-    <div class="no-print bg-slate-900 text-white shadow-lg sticky top-0 z-50 border-b border-slate-800">
-        <div class="max-w-4xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
-            <!-- Título y Estado -->
-            <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                    <i class="fa-solid fa-file-invoice-dollar text-base"></i>
-                </div>
-                <div class="truncate">
-                    <h1 class="font-bold text-sm tracking-tight text-white truncate">Gastos Andru</h1>
-                    <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
-                        <span id="status-dot" class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
-                        <span id="status-nube" class="truncate">Conectando...</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botones de Acción Rápida -->
-            <div class="flex items-center gap-1.5 shrink-0">
-                <button onclick="abrirModalHistorial()" class="btn-action bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-700" title="Historial de Reportes">
-                    <i class="fa-solid fa-folder-open text-amber-400"></i>
-                    <span class="hidden sm:inline">Historial</span>
-                </button>
-                <button onclick="abrirModalConfig()" class="btn-action bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-xl text-xs border border-slate-700" title="Configuración e IA">
-                    <i class="fa-solid fa-gear text-slate-300"></i>
-                </button>
-                <button onclick="descargarPDF()" id="btn-pdf" class="btn-action bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-950/50">
-                    <i class="fa-solid fa-file-pdf"></i>
-                    <span>PDF</span>
-                </button>
-            </div>
+    <header>
+        <h1>🎯 Andru CRM <span style="font-size:9px; background:#f59e0b; color:#0f172a; padding:2px 6px; border-radius:4px; font-weight:900;">PREVISER</span></h1>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span id="total-registros" style="font-size:11px;">Cargando...</span>
+            <button class="theme-btn" title="Ver Comandos de Voz" onclick="abrirModalComandos()">?</button>
+            <button id="btn-toggle-tema" class="theme-btn" title="Cambiar Modo Claro / Oscuro" onclick="alternarTemaVisual()">🌙</button>
         </div>
+    </header>
+
+    <!-- BANNER DE FILTRO POR VOZ ACTIVO -->
+    <div class="voice-banner" id="voice-banner">
+        <span id="voice-banner-text">🎙️ Filtro de voz activo</span>
+        <button onclick="limpiarFiltrosCompletos()">✕ Limpiar</button>
     </div>
 
-    <!-- PANEL DE REGISTRO RÁPIDO (SOLO WEB) -->
-    <div class="no-print max-w-4xl mx-auto px-3 pt-3">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5">
-            
-            <!-- Pestañas / Modo de ingreso + Micrófono -->
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2.5 border-b border-slate-100">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-plus-circle text-emerald-600"></i> Nuevo Gasto
-                    </span>
-                    <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">
-                        Valores x1000 automático
-                    </span>
-                </div>
-
-                <!-- Botón Micrófono e IA -->
-                <div class="flex items-center gap-1.5">
-                    <button id="btn-voz" onclick="toggleVoz()" class="btn-action bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
-                        <i id="icono-voz" class="fa-solid fa-microphone"></i>
-                        <span id="texto-voz">Dictar por Voz</span>
-                    </button>
-                    <button onclick="abrirModalIA()" class="btn-action bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1" title="Procesar texto o factura con IA">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span class="hidden sm:inline">IA</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Banner estado de voz -->
-            <div id="banner-voz" class="hidden mb-3 bg-rose-50 border border-rose-200 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2 min-w-0">
-                    <span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping shrink-0"></span>
-                    <p id="transcripcion-vivo" class="text-xs text-rose-800 font-medium truncate">Escuchando... Di ejemplo: "Almuerzo restaurante El Paisa 18 mil en efectivo"</p>
-                </div>
-                <button onclick="detenerVoz()" class="text-[11px] bg-rose-600 text-white px-2.5 py-1 rounded-lg font-bold shrink-0">Listo</button>
-            </div>
-
-            <!-- Formulario Compacto -->
-            <div class="grid grid-cols-12 gap-2">
-                <!-- Fecha -->
-                <div class="col-span-5 sm:col-span-2">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Fecha</label>
-                    <input type="date" id="reg-fecha" class="w-full text-xs border border-slate-300 rounded-lg px-2 py-2 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none">
-                </div>
-
-                <!-- Categoría / Concepto -->
-                <div class="col-span-7 sm:col-span-3">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Concepto</label>
-                    <select id="reg-concepto" onchange="verificarOtroConcepto()" class="w-full text-xs border border-slate-300 rounded-lg px-2 py-2 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none font-medium">
-                        <option value="Alimentación">Alimentación</option>
-                        <option value="Transporte / Gasolina">Transporte / Gasolina</option>
-                        <option value="Peajes">Peajes</option>
-                        <option value="Hospedaje">Hospedaje</option>
-                        <option value="Parqueadero">Parqueadero</option>
-                        <option value="Papelería / Oficina">Papelería / Oficina</option>
-                        <option value="Atención a Clientes">Atención a Clientes</option>
-                        <option value="Otro">Otro (Escribir...)</option>
-                    </select>
-                </div>
-
-                <!-- Proveedor / Descripción -->
-                <div class="col-span-12 sm:col-span-4">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Establecimiento / Detalle</label>
-                    <input type="text" id="reg-detalle" placeholder="Ej: Restaurante, Estación Terpel..." class="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-2 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none">
-                </div>
-
-                <!-- Forma de Pago -->
-                <div class="col-span-6 sm:col-span-3">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Medio de Pago</label>
-                    <select id="reg-pago" class="w-full text-xs border border-slate-300 rounded-lg px-2 py-2 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none font-medium">
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Tarjeta Débito">Tarjeta Débito</option>
-                        <option value="Tarjeta Crédito">Tarjeta Crédito</option>
-                        <option value="Transferencia / Nequi">Transferencia / Nequi</option>
-                    </select>
-                </div>
-
-                <!-- Campo Concepto Personalizado (Oculto por defecto) -->
-                <div id="box-otro-concepto" class="hidden col-span-12">
-                    <input type="text" id="reg-otro-concepto" placeholder="Escribe el concepto personalizado..." class="w-full text-xs border border-amber-300 rounded-lg px-2.5 py-1.5 bg-amber-50/50 outline-none">
-                </div>
-
-                <!-- Monto (Miles) -->
-                <div class="col-span-6 sm:col-span-4">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Valor (En miles)</label>
-                    <div class="relative">
-                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
-                        <input type="number" id="reg-valor" step="any" placeholder="Ej: 18 = $18.000" onkeyup="actualizarPreviewMonto()" onchange="actualizarPreviewMonto()" class="w-full text-xs font-bold border border-slate-300 rounded-lg pl-6 pr-2 py-2 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none">
-                    </div>
-                    <span id="preview-monto" class="text-[10px] text-emerald-600 font-bold block mt-0.5 h-3.5"></span>
-                </div>
-
-                <!-- Factura / Soporte -->
-                <div class="col-span-6 sm:col-span-4">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">N° Factura / Soporte</label>
-                    <input type="text" id="reg-factura" placeholder="Opcional (Ej: FV-102)" class="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-2 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none">
-                </div>
-
-                <!-- Botón Agregar -->
-                <div class="col-span-12 sm:col-span-4 flex items-end">
-                    <button onclick="agregarGastoManual()" class="btn-action w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm">
-                        <i class="fa-solid fa-plus text-emerald-400"></i>
-                        <span>Agregar al Reporte</span>
-                    </button>
-                </div>
-            </div>
+    <div class="search-container">
+        <div class="search-row">
+            <select id="select-criterio" class="filter-select" onchange="filtrarLista()">
+                <option value="todo">🔍 Todo (General)</option>
+                <option value="mes_compra">📅 Mes de Compra</option>
+                <option value="titular">👤 Titular / Nombre</option>
+                <option value="cedula">🪪 Cédula</option>
+                <option value="empresa">🏢 Empresa / Convenio</option>
+                <option value="ciudad">📍 Ciudad / Dir.</option>
+                <option value="con_saldo">💸 Con Saldo Pendiente</option>
+            </select>
+            <input type="text" id="input-buscar" class="search-input" placeholder="Escribe para buscar..." oninput="filtrarLista()">
         </div>
-    </div>
-
-    <!-- HOJA OFICIAL IMPRIMIBLE / EXPORTABLE A PDF -->
-    <div class="px-2 sm:px-4 mt-4">
-        <div id="hoja-impresion" class="p-4 sm:p-8 border border-slate-200">
-            
-            <!-- Encabezado Corporativo -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b-2 border-slate-900 pb-3 mb-4 gap-2">
-                <div>
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Legalización de Gastos</span>
-                    <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight mt-1">RELACIÓN DE GASTOS Y VIÁTICOS</h2>
-                    <p class="text-[11px] text-slate-500">Gestión Comercial • Suroccidente Colombiano</p>
-                </div>
-                <div class="text-left sm:text-right bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 w-full sm:w-auto">
-                    <div class="text-[10px] text-slate-500 font-bold uppercase">Consecutivo / Periodo</div>
-                    <input type="text" id="doc-periodo" value="Noviembre 2026" onchange="guardarMetadatos()" class="input-inline font-bold text-xs text-slate-900 sm:text-right">
-                </div>
-            </div>
-
-            <!-- Datos del Colaborador y Anticipo -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-xs">
-                <div class="bg-slate-50/70 p-2.5 rounded-lg border border-slate-200 space-y-1.5">
-                    <div class="flex items-center justify-between border-b border-slate-200/80 pb-1">
-                        <span class="font-bold text-slate-500 text-[10px] uppercase">Colaborador:</span>
-                        <input type="text" id="doc-nombre" value="Andru Fabian Trochez López" onchange="guardarMetadatos()" class="input-inline font-semibold text-slate-800 text-right w-2/3">
-                    </div>
-                    <div class="flex items-center justify-between border-b border-slate-200/80 pb-1">
-                        <span class="font-bold text-slate-500 text-[10px] uppercase">Cargo / Área:</span>
-                        <input type="text" id="doc-cargo" value="Ejecutivo Comercial" onchange="guardarMetadatos()" class="input-inline font-medium text-slate-700 text-right w-2/3">
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-slate-500 text-[10px] uppercase">Ciudad / Zona:</span>
-                        <input type="text" id="doc-ciudad" value="Palmira - Valle del Cauca" onchange="guardarMetadatos()" class="input-inline font-medium text-slate-700 text-right w-2/3">
-                    </div>
-                </div>
-
-                <div class="bg-slate-50/70 p-2.5 rounded-lg border border-slate-200 space-y-1.5">
-                    <div class="flex items-center justify-between border-b border-slate-200/80 pb-1">
-                        <span class="font-bold text-slate-500 text-[10px] uppercase">Fecha Reporte:</span>
-                        <input type="date" id="doc-fecha-corte" onchange="guardarMetadatos()" class="input-inline font-semibold text-slate-800 text-right w-1/2">
-                    </div>
-                    <div class="flex items-center justify-between border-b border-slate-200/80 pb-1">
-                        <span class="font-bold text-slate-500 text-[10px] uppercase">Anticipo Recibido ($):</span>
-                        <input type="number" id="doc-anticipo" value="0" onchange="guardarMetadatos(); renderizarTabla();" class="input-inline font-bold text-slate-800 text-right w-1/2">
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-slate-500 text-[10px] uppercase">Estado:</span>
-                        <span id="badge-estado-doc" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">EN CURSO</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tabla Principal de Gastos -->
-            <div class="overflow-x-auto mb-4">
-                <table class="w-full border-collapse tabla-gastos">
-                    <thead>
-                        <tr>
-                            <th class="w-8 text-center">#</th>
-                            <th class="w-24 text-left">Fecha</th>
-                            <th class="w-32 text-left">Concepto</th>
-                            <th class="text-left">Establecimiento / Detalle</th>
-                            <th class="w-24 text-left">Soporte</th>
-                            <th class="w-28 text-left">Pago</th>
-                            <th class="w-28 text-right">Valor</th>
-                            <th class="no-print w-16 text-center">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-cuerpo">
-                        <!-- Filas generadas dinámicamente -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Resumen Financiero -->
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start mb-6">
-                <!-- Notas / Observaciones -->
-                <div class="sm:col-span-7 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observaciones / Notas de Legalización:</label>
-                    <textarea id="doc-notas" rows="3" onchange="guardarMetadatos()" placeholder="Sin novedades adicionales..." class="w-full bg-transparent text-xs text-slate-700 outline-none resize-none">Soportes físicos y electrónicos adjuntos según relación detallada.</textarea>
-                </div>
-
-                <!-- Totales -->
-                <div class="sm:col-span-5 bg-slate-900 text-white p-3.5 rounded-xl space-y-2 text-xs">
-                    <div class="flex justify-between items-center text-slate-300">
-                        <span>Total Gastos Reportados:</span>
-                        <span id="resumen-total-gastos" class="font-bold text-sm text-white">$0</span>
-                    </div>
-                    <div class="flex justify-between items-center text-slate-300 border-b border-slate-700 pb-2">
-                        <span>Anticipo Recibido:</span>
-                        <span id="resumen-anticipo" class="font-semibold text-slate-200">$0</span>
-                    </div>
-                    <div class="flex justify-between items-center pt-0.5">
-                        <span id="label-saldo" class="font-bold uppercase tracking-wider text-[11px] text-emerald-400">Saldo a Favor:</span>
-                        <span id="resumen-saldo" class="font-extrabold text-base text-emerald-400">$0</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sección de Firmas -->
-            <div class="grid grid-cols-2 gap-6 pt-4 border-t border-slate-200 mt-4">
-                <!-- Firma Colaborador -->
-                <div class="text-center">
-                    <div class="h-20 border-b border-slate-400 flex items-center justify-center relative group mb-1.5">
-                        <img id="img-firma-colaborador" class="max-h-16 max-w-full object-contain hidden" alt="Firma">
-                        <span id="placeholder-firma" class="text-[11px] text-slate-400 italic no-print">Toca abajo para firmar o subir imagen</span>
-                    </div>
-                    <p id="firma-nombre-display" class="text-xs font-bold text-slate-800">Andru Fabian Trochez López</p>
-                    <p class="text-[10px] text-slate-500">Firma del Colaborador</p>
-                    
-                    <!-- Botones de Firma (No salen en PDF) -->
-                    <div class="no-print flex items-center justify-center gap-1.5 mt-2">
-                        <button onclick="abrirModalFirma()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-300 flex items-center gap-1">
-                            <i class="fa-solid fa-pen-nib"></i> Dibujar
-                        </button>
-                        <label class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-300 flex items-center gap-1 cursor-pointer">
-                            <i class="fa-solid fa-upload"></i> Subir
-                            <input type="file" id="file-firma" accept="image/*" class="hidden" onchange="cargarImagenFirma(event)">
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Firma Aprobación -->
-                <div class="text-center">
-                    <div class="h-20 border-b border-slate-400 flex items-end justify-center pb-1 mb-1.5">
-                    </div>
-                    <p class="text-xs font-bold text-slate-800">Aprobación / Contabilidad</p>
-                    <p class="text-[10px] text-slate-500">Firma y Sello Autorizado</p>
-                </div>
-            </div>
-
-            <!-- Pie de página -->
-            <div class="mt-6 pt-2 border-t border-slate-100 flex justify-between items-center text-[9px] text-slate-400">
-                <span>Generado digitalmente • Sistema de Legalización</span>
-                <span id="footer-timestamp"></span>
-            </div>
-        </div>
-
-        <!-- Botones Inferiores de Gestión del Reporte -->
-        <div class="no-print max-w-4xl mx-auto mt-4 flex flex-wrap items-center justify-between gap-2 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-            <button onclick="nuevoReporteLimpio()" class="btn-action bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
-                <i class="fa-solid fa-file-circle-plus text-slate-600"></i>
-                <span>Nuevo Reporte</span>
+        <div style="display: flex; gap: 6px;">
+            <button id="btn-ordenar-dia" class="btn-orden" style="flex: 1;" onclick="alternarOrdenVencimiento()">
+                📅 Día (1-31)
             </button>
-
-            <div class="flex items-center gap-2">
-                <button onclick="guardarCierreEnHistorial()" class="btn-action bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
-                    <i class="fa-solid fa-box-archive"></i>
-                    <span>Guardar Cierre</span>
-                </button>
-            </div>
+            <button id="btn-ordenar-nombre" class="btn-orden" style="flex: 1; background: var(--btn-orden-inactive-bg); border-color: var(--border-color); color: var(--btn-orden-inactive-text);" onclick="alternarOrdenNombre()">
+                🔤 Nombre (A-Z)
+            </button>
         </div>
+        <button id="btn-limpiar-duplicados" class="btn-orden" style="background: #fee2e2; color: #b91c1c; border-color: #fca5a5;" onclick="depurarDuplicadosCRM()">
+            🧹 Depurar Duplicados de esta Vista
+        </button>
     </div>
 
-    <!-- MODAL: DIBUJAR FIRMA -->
-    <div id="modal-firma" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
-                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-signature text-emerald-600"></i> Dibuja tu Firma
-                </h3>
-                <button onclick="cerrarModalFirma()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 overflow-hidden mb-3">
-                <canvas id="signature-pad" width="400" height="160" class="w-full h-40 block"></canvas>
-            </div>
-            <div class="flex justify-between gap-2">
-                <button onclick="limpiarCanvasFirma()" class="px-3 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl">Limpiar</button>
-                <button onclick="guardarFirmaCanvas()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl">Aplicar Firma</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: ASISTENTE IA (TEXTO LIBRE / FACTURAS) -->
-    <div id="modal-ia" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-4 shadow-2xl">
-            <div class="flex justify-between items-center mb-2">
-                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> Ingreso Inteligente (Varios Gastos)
-                </h3>
-                <button onclick="cerrarModalIA()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-500 mb-3">Pega o dicta varios gastos seguidos y el sistema los extraerá automáticamente a tu tabla.</p>
-            <textarea id="input-texto-ia" rows="4" placeholder="Ejemplo: Hoy 14 de noviembre gasté 15 mil en almuerzo en El Rancherito en efectivo, 40 mil de gasolina en Terpel con tarjeta débito y 12 mil en peaje..." class="w-full text-xs border border-slate-300 rounded-xl p-3 bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none mb-3"></textarea>
-            <div class="flex justify-end gap-2">
-                <button onclick="cerrarModalIA()" class="px-3 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl">Cancelar</button>
-                <button onclick="procesarTextoConIA()" id="btn-procesar-ia" class="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl flex items-center gap-1.5">
-                    <i class="fa-solid fa-bolt"></i> Extraer Gastos
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: HISTORIAL DE CIERRES -->
-    <div id="modal-historial" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-4 shadow-2xl max-h-[85vh] flex flex-col">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100">
-                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-folder-open text-amber-500"></i> Reportes Guardados
-                </h3>
-                <button onclick="cerrarModalHistorial()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div id="lista-historial" class="overflow-y-auto space-y-2 flex-1 pr-1">
-                <!-- Items historial -->
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: CONFIGURACIÓN -->
-    <div id="modal-config" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100">
-                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-gear text-slate-600"></i> Configuración
-                </h3>
-                <button onclick="cerrarModalConfig()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">API Key de Gemini (Opcional para IA avanzada):</label>
-                    <input type="password" id="config-gemini-key" placeholder="AIzaSy..." class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-slate-50 outline-none">
-                    <p class="text-[10px] text-slate-400 mt-1">Si no colocas clave, el micrófono y el extractor local funcionarán de forma gratuita sin conexión externa.</p>
-                </div>
-                <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    <div>
-                        <p class="font-bold text-slate-700">Multiplicar montos x 1.000</p>
-                        <p class="text-[10px] text-slate-500">Ej: Escribir "15" se guarda como "$15.000"</p>
-                    </div>
-                    <input type="checkbox" id="config-multiplicar-mil" checked class="w-4 h-4 accent-emerald-600">
-                </div>
-            </div>
-            <div class="mt-4 flex justify-end gap-2">
-                <button onclick="guardarConfiguracion()" class="px-4 py-2 text-xs font-bold text-white bg-slate-900 rounded-xl">Guardar Ajustes</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- TOAST NOTIFICACIÓN -->
-    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-xl opacity-0 pointer-events-none transition-opacity duration-300 z-50 flex items-center gap-2">
-        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
-        <span id="toast-msg">Guardado</span>
-    </div>
-
-    <!-- SCRIPT PRINCIPAL Y FIREBASE -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        // Configuración Firebase (puedes reemplazarla con tus credenciales reales si las usas)
-        const firebaseConfig = {
-            apiKey: "",
-            authDomain: "",
-            projectId: "",
-            storageBucket: "",
-            messagingSenderId: "",
-            appId: ""
-        };
-
-        let db = null;
-        let usarNube = false;
-
-        if (firebaseConfig.apiKey && firebaseConfig.projectId) {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                usarNube = true;
-                actualizarEstadoNube(true, "Sincronizado en Nube");
-            } catch (e) {
-                actualizarEstadoNube(false, "Modo Local Activo");
-            }
-        } else {
-            actualizarEstadoNube(false, "Guardado Local");
-        }
-
-        function actualizarEstadoNube(online, texto) {
-            const dot = document.getElementById('status-dot');
-            const lbl = document.getElementById('status-nube');
-            if (dot) dot.className = `w-2 h-2 rounded-full inline-block ${online ? 'bg-emerald-400' : 'bg-sky-400'}`;
-            if (lbl) lbl.textContent = texto;
-        }
-
-        // Exponer funciones de almacenamiento al scope global
-        window.storageEngine = {
-            async guardarActual(data) {
-                localStorage.setItem('reporte_gastos_actual_v2', JSON.stringify(data));
-                if (usarNube && db) {
-                    try {
-                        await setDoc(doc(db, "reportes_andru", "borrador_actual"), data);
-                    } catch (e) { console.warn("Sync nube falló, guardado local OK", e); }
-                }
-            },
-            async cargarActual() {
-                if (usarNube && db) {
-                    try {
-                        const snap = await getDoc(doc(db, "reportes_andru", "borrador_actual"));
-                        if (snap.exists()) return snap.data();
-                    } catch (e) {}
-                }
-                const local = localStorage.getItem('reporte_gastos_actual_v2');
-                return local ? JSON.parse(local) : null;
-            },
-            async guardarCierre(id, data) {
-                const hist = JSON.parse(localStorage.getItem('reportes_gastos_historial_v2') || '{}');
-                hist[id] = data;
-                localStorage.setItem('reportes_gastos_historial_v2', JSON.stringify(hist));
-                if (usarNube && db) {
-                    try {
-                        await setDoc(doc(db, "reportes_andru_historial", id), data);
-                    } catch (e) {}
-                }
-            },
-            async listarCierres() {
-                let hist = JSON.parse(localStorage.getItem('reportes_gastos_historial_v2') || '{}');
-                if (usarNube && db) {
-                    try {
-                        const querySnapshot = await getDocs(collection(db, "reportes_andru_historial"));
-                        querySnapshot.forEach((docSnap) => { hist[docSnap.id] = docSnap.data(); });
-                        localStorage.setItem('reportes_gastos_historial_v2', JSON.stringify(hist));
-                    } catch (e) {}
-                }
-                return Object.values(hist).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-            },
-            async eliminarCierre(id) {
-                const hist = JSON.parse(localStorage.getItem('reportes_gastos_historial_v2') || '{}');
-                delete hist[id];
-                localStorage.setItem('reportes_gastos_historial_v2', JSON.stringify(hist));
-                if (usarNube && db) {
-                    try {
-                        await deleteDoc(doc(db, "reportes_andru_historial", id));
-                    } catch (e) {}
-                }
-            }
-        };
-
-        window.dispatchEvent(new Event('storageReady'));
-    </script>
-
-    <script>
-        // ESTADO GLOBAL DE LA APLICACIÓN
-        let estadoReporte = {
-            periodo: "Noviembre 2026",
-            nombre: "Andru Fabian Trochez López",
-            cargo: "Ejecutivo Comercial",
-            ciudad: "Palmira - Valle del Cauca",
-            fechaCorte: new Date().toISOString().split('T')[0],
-            anticipo: 0,
-            notas: "Soportes físicos y electrónicos adjuntos según relación detallada.",
-            firmaBase64: "",
-            items: []
-        };
-
-        let configApp = {
-            geminiKey: localStorage.getItem('gastos_gemini_key') || '',
-            multiplicarMil: localStorage.getItem('gastos_multiplicar_mil') !== 'false'
-        };
-
-        // INICIALIZACIÓN
-        document.addEventListener('DOMContentLoaded', () => {
-            const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('reg-fecha').value = hoy;
-            document.getElementById('doc-fecha-corte').value = hoy;
-            document.getElementById('footer-timestamp').textContent = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
-            
-            document.getElementById('config-gemini-key').value = configApp.geminiKey;
-            document.getElementById('config-multiplicar-mil').checked = configApp.multiplicarMil;
-
-            inicializarCanvasFirma();
-        });
-
-        window.addEventListener('storageReady', async () => {
-            const guardado = await window.storageEngine.cargarActual();
-            if (guardado) {
-                estadoReporte = { ...estadoReporte, ...guardado };
-            }
-            aplicarEstadoAInterfaz();
-        });
-
-        function aplicarEstadoAInterfaz() {
-            document.getElementById('doc-periodo').value = estadoReporte.periodo || '';
-            document.getElementById('doc-nombre').value = estadoReporte.nombre || '';
-            document.getElementById('doc-cargo').value = estadoReporte.cargo || '';
-            document.getElementById('doc-ciudad').value = estadoReporte.ciudad || '';
-            document.getElementById('doc-fecha-corte').value = estadoReporte.fechaCorte || '';
-            document.getElementById('doc-anticipo').value = estadoReporte.anticipo || 0;
-            document.getElementById('doc-notas').value = estadoReporte.notas || '';
-            document.getElementById('firma-nombre-display').textContent = estadoReporte.nombre || 'Andru Fabian Trochez López';
-
-            if (estadoReporte.firmaBase64) {
-                const img = document.getElementById('img-firma-colaborador');
-                img.src = estadoReporte.firmaBase64;
-                img.classList.remove('hidden');
-                document.getElementById('placeholder-firma').classList.add('hidden');
-            } else {
-                document.getElementById('img-firma-colaborador').classList.add('hidden');
-                document.getElementById('placeholder-firma').classList.remove('hidden');
-            }
-
-            renderizarTabla();
-        }
-
-        function guardarMetadatos() {
-            estadoReporte.periodo = document.getElementById('doc-periodo').value;
-            estadoReporte.nombre = document.getElementById('doc-nombre').value;
-            estadoReporte.cargo = document.getElementById('doc-cargo').value;
-            estadoReporte.ciudad = document.getElementById('doc-ciudad').value;
-            estadoReporte.fechaCorte = document.getElementById('doc-fecha-corte').value;
-            estadoReporte.anticipo = parseFloat(document.getElementById('doc-anticipo').value) || 0;
-            estadoReporte.notas = document.getElementById('doc-notas').value;
-            document.getElementById('firma-nombre-display').textContent = estadoReporte.nombre;
-
-            if (window.storageEngine) {
-                window.storageEngine.guardarActual(estadoReporte);
-            }
-        }
-
-        // FORMATEO DE MONEDA COP
-        function formatoCOP(valor) {
-            return new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(valor || 0);
-        }
-
-        function verificarOtroConcepto() {
-            const sel = document.getElementById('reg-concepto').value;
-            const box = document.getElementById('box-otro-concepto');
-            if (sel === 'Otro') {
-                box.classList.remove('hidden');
-                document.getElementById('reg-otro-concepto').focus();
-            } else {
-                box.classList.add('hidden');
-            }
-        }
-
-        function actualizarPreviewMonto() {
-            const raw = parseFloat(document.getElementById('reg-valor').value);
-            const prev = document.getElementById('preview-monto');
-            if (!isNaN(raw) && raw > 0) {
-                const final = (configApp.multiplicarMil && raw < 1000) ? raw * 1000 : raw;
-                prev.textContent = `Se registrará: ${formatoCOP(final)}`;
-            } else {
-                prev.textContent = '';
-            }
-        }
-
-        // AGREGAR GASTO MANUAL
-        function agregarGastoManual() {
-            const fecha = document.getElementById('reg-fecha').value || new Date().toISOString().split('T')[0];
-            let concepto = document.getElementById('reg-concepto').value;
-            if (concepto === 'Otro') {
-                concepto = document.getElementById('reg-otro-concepto').value.trim() || 'Otros Gastos';
-            }
-            const detalle = document.getElementById('reg-detalle').value.trim() || concepto;
-            const pago = document.getElementById('reg-pago').value;
-            const factura = document.getElementById('reg-factura').value.trim() || 'S/N';
-            let valorRaw = parseFloat(document.getElementById('reg-valor').value);
-
-            if (isNaN(valorRaw) || valorRaw <= 0) {
-                mostrarToast("Ingresa un valor válido", "error");
-                document.getElementById('reg-valor').focus();
-                return;
-            }
-
-            const valorFinal = (configApp.multiplicarMil && valorRaw < 1000) ? valorRaw * 1000 : valorRaw;
-
-            estadoReporte.items.push({
-                id: Date.now().toString(),
-                fecha,
-                concepto,
-                detalle,
-                factura,
-                pago,
-                valor: valorFinal
-            });
-
-            // Limpiar campos rápidos
-            document.getElementById('reg-detalle').value = '';
-            document.getElementById('reg-valor').value = '';
-            document.getElementById('reg-factura').value = '';
-            document.getElementById('preview-monto').textContent = '';
-
-            guardarMetadatos();
-            renderizarTabla();
-            mostrarToast(`Agregado: ${formatoCOP(valorFinal)}`);
-        }
-
-        // RENDERIZAR TABLA Y TOTALES
-        function renderizarTabla() {
-            const tbody = document.getElementById('tabla-cuerpo');
-            tbody.innerHTML = '';
-
-            let totalGastos = 0;
-
-            if (estadoReporte.items.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center py-6 text-slate-400 italic text-xs">
-                            No hay gastos registrados aún. Usa el formulario superior o el micrófono para agregar.
-                        </td>
-                    </tr>
-                `;
-            } else {
-                estadoReporte.items.forEach((item, index) => {
-                    totalGastos += Number(item.valor) || 0;
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50/80 transition-colors";
-                    tr.innerHTML = `
-                        <td class="text-center font-bold text-slate-500">${index + 1}</td>
-                        <td><input type="date" value="${item.fecha}" onchange="editarItem(${index}, 'fecha', this.value)" class="input-inline text-[11px]"></td>
-                        <td><input type="text" value="${item.concepto}" onchange="editarItem(${index}, 'concepto', this.value)" class="input-inline font-semibold text-slate-800"></td>
-                        <td><input type="text" value="${item.detalle}" onchange="editarItem(${index}, 'detalle', this.value)" class="input-inline text-slate-700"></td>
-                        <td><input type="text" value="${item.factura || 'S/N'}" onchange="editarItem(${index}, 'factura', this.value)" class="input-inline text-slate-600"></td>
-                        <td><input type="text" value="${item.pago}" onchange="editarItem(${index}, 'pago', this.value)" class="input-inline text-slate-600"></td>
-                        <td class="text-right font-bold text-slate-900">
-                            <input type="number" value="${item.valor}" onchange="editarItem(${index}, 'valor', Number(this.value))" class="input-inline text-right font-bold">
-                        </td>
-                        <td class="no-print text-center">
-                            <button onclick="eliminarItem(${index})" class="text-rose-500 hover:text-rose-700 p-1 rounded" title="Eliminar fila">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-
-            const anticipo = Number(estadoReporte.anticipo) || 0;
-            const saldo = totalGastos - anticipo;
-
-            document.getElementById('resumen-total-gastos').textContent = formatoCOP(totalGastos);
-            document.getElementById('resumen-anticipo').textContent = formatoCOP(anticipo);
-            
-            const lblSaldo = document.getElementById('label-saldo');
-            const valSaldo = document.getElementById('resumen-saldo');
-            if (saldo >= 0) {
-                lblSaldo.textContent = "Saldo a Reembolsar:";
-                lblSaldo.className = "font-bold uppercase tracking-wider text-[11px] text-emerald-400";
-                valSaldo.className = "font-extrabold text-base text-emerald-400";
-                valSaldo.textContent = formatoCOP(saldo);
-            } else {
-                lblSaldo.textContent = "Saldo a Devolver:";
-                lblSaldo.className = "font-bold uppercase tracking-wider text-[11px] text-amber-400";
-                valSaldo.className = "font-extrabold text-base text-amber-400";
-                valSaldo.textContent = formatoCOP(Math.abs(saldo));
-            }
-        }
-
-        function editarItem(index, campo, valor) {
-            estadoReporte.items[index][campo] = valor;
-            guardarMetadatos();
-            if (campo === 'valor') renderizarTabla();
-        }
-
-        function eliminarItem(index) {
-            estadoReporte.items.splice(index, 1);
-            guardarMetadatos();
-            renderizarTabla();
-            mostrarToast("Gasto eliminado");
-        }
-
-        // ==========================================
-        // RECONOCIMIENTO DE VOZ (MICRÓFONO NATIVO)
-        // ==========================================
-        let recognition = null;
-        let escuchandoVoz = false;
-
-        function toggleVoz() {
-            if (escuchandoVoz) {
-                detenerVoz();
-            } else {
-                iniciarVoz();
-            }
-        }
-
-        function iniciarVoz() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                mostrarToast("Tu navegador no soporta dictado por voz", "error");
-                return;
-            }
-
-            recognition = new SpeechRecognition();
-            recognition.lang = 'es-CO';
-            recognition.continuous = false;
-            recognition.interimResults = true;
-
-            const btnVoz = document.getElementById('btn-voz');
-            const textoVoz = document.getElementById('texto-voz');
-            const bannerVoz = document.getElementById('banner-voz');
-            const transVivo = document.getElementById('transcripcion-vivo');
-
-            recognition.onstart = () => {
-                escuchandoVoz = true;
-                btnVoz.classList.add('pulse-mic', 'bg-rose-600', 'text-white');
-                btnVoz.classList.remove('bg-rose-50', 'text-rose-600');
-                textoVoz.textContent = "Escuchando...";
-                bannerVoz.classList.remove('hidden');
-                transVivo.textContent = "Habla ahora... Ej: 'Almuerzo 18 mil en efectivo'";
-            };
-
-            recognition.onresult = (event) => {
-                let transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    transcript += event.results[i][0].transcript;
-                }
-                transVivo.textContent = `"${transcript}"`;
-
-                if (event.results[event.results.length - 1].isFinal) {
-                    procesarFraseDeVoz(transcript);
-                }
-            };
-
-            recognition.onerror = (event) => {
-                console.error("Error voz:", event.error);
-                detenerVoz();
-                if (event.error === 'not-allowed') {
-                    mostrarToast("Permiso de micrófono denegado", "error");
-                }
-            };
-
-            recognition.onend = () => {
-                detenerVoz();
-            };
-
-            recognition.start();
-        }
-
-        function detenerVoz() {
-            escuchandoVoz = false;
-            if (recognition) {
-                try { recognition.stop(); } catch (e) {}
-            }
-            const btnVoz = document.getElementById('btn-voz');
-            const textoVoz = document.getElementById('texto-voz');
-            const bannerVoz = document.getElementById('banner-voz');
-
-            btnVoz.classList.remove('pulse-mic', 'bg-rose-600', 'text-white');
-            btnVoz.classList.add('bg-rose-50', 'text-rose-600');
-            textoVoz.textContent = "Dictar por Voz";
-            setTimeout(() => bannerVoz.classList.add('hidden'), 1500);
-        }
-
-        function procesarFraseDeVoz(texto) {
-            const lower = texto.toLowerCase();
-
-            // 1. Extraer monto
-            let monto = 0;
-            const matchMil = lower.match(/(\d+(?:[.,]\d+)?)\s*mil/);
-            const matchNum = lower.match(/(\d+(?:[.,]\d+)?)/);
-
-            if (matchMil) {
-                monto = parseFloat(matchMil[1].replace(',', '.')) * 1000;
-            } else if (matchNum) {
-                let n = parseFloat(matchNum[1].replace(/\./g, '').replace(',', '.'));
-                monto = (n < 1000) ? n * 1000 : n;
-            }
-
-            // 2. Detectar concepto
-            let concepto = "Alimentación";
-            if (lower.includes("gasolina") || lower.includes("combustible") || lower.includes("uber") || lower.includes("taxi") || lower.includes("pasaje") || lower.includes("transporte")) {
-                concepto = "Transporte / Gasolina";
-            } else if (lower.includes("peaje")) {
-                concepto = "Peajes";
-            } else if (lower.includes("hotel") || lower.includes("hospedaje")) {
-                concepto = "Hospedaje";
-            } else if (lower.includes("parqueadero")) {
-                concepto = "Parqueadero";
-            } else if (lower.includes("papelería") || lower.includes("impresión") || lower.includes("copia")) {
-                concepto = "Papelería / Oficina";
-            } else if (lower.includes("cliente") || lower.includes("café") || lower.includes("invitación")) {
-                concepto = "Atención a Clientes";
-            }
-
-            // 3. Detectar medio de pago
-            let pago = "Efectivo";
-            if (lower.includes("débito") || lower.includes("debito")) pago = "Tarjeta Débito";
-            else if (lower.includes("crédito") || lower.includes("credito")) pago = "Tarjeta Crédito";
-            else if (lower.includes("transferencia") || lower.includes("nequi") || lower.includes("daviplata")) pago = "Transferencia / Nequi";
-
-            // Limpiar detalle
-            let detalle = texto.charAt(0).toUpperCase() + texto.slice(1);
-
-            if (monto > 0) {
-                estadoReporte.items.push({
-                    id: Date.now().toString(),
-                    fecha: document.getElementById('reg-fecha').value || new Date().toISOString().split('T')[0],
-                    concepto,
-                    detalle,
-                    factura: 'S/N',
-                    pago,
-                    valor: monto
-                });
-                guardarMetadatos();
-                renderizarTabla();
-                mostrarToast(`Agregado por voz: ${concepto} (${formatoCOP(monto)})`);
-            } else {
-                // Si no detectó monto, lo pone en el detalle para que solo falte el valor
-                document.getElementById('reg-detalle').value = detalle;
-                document.getElementById('reg-concepto').value = concepto;
-                document.getElementById('reg-pago').value = pago;
-                document.getElementById('reg-valor').focus();
-                mostrarToast("Escribe el valor para completar", "info");
-            }
-        }
-
-        // ==========================================
-        // EXTRACTOR MÚLTIPLE / IA
-        // ==========================================
-        function abrirModalIA() {
-            document.getElementById('modal-ia').classList.remove('hidden');
-            document.getElementById('input-texto-ia').focus();
-        }
-        function cerrarModalIA() {
-            document.getElementById('modal-ia').classList.add('hidden');
-        }
-
-        async function procesarTextoConIA() {
-            const texto = document.getElementById('input-texto-ia').value.trim();
-            if (!texto) return;
-
-            const btn = document.getElementById('btn-procesar-ia');
-            btn.disabled = true;
-            btn
+    <div class="nav-tabs">
+        <button class="tab-btn active" id="tab-btn-cobros" onclick="cambiarVista('cobros')">💰 Cobros del Día</
