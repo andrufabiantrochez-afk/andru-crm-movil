@@ -109,9 +109,14 @@
             </select>
             <input type="text" id="input-buscar" class="search-input" placeholder="Escribe para buscar..." oninput="filtrarLista()">
         </div>
-        <button id="btn-ordenar-dia" class="btn-orden" onclick="alternarOrdenVencimiento()">
-            📅 Ordenar por Día Vencimiento (1 al 31)
-        </button>
+        <div style="display: flex; gap: 6px;">
+            <button id="btn-ordenar-dia" class="btn-orden" style="flex: 1;" onclick="alternarOrdenVencimiento()">
+                📅 Día (1-31)
+            </button>
+            <button id="btn-ordenar-nombre" class="btn-orden" style="flex: 1; background: #1e293b; border-color: #475569; color: #94a3b8;" onclick="alternarOrdenNombre()">
+                🔤 Nombre (A-Z)
+            </button>
+        </div>
         <button id="btn-limpiar-duplicados" class="btn-orden" style="background: #7f1d1d; color: #fca5a5; border-color: #991b1b;" onclick="depurarDuplicadosCRM()">
             🧹 Depurar Duplicados de esta Vista
         </button>
@@ -185,23 +190,46 @@
         let vistaActual = 'cobros';
         let subFiltroCobros = 'DIA_ACTUAL';
         let registrosGlobales = [];
+        let tipoOrdenActual = 'dia'; // Puede ser 'dia' o 'nombre'
         let ordenVencimientoAsc = true;
+        let ordenNombreAsc = true;
 
-        function cambiarVista(vista) {
-            vistaActual = vista;
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            let btnActivo = document.getElementById(`tab-btn-${vista}`);
-            if(btnActivo) btnActivo.classList.add('active');
+        function alternarOrdenVencimiento() {
+            tipoOrdenActual = 'dia';
+            ordenVencimientoAsc = !ordenVencimientoAsc;
             
-            document.getElementById('subnav-cobros').style.display = (vista === 'cobros') ? 'flex' : 'none';
+            let btnDia = document.getElementById('btn-ordenar-dia');
+            let btnNom = document.getElementById('btn-ordenar-nombre');
             
-            if (vista === 'renovaciones') {
-                document.getElementById('select-criterio').value = 'mes_compra';
-            } else {
-                document.getElementById('select-criterio').value = 'todo';
-            }
+            btnDia.style.background = '#312e81';
+            btnDia.style.color = '#38bdf8';
+            btnDia.style.borderColor = '#4338ca';
+            btnDia.innerText = ordenVencimientoAsc ? '📅 Día (1-31)' : '📅 Día (31-1)';
 
-            cargarDatosMovil();
+            btnNom.style.background = '#1e293b';
+            btnNom.style.color = '#94a3b8';
+            btnNom.style.borderColor = '#475569';
+
+            filtrarLista();
+        }
+
+        function alternarOrdenNombre() {
+            tipoOrdenActual = 'nombre';
+            ordenNombreAsc = !ordenNombreAsc;
+            
+            let btnDia = document.getElementById('btn-ordenar-dia');
+            let btnNom = document.getElementById('btn-ordenar-nombre');
+
+            btnNom.style.background = '#312e81';
+            btnNom.style.color = '#38bdf8';
+            btnNom.style.borderColor = '#4338ca';
+            btnNom.innerText = ordenNombreAsc ? '🔤 Nombre (A-Z)' : '🔤 Nombre (Z-A)';
+
+            btnDia.style.background = '#1e293b';
+            btnDia.style.color = '#94a3b8';
+            btnDia.style.borderColor = '#475569';
+
+            filtrarLista();
         }
 
         function cambiarSubFiltroCobros(subFiltro) {
@@ -404,12 +432,15 @@ window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado)
             const contenedor = document.getElementById('lista-tarjetas');
             const contador = document.getElementById('total-registros');
             contenedor.innerHTML = '';
-            contador.innerText = `${lista.length} registros`;
-
-            if (lista.length === 0) {
-                contenedor.innerHTML = `<div class="loading" style="color:#94a3b8;">🎉 No hay registros para este filtro.</div>`;
-                return;
-            }
+            const etiquetasVista = {
+                'cobros': 'cobros',
+                'afiliados': 'afiliados',
+                'renovaciones': 'renovaciones',
+                'prospectos': 'prospectos',
+                'ganados': 'ventas'
+            };
+            let palabraVista = etiquetasVista[vistaActual] || 'registros';
+            contador.innerHTML = `<span style="background: rgba(99, 102, 241, 0.25); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.5); padding: 3px 9px; border-radius: 12px; font-weight: bold;">${lista.length} ${palabraVista}</span>`;
 
             let fechaHoy = new Date();
             let diaActualNum = fechaHoy.getDate();
@@ -634,13 +665,18 @@ let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${
             });
 
             filtrados.sort((a, b) => {
-                let diaA = extraerDiaNum(a);
-                let diaB = extraerDiaNum(b);
-                return ordenVencimientoAsc ? (diaA - diaB) : (diaB - diaA);
+                if (tipoOrdenActual === 'nombre') {
+                    let nomA = String(a.titular || a.nombre || a.nombreCompleto || a.cliente || "").trim().toUpperCase();
+                    let nomB = String(b.titular || b.nombre || b.nombreCompleto || b.cliente || "").trim().toUpperCase();
+                    return ordenNombreAsc ? nomA.localeCompare(nomB) : nomB.localeCompare(nomA);
+                } else {
+                    let diaA = extraerDiaNum(a);
+                    let diaB = extraerDiaNum(b);
+                    return ordenVencimientoAsc ? (diaA - diaB) : (diaB - diaA);
+                }
             });
 
             renderizarTarjetas(filtrados);
-        }
 
         function activarHeyAndru() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
