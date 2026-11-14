@@ -375,7 +375,13 @@
                 <div style="font-size:12px; font-weight:800; color:#059669;" id="lbl-total-reporte">Total Reporte: $ 0 (0 ítems)</div>
                 <div style="font-size:10px; font-weight:bold; color:#003380;" id="lbl-firma-status">✒️ Verificando firma en la nube...</div>
             </div>
-            <button onclick="seleccionarTodosReporte(true)" style="background:var(--btn-orden-bg); color:var(--btn-orden-text); border:1px solid var(--btn-orden-border); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">☑️ Todos</button>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <button onclick="seleccionarTodosReporte(true)" style="background:var(--btn-orden-bg); color:var(--btn-orden-text); border:1px solid var(--btn-orden-border); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">☑️ Todos</button>
+                <label style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer; text-align:center;">
+                    ✒️ Firma
+                    <input type="file" accept="image/*" style="display:none;" onchange="subirFirmaDesdeMovil(event)">
+                </label>
+            </div>
         </div>
         <div class="reporte-botones-grid">
             <button class="btn-pdf-original" onclick="descargarSoporteOriginalExtensionPDF()">🖨️ Soporte Oficial Original (13 Col + Firma PDF)</button>
@@ -829,7 +835,7 @@
                             document.getElementById('lbl-firma-status').innerText = "✅ Firma digital lista desde la nube";
                             document.getElementById('lbl-firma-status').style.color = "#059669";
                         } else {
-                            document.getElementById('lbl-firma-status').innerText = "ℹ️ Sin firma digital (se imprimirá línea)";
+                            document.getElementById('lbl-firma-status').innerText = "ℹ️ Sin firma digital (toca ✒️ Firma para subir)";
                             document.getElementById('lbl-firma-status').style.color = "#64748b";
                         }
 
@@ -1214,6 +1220,31 @@
                     console.error("Error dibujando tarjeta:", cardErr, item);
                 }
             });
+        }
+
+        // --- SUBIR FIRMA DIGITAL DESDE EL CELULAR HACIA FIREBASE (BIDIRECCIONAL CON EXTENSIÓN) ---
+        async function subirFirmaDesdeMovil(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Firma = e.target.result;
+                try {
+                    await db.collection('reportes_acumulados').doc('semana_actual').set({
+                        firma: base64Firma,
+                        actualizado: new Date().toISOString()
+                    }, { merge: true });
+
+                    firmaReporteNube = base64Firma;
+                    document.getElementById('lbl-firma-status').innerText = "✅ Firma digital guardada en la nube";
+                    document.getElementById('lbl-firma-status').style.color = "#059669";
+                    alert("✅ ¡Firma subida a la nube! Ya quedó disponible en el celular y en la extensión del computador.");
+                } catch (err) {
+                    alert("❌ Error al subir la firma: " + err.message);
+                }
+            };
+            reader.readAsDataURL(file);
         }
 
         // --- 1. SOPORTE OFICIAL ORIGINAL IDÉNTICO AL DE LA EXTENSIÓN (13 COLUMNAS + FIRMA -> PDF) ---
