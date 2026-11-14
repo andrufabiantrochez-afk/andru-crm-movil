@@ -16,7 +16,9 @@
     <!-- Firebase SDK Compat -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <!-- jsPDF + AutoTable para descargar el Reporte Oficial en PDF -->
+    <!-- html2pdf para convertir el Soporte Oficial idéntico de la extensión a PDF en el celular -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- jsPDF + AutoTable para el Reporte Resumen PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     
@@ -120,31 +122,46 @@
         }
         .reporte-botones-grid {
             display: grid;
-            grid-template-columns: 1.4fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
         }
-        .btn-pdf-oficial {
-            background: #059669;
+        .btn-pdf-original {
+            grid-column: span 2;
+            background: #003380;
             color: #ffffff;
-            border: none;
-            padding: 10px;
+            border: 2px solid #f59e0b;
+            padding: 11px;
             border-radius: 8px;
-            font-size: 12px;
+            font-size: 12.5px;
             font-weight: 800;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3);
+            gap: 6px;
+            box-shadow: 0 3px 8px rgba(0, 51, 128, 0.25);
         }
-        .btn-nuevo-pago-rep {
-            background: #003380;
+        .btn-pdf-oficial {
+            background: #059669;
             color: #ffffff;
             border: none;
-            padding: 10px;
+            padding: 9px;
             border-radius: 8px;
-            font-size: 12px;
+            font-size: 11.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-nuevo-pago-rep {
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 9px;
+            border-radius: 8px;
+            font-size: 11.5px;
             font-weight: 800;
             cursor: pointer;
             display: flex;
@@ -356,11 +373,13 @@
             <div>
                 <div style="font-size:10px; color:var(--text-secondary);" id="lbl-actualizado-reporte">📊 reportes_acumulados / semana_actual</div>
                 <div style="font-size:12px; font-weight:800; color:#059669;" id="lbl-total-reporte">Total Reporte: $ 0 (0 ítems)</div>
+                <div style="font-size:10px; font-weight:bold; color:#003380;" id="lbl-firma-status">✒️ Verificando firma en la nube...</div>
             </div>
             <button onclick="seleccionarTodosReporte(true)" style="background:var(--btn-orden-bg); color:var(--btn-orden-text); border:1px solid var(--btn-orden-border); padding:4px 8px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">☑️ Todos</button>
         </div>
         <div class="reporte-botones-grid">
-            <button class="btn-pdf-oficial" onclick="descargarReporteOficialPDF()">⬇️ Descargar PDF Oficial</button>
+            <button class="btn-pdf-original" onclick="descargarSoporteOriginalExtensionPDF()">🖨️ Soporte Oficial Original (13 Col + Firma PDF)</button>
+            <button class="btn-pdf-oficial" onclick="descargarReporteResumenPDF()">📑 Reporte Resumen PDF</button>
             <button class="btn-nuevo-pago-rep" onclick="abrirModalItemReporte(-1)">➕ Agregar Ítem</button>
         </div>
     </div>
@@ -429,13 +448,19 @@
                 </div>
                 <div class="form-group">
                     <label>Fecha *</label>
-                    <input type="text" id="rep-fecha" class="form-input" placeholder="Ej: 2026-11-09">
+                    <input type="date" id="rep-fecha" class="form-input">
                 </div>
             </div>
             <div class="form-row-2">
                 <div class="form-group">
                     <label>Referencia / Plan</label>
-                    <input type="text" id="rep-referencia" class="form-input" placeholder="Ej: clasica">
+                    <select id="rep-referencia" class="form-input">
+                        <option value="clasica">Clásica (33%)</option>
+                        <option value="bipersonal">Bipersonal (18.5%)</option>
+                        <option value="premium">Premium (31%)</option>
+                        <option value="vip">VIP Gold (29.8%)</option>
+                        <option value="diamante">Diamante Plus (26.4%)</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Suscripción ($)</label>
@@ -444,18 +469,18 @@
             </div>
             <div class="form-row-2">
                 <div class="form-group">
-                    <label>Adicional ($)</label>
+                    <label>Aporte Adicional ($)</label>
                     <input type="number" id="rep-adicional" class="form-input" placeholder="Ej: 300000">
                 </div>
                 <div class="form-group">
-                    <label>Saldo ($)</label>
-                    <input type="number" id="rep-saldo" class="form-input" placeholder="Ej: 0">
+                    <label>Premiación ($)</label>
+                    <input type="number" id="rep-premiacion" class="form-input" placeholder="Ej: 0">
                 </div>
             </div>
             <div class="form-row-2">
                 <div class="form-group">
-                    <label>Premiación ($)</label>
-                    <input type="number" id="rep-premiacion" class="form-input" placeholder="Ej: 0">
+                    <label>Saldo ($)</label>
+                    <input type="number" id="rep-saldo" class="form-input" placeholder="Ej: 0">
                 </div>
                 <div class="form-group">
                     <label>Titular (Opcional)</label>
@@ -567,8 +592,9 @@
         let ordenVencimientoAsc = true;
         let ordenNombreAsc = true;
 
-        // Variables exactas para reportes_acumulados / semana_actual -> items
+        // Variables exactas para reportes_acumulados / semana_actual -> items y firma
         let itemsReporteCrudos = [];
+        let firmaReporteNube = "";
         let itemReporteEditandoIdx = -1;
         let listaFiltradaActual = [];
 
@@ -773,10 +799,9 @@
             const contenedor = document.getElementById('lista-tarjetas');
             contenedor.innerHTML = `<div class="loading">⏳ Consultando datos de Firebase...</div>`;
 
-            // VISTA ESPECIAL: REPORTE OFICIAL (reportes_acumulados -> semana_actual -> items)
+            // VISTA ESPECIAL: REPORTE OFICIAL (reportes_acumulados -> semana_actual -> items + firma)
             if (vistaActual === 'reporte') {
                 try {
-                    // También cargamos afiliados para enriquecer el nombre si la membresía coincide
                     let mapaMembresias = {};
                     try {
                         const snapAfil = await db.collection('afiliados').get();
@@ -792,15 +817,25 @@
                     const docSnap = await docRef.get();
                     registrosGlobales = [];
                     itemsReporteCrudos = [];
+                    firmaReporteNube = "";
 
                     if (docSnap.exists) {
                         const dataDoc = docSnap.data();
                         let act = dataDoc.actualizado ? new Date(dataDoc.actualizado).toLocaleString('es-CO') : 'Reciente';
                         document.getElementById('lbl-actualizado-reporte').innerText = `🔄 Sincronizado: ${act}`;
 
+                        if (dataDoc.firma) {
+                            firmaReporteNube = dataDoc.firma;
+                            document.getElementById('lbl-firma-status').innerText = "✅ Firma digital lista desde la nube";
+                            document.getElementById('lbl-firma-status').style.color = "#059669";
+                        } else {
+                            document.getElementById('lbl-firma-status').innerText = "ℹ️ Sin firma digital (se imprimirá línea)";
+                            document.getElementById('lbl-firma-status').style.color = "#64748b";
+                        }
+
                         if (Array.isArray(dataDoc.items)) {
-                            itemsReporteCrudos = dataDoc.items;
-                            dataDoc.items.forEach((it, idx) => {
+                            itemsReporteCrudos = dataDoc.items.filter(it => it != null);
+                            itemsReporteCrudos.forEach((it, idx) => {
                                 let memStr = limpiarTextoSeguro(it.membresia);
                                 let titularAuto = limpiarTextoSeguro(it.titular || it.nombre) || mapaMembresias[memStr] || "";
                                 registrosGlobales.push({
@@ -907,7 +942,8 @@
             seleccionados.forEach(item => {
                 let susc = parsearNumeroMoneda(item.suscripcion);
                 let adic = parsearNumeroMoneda(item.adicional);
-                sumaTotal += (susc + adic);
+                let prem = parsearNumeroMoneda(item.premiacion);
+                sumaTotal += (susc + adic + prem);
             });
             document.getElementById('lbl-total-reporte').innerText = `Total Reporte: $ ${Math.round(sumaTotal).toLocaleString('es-CO')} (${seleccionados.length} ítems)`;
         }
@@ -969,7 +1005,7 @@
                     let valAdic = parsearNumeroMoneda(item.adicional);
                     let valSaldo = parsearNumeroMoneda(item.saldo);
                     let valPrem = parsearNumeroMoneda(item.premiacion);
-                    let subtotalItem = valSusc + valAdic;
+                    let subtotalItem = valSusc + valAdic + valPrem;
 
                     let incluido = item._incluirEnPdf !== false;
 
@@ -979,13 +1015,13 @@
                     card.innerHTML = `
                         <div class="card-header">
                             <div class="card-title-group">
-                                <input type="checkbox" ${incluido ? 'checked' : ''} style="width:17px; height:17px; accent-color:#059669; cursor:pointer;" onchange="alternarInclusionPDF(${idx}, this.checked)" title="Incluir en el PDF oficial">
+                                <input type="checkbox" ${incluido ? 'checked' : ''} style="width:17px; height:17px; accent-color:#059669; cursor:pointer;" onchange="alternarInclusionPDF(${idx}, this.checked)" title="Incluir en el reporte">
                                 <span class="card-title">🪪 Membresía: ${membresia} ${titular ? `(${titular.toUpperCase()})` : ''}</span>
                             </div>
-                            <span class="badge badge-purple">${referencia}</span>
+                            <span class="badge badge-purple">${referencia} ${valPrem > 0 ? '• PASS' : ''}</span>
                         </div>
                         <div class="card-body">
-                            <div>🗓️ Fecha: <strong>${fecha}</strong> | 💰 Total Ítem: <strong style="color:#059669;">$ ${Math.round(subtotalItem).toLocaleString('es-CO')}</strong></div>
+                            <div>🗓️ Fecha: <strong>${fecha}</strong> | 💰 Total Fila: <strong style="color:#059669;">$ ${Math.round(subtotalItem).toLocaleString('es-CO')}</strong></div>
                             <div class="finance-box">
                                 <div class="finance-metrics">
                                     <span class="metric-paid">💵 Suscripción: $ ${Math.round(valSusc).toLocaleString('es-CO')}</span>
@@ -1180,7 +1216,231 @@
             });
         }
 
-        // --- FUNCIONES EXACTAS PARA reportes_acumulados / semana_actual -> items ---
+        // --- 1. SOPORTE OFICIAL ORIGINAL IDÉNTICO AL DE LA EXTENSIÓN (13 COLUMNAS + FIRMA -> PDF) ---
+        async function descargarSoporteOriginalExtensionPDF() {
+            let incluidos = listaFiltradaActual.filter(r => r._incluirEnPdf !== false);
+            if (incluidos.length === 0) {
+                alert("⚠️ No hay registros seleccionados para generar el Soporte Oficial.");
+                return;
+            }
+
+            const fechaHoy = new Date();
+            const ultimoDiaMes = new Date(fechaHoy.getFullYear(), fechaHoy.getMonth() + 1, 0).getDate();
+            let mesTxt = fechaHoy.toLocaleString('es-ES', { month: 'long' });
+            
+            let qSugerida = fechaHoy.getDate() <= 15 ? `1 al 15 de ${mesTxt} de ${fechaHoy.getFullYear()}` : `15 al ${ultimoDiaMes} de ${mesTxt} de ${fechaHoy.getFullYear()}`;
+            let tQuincena = prompt("📅 Quincena del reporte:", qSugerida);
+            if (!tQuincena) return;
+            
+            let semSug = Math.min(5, Math.ceil(fechaHoy.getDate() / 7));
+            let numSem = prompt("🔢 Número de SEMANA (1-5):", semSug);
+            if (!numSem) return;
+            let semElegida = parseInt(numSem) || semSug;
+
+            let casillasSem = `<table style="border-collapse: collapse; display: inline-table; margin-right: 15px; font-size: 11px;">
+                <tr><td style="border:1px solid #000; padding:2px 4px; font-weight:bold; background:#f8fafc;">No.</td><td style="border:1px solid #000; padding:2px 5px;">1</td><td style="border:1px solid #000; padding:2px 5px;">2</td><td style="border:1px solid #000; padding:2px 5px;">3</td><td style="border:1px solid #000; padding:2px 5px;">4</td><td style="border:1px solid #000; padding:2px 5px;">5</td></tr>
+                <tr><td style="border:1px solid #000; padding:2px 4px; font-weight:bold; background:#f8fafc;">SEM</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 1 ? 'X' : ''}</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 2 ? 'X' : ''}</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 3 ? 'X' : ''}</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 4 ? 'X' : ''}</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 5 ? 'X' : ''}</td></tr>
+            </table>`;
+
+            let fHTML = firmaReporteNube ? `<img src="${firmaReporteNube}" style="max-height: 95px; max-width: 260px; vertical-align: middle; margin-left: 5px;">` : "_________________________";
+
+            let htmlCuerpo = `
+            <div style="font-family: Arial, sans-serif; padding: 10px; color: #000; font-size: 10px; background: #fff; width: 100%;">
+                <style>
+                    table.reporte-ext { width: 100%; border-collapse: collapse; margin-top: 5px; }
+                    table.reporte-ext th, table.reporte-ext td { border: 1px solid #000; padding: 6px 3px; text-align: center; white-space: nowrap; color: #000; }
+                    table.reporte-ext th { background: #f8fafc; font-size: 8.5px; line-height: 1.1; white-space: normal; }
+                    .num-col { font-size: 7px; color: #475569; display: block; }
+                    .pass-cell { background-color: #d1fae5 !important; font-weight: bold; }
+                </style>
+                <div style="text-align: center; margin-bottom: 12px;"><h3 style="margin: 0; font-size: 16px; letter-spacing: 1px; color: #000;">SOPORTE DE REPORTE SEMANAL</h3></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 13px; border-bottom: 1px solid #000; padding-bottom: 8px; color: #000;">
+                    <div>${casillasSem} <span><strong>COD.</strong> 8125</span> <span style="margin-left:8px;"><strong>NOMBRE:</strong> Andru Trochez</span></div>
+                    <div><span><strong>QUINCENA DEL:</strong> <u>${tQuincena.trim()}</u></span> <span style="margin-left: 15px;"><strong>FIRMA:</strong> ${fHTML}</span></div>
+                </div>
+                <table class="reporte-ext">
+                    <thead>
+                        <tr>
+                            <th><span class="num-col">1</span>FECHA</th>
+                            <th><span class="num-col">2</span>MEMB.</th>
+                            <th><span class="num-col">3</span>SUSCRIPCIÓN</th>
+                            <th><span class="num-col">4</span>APORTE ADIC.</th>
+                            <th><span class="num-col">5</span>PREMIACIÓN</th>
+                            <th><span class="num-col">6</span>SALDO</th>
+                            <th><span class="num-col">7</span>TOTAL REPORTE</th>
+                            <th><span class="num-col">8</span>% SERVICIOS</th>
+                            <th><span class="num-col">9</span>% CONS. SOCIAL</th>
+                            <th><span class="num-col">10</span>% MOVILIZACIÓN</th>
+                            <th><span class="num-col">11</span>% ALIMENTACIÓN</th>
+                            <th><span class="num-col">12</span>% APORTE ADIC. Y PREM.</th>
+                            <th><span class="num-col">13</span>TOTAL A GANAR</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            let tS=0, tA=0, tP=0, tSal=0, tTotR=0, tServ=0, tSoc=0, tMov=0, tAlim=0, tAdPr=0, tGanar=0;
+            const fmt = v => (!v || v===0) ? "-" : "$" + Math.round(v).toLocaleString();
+
+            incluidos.forEach(item => {
+                let sus = parsearNumeroMoneda(item.suscripcion);
+                let adic = parsearNumeroMoneda(item.adicional);
+                let prem = parsearNumeroMoneda(item.premiacion);
+                let sal = parsearNumeroMoneda(item.saldo);
+                let ref = normalizarTexto(item.referencia);
+
+                let pct = ref === "bipersonal" ? 0.185 : ref === "premium" ? 0.31 : ref === "vip" ? 0.298 : ref === "diamante" ? 0.264 : 0.33;
+                let cServ = sus * pct, cSoc = sus * 0.06, cMov = sus * 0.02, cAlim = sus * 0.02;
+                let cAdicPrem = (adic * 0.15) + (prem * 0.15) + (prem > 0 ? 96600 : 0);
+                let tot = sus + adic + prem, ganFila = cServ + cSoc + cMov + cAlim + cAdicPrem;
+
+                tS+=sus; tA+=adic; tP+=prem; tSal+=sal; tTotR+=tot; tServ+=cServ; tSoc+=cSoc; tMov+=cMov; tAlim+=cAlim; tAdPr+=cAdicPrem; tGanar+=ganFila;
+                let cv = prem > 0 ? 'pass-cell' : '', pT = prem > 0 ? ' <span style="color: #065f46; font-size:9px;">PASS</span>' : '';
+
+                htmlCuerpo += `<tr><td>${item.fecha}</td><td>${item.membresia}</td><td class="${cv}">${fmt(sus)}${pT}</td><td class="${cv}">${fmt(adic)}</td><td class="${cv}">${fmt(prem)}</td><td>${fmt(sal)}</td><td class="${cv}" style="font-weight:bold;">$${tot.toLocaleString()}</td><td class="${cv}">${fmt(cServ)}</td><td class="${cv}">${fmt(cSoc)}</td><td class="${cv}">${fmt(cMov)}</td><td class="${cv}">${fmt(cAlim)}</td><td class="${cv}">${fmt(cAdicPrem)}</td><td class="${cv}"><strong>$${Math.round(ganFila).toLocaleString()}</strong></td></tr>`;
+            });
+
+            htmlCuerpo += `<tr style="background:#f1f5f9;"><td colspan="2" style="text-align:left; padding-left:6px; font-weight:bold;">TOTALES</td><td style="font-weight:bold;">$${tS.toLocaleString()}</td><td style="font-weight:bold;">$${tA.toLocaleString()}</td><td style="font-weight:bold;">$${tP.toLocaleString()}</td><td style="font-weight:bold;">$${tSal.toLocaleString()}</td><td style="color:#dc2626; font-weight:bold;">$${tTotR.toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tServ).toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tSoc).toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tMov).toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tAlim).toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tAdPr).toLocaleString()}</td><td style="color:#dc2626; font-weight:bold;">$${Math.round(tGanar).toLocaleString()}</td></tr></tbody></table></div>`;
+
+            // Convertimos exactamente ese documento original a PDF horizontal (Landscape)
+            if (window.html2pdf) {
+                let contenedorTemp = document.createElement('div');
+                contenedorTemp.style.width = '1060px';
+                contenedorTemp.innerHTML = htmlCuerpo;
+                document.body.appendChild(contenedorTemp);
+
+                const opcionesPDF = {
+                    margin: 6,
+                    filename: `Soporte_Reporte_Oficial_${new Date().toISOString().split('T')[0]}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'letter', orientation: 'landscape' }
+                };
+
+                try {
+                    await html2pdf().set(opcionesPDF).from(contenedorTemp).save();
+                } finally {
+                    contenedorTemp.remove();
+                }
+            } else {
+                // Respaldo exacto HTML si no cargó html2pdf
+                let htmlCompleto = `<html><head><meta charset="UTF-8"><style>@page { size: landscape; margin: 8mm; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }</style></head><body>${htmlCuerpo}</body></html>`;
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([htmlCompleto], {type: 'text/html'}));
+                a.download = 'Soporte_Reporte_Oficial.html';
+                a.click();
+            }
+        }
+
+        // --- 2. REPORTE RESUMEN PDF (EL OTRO FORMATO DISPONIBLE) ---
+        function descargarReporteResumenPDF() {
+            let incluidos = listaFiltradaActual.filter(r => r._incluirEnPdf !== false);
+            if (incluidos.length === 0) {
+                alert("No hay ítems seleccionados para generar el PDF.");
+                return;
+            }
+
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert("Cargando motor PDF, intenta de nuevo en 2 segundos.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+
+            let fechaHoyStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            doc.setFillColor(0, 51, 128);
+            doc.rect(0, 0, 216, 30, 'F');
+            doc.setFillColor(245, 158, 11);
+            doc.rect(0, 30, 216, 2, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(15);
+            doc.setFont(undefined, 'bold');
+            doc.text("PREVISER - REPORTE RESUMEN ACUMULADO", 14, 13);
+
+            doc.setFontSize(9.5);
+            doc.setFont(undefined, 'normal');
+            doc.text("Ejecutivo Comercial: Andru Fabian Trochez López  |  Tel: 318 796 8389", 14, 20);
+            doc.text(`Fecha de descarga: ${fechaHoyStr}  |  COD. 8125`, 14, 26);
+
+            let sumaSuscripcion = 0;
+            let sumaAdicional = 0;
+            let sumaSaldo = 0;
+            let sumaPremiacion = 0;
+
+            const filasTabla = incluidos.map((item, idx) => {
+                let fecha = limpiarTextoSeguro(item.fecha) || "---";
+                let membresia = limpiarTextoSeguro(item.membresia) || "---";
+                let ref = (limpiarTextoSeguro(item.referencia) || "clasica").toUpperCase();
+                let titular = limpiarTextoSeguro(item.titular);
+                let detalleRef = titular ? `${ref}\n(${titular.toUpperCase()})` : ref;
+
+                let valSusc = parsearNumeroMoneda(item.suscripcion);
+                let valAdic = parsearNumeroMoneda(item.adicional);
+                let valSal = parsearNumeroMoneda(item.saldo);
+                let valPrem = parsearNumeroMoneda(item.premiacion);
+
+                sumaSuscripcion += valSusc;
+                sumaAdicional += valAdic;
+                sumaSaldo += valSal;
+                sumaPremiacion += valPrem;
+
+                return [
+                    idx + 1,
+                    fecha,
+                    membresia,
+                    detalleRef,
+                    `$ ${Math.round(valSusc).toLocaleString('es-CO')}`,
+                    `$ ${Math.round(valAdic).toLocaleString('es-CO')}`,
+                    `$ ${Math.round(valSal).toLocaleString('es-CO')}`,
+                    `$ ${Math.round(valPrem).toLocaleString('es-CO')}`
+                ];
+            });
+
+            doc.autoTable({
+                startY: 38,
+                head: [['#', 'Fecha', 'Membresía', 'Referencia', 'Suscripción', 'Adicional', 'Saldo', 'Premiación']],
+                body: filasTabla,
+                theme: 'grid',
+                headStyles: { fillColor: [0, 51, 128], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+                bodyStyles: { fontSize: 8, textColor: [15, 23, 42] },
+                alternateRowStyles: { fillColor: [241, 245, 249] },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 8 },
+                    1: { cellWidth: 22 },
+                    2: { cellWidth: 22, fontStyle: 'bold' },
+                    3: { cellWidth: 34 },
+                    4: { halign: 'right', cellWidth: 26 },
+                    5: { halign: 'right', cellWidth: 26 },
+                    6: { halign: 'right', cellWidth: 24 },
+                    7: { halign: 'right', cellWidth: 26 }
+                }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 8;
+            let granTotal = sumaSuscripcion + sumaAdicional + sumaPremiacion;
+
+            doc.setFillColor(241, 245, 249);
+            doc.setDrawColor(0, 51, 128);
+            doc.roundedRect(14, finalY, 188, 26, 2, 2, 'FD');
+
+            doc.setTextColor(0, 51, 128);
+            doc.setFontSize(9.5);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Registros en Reporte: ${incluidos.length}`, 18, finalY + 7);
+            doc.text(`Total Suscripción: $ ${Math.round(sumaSuscripcion).toLocaleString('es-CO')}   |   Total Adicional: $ ${Math.round(sumaAdicional).toLocaleString('es-CO')}`, 18, finalY + 14);
+            doc.text(`Total Saldo: $ ${Math.round(sumaSaldo).toLocaleString('es-CO')}   |   Total Premiación: $ ${Math.round(sumaPremiacion).toLocaleString('es-CO')}`, 18, finalY + 21);
+
+            doc.setTextColor(5, 150, 105);
+            doc.setFontSize(11);
+            doc.text(`GRAN TOTAL: $ ${Math.round(granTotal).toLocaleString('es-CO')}`, 198, finalY + 14, { align: 'right' });
+
+            let nombreArchivo = `Reporte_Resumen_Previser_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(nombreArchivo);
+        }
+
+        // --- FUNCIONES CRUD PARA reportes_acumulados / semana_actual -> items ---
         function abrirModalItemReporte(idxArray) {
             itemReporteEditandoIdx = idxArray;
             let titulo = document.getElementById('modal-item-rep-titulo');
@@ -1190,7 +1450,7 @@
                 titulo.innerText = `✏️ Editar Ítem #${idxArray + 1}`;
                 document.getElementById('rep-membresia').value = limpiarTextoSeguro(it.membresia);
                 document.getElementById('rep-fecha').value = limpiarTextoSeguro(it.fecha);
-                document.getElementById('rep-referencia').value = limpiarTextoSeguro(it.referencia);
+                document.getElementById('rep-referencia').value = normalizarTexto(it.referencia) || "clasica";
                 document.getElementById('rep-suscripcion').value = parsearNumeroMoneda(it.suscripcion);
                 document.getElementById('rep-adicional').value = parsearNumeroMoneda(it.adicional);
                 document.getElementById('rep-saldo').value = parsearNumeroMoneda(it.saldo);
@@ -1278,116 +1538,6 @@
             } catch (err) {
                 alert("❌ Error al eliminar ítem: " + err.message);
             }
-        }
-
-        function descargarReporteOficialPDF() {
-            let incluidos = listaFiltradaActual.filter(r => r._incluirEnPdf !== false);
-            if (incluidos.length === 0) {
-                alert("No hay ítems seleccionados para generar el PDF.");
-                return;
-            }
-
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                alert("Cargando motor PDF, intenta de nuevo en 2 segundos.");
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
-
-            let fechaHoyStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
-
-            // Encabezado Institucional Previser
-            doc.setFillColor(0, 51, 128);
-            doc.rect(0, 0, 216, 30, 'F');
-            doc.setFillColor(245, 158, 11);
-            doc.rect(0, 30, 216, 2, 'F');
-
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(15);
-            doc.setFont(undefined, 'bold');
-            doc.text("PREVISER - REPORTE OFICIAL ACUMULADO", 14, 13);
-
-            doc.setFontSize(9.5);
-            doc.setFont(undefined, 'normal');
-            doc.text("Ejecutivo Comercial: Andru Fabian Trochez López  |  Tel: 318 796 8389", 14, 20);
-            doc.text(`Fecha de descarga: ${fechaHoyStr}  |  Suroccidente Colombiano`, 14, 26);
-
-            let sumaSuscripcion = 0;
-            let sumaAdicional = 0;
-            let sumaSaldo = 0;
-            let sumaPremiacion = 0;
-
-            const filasTabla = incluidos.map((item, idx) => {
-                let fecha = limpiarTextoSeguro(item.fecha) || "---";
-                let membresia = limpiarTextoSeguro(item.membresia) || "---";
-                let ref = (limpiarTextoSeguro(item.referencia) || "clasica").toUpperCase();
-                let titular = limpiarTextoSeguro(item.titular);
-                let detalleRef = titular ? `${ref}\n(${titular.toUpperCase()})` : ref;
-
-                let valSusc = parsearNumeroMoneda(item.suscripcion);
-                let valAdic = parsearNumeroMoneda(item.adicional);
-                let valSal = parsearNumeroMoneda(item.saldo);
-                let valPrem = parsearNumeroMoneda(item.premiacion);
-
-                sumaSuscripcion += valSusc;
-                sumaAdicional += valAdic;
-                sumaSaldo += valSal;
-                sumaPremiacion += valPrem;
-
-                return [
-                    idx + 1,
-                    fecha,
-                    membresia,
-                    detalleRef,
-                    `$ ${Math.round(valSusc).toLocaleString('es-CO')}`,
-                    `$ ${Math.round(valAdic).toLocaleString('es-CO')}`,
-                    `$ ${Math.round(valSal).toLocaleString('es-CO')}`,
-                    `$ ${Math.round(valPrem).toLocaleString('es-CO')}`
-                ];
-            });
-
-            doc.autoTable({
-                startY: 38,
-                head: [['#', 'Fecha', 'Membresía', 'Referencia', 'Suscripción', 'Adicional', 'Saldo', 'Premiación']],
-                body: filasTabla,
-                theme: 'grid',
-                headStyles: { fillColor: [0, 51, 128], textColor: 255, fontStyle: 'bold', fontSize: 8 },
-                bodyStyles: { fontSize: 8, textColor: [15, 23, 42] },
-                alternateRowStyles: { fillColor: [241, 245, 249] },
-                columnStyles: {
-                    0: { halign: 'center', cellWidth: 8 },
-                    1: { cellWidth: 22 },
-                    2: { cellWidth: 22, fontStyle: 'bold' },
-                    3: { cellWidth: 34 },
-                    4: { halign: 'right', cellWidth: 26 },
-                    5: { halign: 'right', cellWidth: 26 },
-                    6: { halign: 'right', cellWidth: 24 },
-                    7: { halign: 'right', cellWidth: 26 }
-                }
-            });
-
-            let finalY = doc.lastAutoTable.finalY + 8;
-            let granTotal = sumaSuscripcion + sumaAdicional;
-
-            // Caja de resumen total
-            doc.setFillColor(241, 245, 249);
-            doc.setDrawColor(0, 51, 128);
-            doc.roundedRect(14, finalY, 188, 26, 2, 2, 'FD');
-
-            doc.setTextColor(0, 51, 128);
-            doc.setFontSize(9.5);
-            doc.setFont(undefined, 'bold');
-            doc.text(`Registros en Reporte: ${incluidos.length}`, 18, finalY + 7);
-            doc.text(`Total Suscripción: $ ${Math.round(sumaSuscripcion).toLocaleString('es-CO')}   |   Total Adicional: $ ${Math.round(sumaAdicional).toLocaleString('es-CO')}`, 18, finalY + 14);
-            doc.text(`Total Saldo: $ ${Math.round(sumaSaldo).toLocaleString('es-CO')}   |   Total Premiación: $ ${Math.round(sumaPremiacion).toLocaleString('es-CO')}`, 18, finalY + 21);
-
-            doc.setTextColor(5, 150, 105);
-            doc.setFontSize(11);
-            doc.text(`GRAN TOTAL: $ ${Math.round(granTotal).toLocaleString('es-CO')}`, 198, finalY + 14, { align: 'right' });
-
-            let nombreArchivo = `Reporte_Oficial_Previser_${new Date().toISOString().split('T')[0]}.pdf`;
-            doc.save(nombreArchivo);
         }
 
         function verCamposFirebase(idDoc) {
