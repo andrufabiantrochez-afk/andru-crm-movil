@@ -40,6 +40,8 @@
             --btn-orden-inactive-text: #64748b;
             --note-color: #b91c1c;
             --card-shadow: 0 2px 8px rgba(0, 51, 128, 0.08);
+            --finance-box-bg: #f8fafc;
+            --finance-box-border: #e2e8f0;
         }
 
         /* VARIABLES DE COLOR - MODO OSCURO */
@@ -64,6 +66,8 @@
             --btn-orden-inactive-text: #94a3b8;
             --note-color: #f472b6;
             --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --finance-box-bg: #0f172a;
+            --finance-box-border: #334155;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -121,6 +125,42 @@
 
         .card-body { font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
         .card-body strong { color: var(--text-primary); }
+
+        /* CAJA FINANCIERA DE PAGOS Y SALDOS */
+        .finance-box {
+            background: var(--finance-box-bg);
+            border: 1px solid var(--finance-box-border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-top: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .finance-metrics {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 11px;
+        }
+        .metric-paid { color: #059669; font-weight: 800; }
+        .metric-debt { color: #dc2626; font-weight: 800; }
+        .metric-plan { color: var(--text-accent); font-weight: 700; }
+        body.dark-mode .metric-paid { color: #34d399; }
+        body.dark-mode .metric-debt { color: #f87171; }
+        
+        .btn-edit-finance {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+        }
         
         .card-actions { display: flex; gap: 5px; margin-top: 6px; }
         .btn { flex: 1; padding: 8px 4px; border-radius: 8px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 3px; text-decoration: none; white-space: nowrap; }
@@ -309,6 +349,18 @@
         let tipoOrdenActual = 'dia';
         let ordenVencimientoAsc = true;
         let ordenNombreAsc = true;
+
+        // Formateador de moneda colombiana ($ 45.000)
+        function formatearMonedaCOP(valor) {
+            if (valor === undefined || valor === null || valor === "") return null;
+            let str = String(valor).trim();
+            if (str === "0" || str === "$0" || str === "$ 0") return "$ 0";
+            let numLimpio = parseFloat(str.replace(/[^0-9.-]+/g, ""));
+            if (!isNaN(numLimpio)) {
+                return "$ " + Math.round(numLimpio).toLocaleString('es-CO');
+            }
+            return str;
+        }
 
         function cambiarVista(vista) {
             vistaActual = vista;
@@ -510,6 +562,15 @@
                 let fechaVenta = item.fecha_venta || item.fec_vinc || item.fecha_compra || item.mes_compra || "";
                 let notaCobro = item.nota_cobro || item.nota_seguimiento || item.observaciones || "";
 
+                // LECTURA INTELIGENTE DE DATOS DE PAGO Y SALDO DE FIREBASE
+                let rawPagado = item.valor_pagado ?? item.pagado ?? item.abono ?? item.monto_pagado ?? item.pago ?? "";
+                let rawSaldo = item.saldo ?? item.debe ?? item.saldo_pendiente ?? item.valor_pendiente ?? item.pendiente ?? "";
+                let rawTotal = item.valor_plan ?? item.valor_total ?? item.valor ?? item.precio ?? item.cuota ?? "";
+
+                let pagadoFmt = formatearMonedaCOP(rawPagado);
+                let saldoFmt = formatearMonedaCOP(rawSaldo);
+                let totalFmt = formatearMonedaCOP(rawTotal);
+
                 let badgeClass = "badge-yellow";
                 let badgeText = "EN GESTIÓN";
                 let tarjetaEstiloClase = "";
@@ -568,7 +629,8 @@
                 }
 
                 if (vistaActual === 'cobros') {
-                    msgWpp = `hola ${primerNombre} 👋 espero estes muy bien ${deseoCobro}\nquedamos en que te recordara del pago hoy ${diaActualNum}.\n\nsi necesitas que te envie alguna cuenta o que te oriente con esto me avisas. 🙌`;
+                    let textoSaldoWpp = saldoFmt && saldoFmt !== "$ 0" ? ` (saldo pendiente de *${saldoFmt}*)` : "";
+                    msgWpp = `hola ${primerNombre} 👋 espero estes muy bien ${deseoCobro}\nquedamos en que te recordara del pago hoy ${diaActualNum}${textoSaldoWpp}.\n\nsi necesitas que te envie alguna cuenta o que te oriente con esto me avisas. 🙌`;
                 } else {
                     msgWpp = `Hola, *${primerNombre}*. 😊 ¡Espero que te encuentres muy bien! ${saludoTiempo}\n\nEstaba revisando las afiliaciones que se renuevan este mes y vi que la tuya ya está próxima, por eso quise escribirte con tiempo.\n\nMe gustaría ayudarte para que continúes disfrutando de todos los beneficios, descuentos y auxilios de tu membresía Previser. 💙\n\nAntes de continuar, cuéntame una cosita. 😊\n\n¿Tu grupo familiar continúa igual o hubo algún cambio que quieras incluir este año?\n\nSi te parece, lo hacemos por aquí mismo o, si prefieres, agendamos una llamada. ¿Qué te queda más cómodo? 🤝`;
                 }
@@ -588,7 +650,7 @@
 
                 // URL DIRECTA A GOOGLE CALENDAR PARA AGENDAR SEGUIMIENTO
                 let tituloCal = encodeURIComponent(`📞 Gestión Previser: ${nombre}`);
-                let detallesCal = encodeURIComponent(`Cliente: ${nombre}\nCédula: ${cedula}\nTeléfono: ${celularLimpioReal}\nEmpresa: ${empresa}\nCiudad: ${ciudad}\nDirección: ${direccion || 'No registrada'}\nNota: ${notaCobro || 'Seguimiento de renovación / membresía'}`);
+                let detallesCal = encodeURIComponent(`Cliente: ${nombre}\nCédula: ${cedula}\nTeléfono: ${celularLimpioReal}\nEmpresa: ${empresa}\nCiudad: ${ciudad}\nDirección: ${direccion || 'No registrada'}\nPagó: ${pagadoFmt || 'N/A'} | Debe: ${saldoFmt || 'N/A'}\nNota: ${notaCobro || 'Seguimiento de renovación / membresía'}`);
                 let urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${tituloCal}&details=${detallesCal}`;
 
                 let valorSelectAccion = "lista";
@@ -613,6 +675,16 @@
                         ${direccion ? `<div>🏠 Dir: <strong>${direccion}</strong></div>` : ''}
                         ${fechaVenta ? `<div>🗓️ Fecha / Venta: <strong style="color:#d97706;">${String(fechaVenta).toUpperCase()}</strong></div>` : ''}
                         
+                        <!-- BLOQUE FINANCIERO DE PAGO Y SALDO -->
+                        <div class="finance-box" id="finance-box-${item.idDoc}">
+                            <div class="finance-metrics">
+                                <span class="metric-paid">💵 Pagó: ${pagadoFmt || '---'}</span>
+                                <span class="metric-debt">⏳ Debe: ${saldoFmt || '---'}</span>
+                                ${totalFmt ? `<span class="metric-plan">🏷️ Plan: ${totalFmt}</span>` : ''}
+                            </div>
+                            <button class="btn-edit-finance" onclick="editarValoresPago('${item.idDoc}', '${item.coleccionOrigen}', '${nombre.replace(/'/g, "\\'")}', '${String(rawPagado).replace(/'/g, "")}', '${String(rawSaldo).replace(/'/g, "")}')">✏️ Pago/Saldo</button>
+                        </div>
+
                         <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
                             <span style="font-size:11px; font-weight:bold; color: var(--text-secondary);">Estado:</span>
                             <select class="select-accion" onchange="cambiarEstadoCliente('${item.idDoc}', '${item.coleccionOrigen}', this.value)">
@@ -636,6 +708,36 @@
                 `;
                 contenedor.appendChild(card);
             });
+        }
+
+        // FUNCIÓN PARA EDITAR CUÁNTO PAGÓ Y CUÁNTO DEBE DESDE EL MÓVIL
+        async function editarValoresPago(idDoc, coleccion, nombre, pagadoActual, saldoActual) {
+            let nuevoPagado = prompt(`💵 ¿Cuánto PAGÓ el cliente?\n👤 ${nombre}\n(Escribe solo el número, ej: 45000)`, pagadoActual || "0");
+            if (nuevoPagado === null) return;
+
+            let nuevoSaldo = prompt(`⏳ ¿Cuánto quedó DEBIENDO (Saldo)?\n👤 ${nombre}\n(Escribe 0 si ya pagó todo)`, saldoActual || "0");
+            if (nuevoSaldo === null) return;
+
+            try {
+                let pagadoLimpio = nuevoPagado.trim();
+                let saldoLimpio = nuevoSaldo.trim();
+
+                await db.collection(coleccion).doc(idDoc).update({
+                    valor_pagado: pagadoLimpio,
+                    saldo: saldoLimpio
+                });
+
+                let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
+                if (registroLocal) {
+                    registroLocal.valor_pagado = pagadoLimpio;
+                    registroLocal.saldo = saldoLimpio;
+                }
+
+                filtrarLista();
+                alert("✅ Valores de pago y saldo actualizados en Firebase.");
+            } catch (err) {
+                alert("❌ Error al guardar los valores: " + err.message);
+            }
         }
 
         async function cambiarEstadoCliente(idDoc, coleccion, nuevoValor) {
