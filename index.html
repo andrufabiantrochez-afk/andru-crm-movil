@@ -120,6 +120,7 @@
         <button id="btn-limpiar-duplicados" class="btn-orden" style="background: #7f1d1d; color: #fca5a5; border-color: #991b1b;" onclick="depurarDuplicadosCRM()">
             🧹 Depurar Duplicados de esta Vista
         </button>
+    </div>
 
     <div class="nav-tabs">
         <button class="tab-btn active" id="tab-btn-cobros" onclick="cambiarVista('cobros')">💰 Cobros del Día</button>
@@ -190,46 +191,25 @@
         let vistaActual = 'cobros';
         let subFiltroCobros = 'DIA_ACTUAL';
         let registrosGlobales = [];
-        let tipoOrdenActual = 'dia'; // Puede ser 'dia' o 'nombre'
+        let tipoOrdenActual = 'dia';
         let ordenVencimientoAsc = true;
         let ordenNombreAsc = true;
 
-        function alternarOrdenVencimiento() {
-            tipoOrdenActual = 'dia';
-            ordenVencimientoAsc = !ordenVencimientoAsc;
+        function cambiarVista(vista) {
+            vistaActual = vista;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            let btnActivo = document.getElementById(`tab-btn-${vista}`);
+            if (btnActivo) btnActivo.classList.add('active');
             
-            let btnDia = document.getElementById('btn-ordenar-dia');
-            let btnNom = document.getElementById('btn-ordenar-nombre');
+            document.getElementById('subnav-cobros').style.display = (vista === 'cobros') ? 'flex' : 'none';
             
-            btnDia.style.background = '#312e81';
-            btnDia.style.color = '#38bdf8';
-            btnDia.style.borderColor = '#4338ca';
-            btnDia.innerText = ordenVencimientoAsc ? '📅 Día (1-31)' : '📅 Día (31-1)';
+            if (vista === 'renovaciones') {
+                document.getElementById('select-criterio').value = 'mes_compra';
+            } else {
+                document.getElementById('select-criterio').value = 'todo';
+            }
 
-            btnNom.style.background = '#1e293b';
-            btnNom.style.color = '#94a3b8';
-            btnNom.style.borderColor = '#475569';
-
-            filtrarLista();
-        }
-
-        function alternarOrdenNombre() {
-            tipoOrdenActual = 'nombre';
-            ordenNombreAsc = !ordenNombreAsc;
-            
-            let btnDia = document.getElementById('btn-ordenar-dia');
-            let btnNom = document.getElementById('btn-ordenar-nombre');
-
-            btnNom.style.background = '#312e81';
-            btnNom.style.color = '#38bdf8';
-            btnNom.style.borderColor = '#4338ca';
-            btnNom.innerText = ordenNombreAsc ? '🔤 Nombre (A-Z)' : '🔤 Nombre (Z-A)';
-
-            btnDia.style.background = '#1e293b';
-            btnDia.style.color = '#94a3b8';
-            btnDia.style.borderColor = '#475569';
-
-            filtrarLista();
+            cargarDatosMovil();
         }
 
         function cambiarSubFiltroCobros(subFiltro) {
@@ -242,9 +222,46 @@
         }
 
         function alternarOrdenVencimiento() {
+            tipoOrdenActual = 'dia';
             ordenVencimientoAsc = !ordenVencimientoAsc;
-            let btn = document.getElementById('btn-ordenar-dia');
-            btn.innerText = ordenVencimientoAsc ? '📅 Ordenar por Día Vencimiento (1 al 31)' : '📅 Ordenar por Día Vencimiento (31 al 1)';
+            
+            let btnDia = document.getElementById('btn-ordenar-dia');
+            let btnNom = document.getElementById('btn-ordenar-nombre');
+            
+            if (btnDia) {
+                btnDia.style.background = '#312e81';
+                btnDia.style.color = '#38bdf8';
+                btnDia.style.borderColor = '#4338ca';
+                btnDia.innerText = ordenVencimientoAsc ? '📅 Día (1-31)' : '📅 Día (31-1)';
+            }
+            if (btnNom) {
+                btnNom.style.background = '#1e293b';
+                btnNom.style.color = '#94a3b8';
+                btnNom.style.borderColor = '#475569';
+            }
+
+            filtrarLista();
+        }
+
+        function alternarOrdenNombre() {
+            tipoOrdenActual = 'nombre';
+            ordenNombreAsc = !ordenNombreAsc;
+            
+            let btnDia = document.getElementById('btn-ordenar-dia');
+            let btnNom = document.getElementById('btn-ordenar-nombre');
+
+            if (btnNom) {
+                btnNom.style.background = '#312e81';
+                btnNom.style.color = '#38bdf8';
+                btnNom.style.borderColor = '#4338ca';
+                btnNom.innerText = ordenNombreAsc ? '🔤 Nombre (A-Z)' : '🔤 Nombre (Z-A)';
+            }
+            if (btnDia) {
+                btnDia.style.background = '#1e293b';
+                btnDia.style.color = '#94a3b8';
+                btnDia.style.borderColor = '#475569';
+            }
+
             filtrarLista();
         }
 
@@ -258,103 +275,6 @@
 
             return 99;
         }
-// --- ASPIRADORA INTELIGENTE DE DUPLICADOS ---
-        window.depurarDuplicadosCRM = async function() {
-            let coleccion = 'afiliados';
-            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
-            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
-
-            const confirmarInicio = confirm(`🔍 Se analizará toda la base de datos de "${coleccion.toUpperCase()}" buscando cédulas o nombres repetidos.\n\n¿Deseas iniciar el escaneo?`);
-            if (!confirmarInicio) return;
-
-            try {
-                const snapshot = await db.collection(coleccion).get();
-                let unicos = {};
-                let idsParaBorrar = [];
-
-                snapshot.forEach(doc => {
-                    let d = doc.data();
-                    // Usamos la cédula limpia como llave principal; si no tiene, usamos el nombre en mayúsculas
-                    let cedula = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
-                    let nombre = String(d.titular || d.nombre || d.nombreCompleto || d.cliente || "").trim().toUpperCase();
-                    
-                    let llaveUnica = cedula.length > 4 ? `CED_${cedula}` : (nombre ? `NOM_${nombre}` : null);
-
-                    if (llaveUnica) {
-                        if (!unicos[llaveUnica]) {
-                            // Es la primera vez que vemos este cliente, lo guardamos como original
-                            unicos[llaveUnica] = { id: doc.id, data: d };
-                        } else {
-                            // ¡Duplicado encontrado! Verificamos si el nuevo tiene notas o estado avanzado antes de decidir cuál borrar
-                            let prev = unicos[llaveUnica];
-                            let nuevoTieneDatos = (d.nota_seguimiento || d.nota_cobro || (d.estado && d.estado !== "En lista"));
-                            let prevTieneDatos = (prev.data.nota_seguimiento || prev.data.nota_cobro || (prev.data.estado && prev.data.estado !== "En lista"));
-
-                            if (nuevoTieneDatos && !prevTieneDatos) {
-                                // El nuevo tiene gestión hecha y el viejo no: borramos el viejo y conservamos el nuevo
-                                idsParaBorrar.push(prev.id);
-                                unicos[llaveUnica] = { id: doc.id, data: d };
-                            } else {
-                                // Conservamos el original y mandamos el repetido a la lista de borrado
-                                idsParaBorrar.push(doc.id);
-                            }
-                        }
-                    }
-                });
-
-                if (idsParaBorrar.length === 0) {
-                    alert("✨ ¡Tu base de datos está limpia! No se encontraron registros duplicados.");
-                    return;
-                }
-
-                const confirmarBorrado = confirm(`⚠️ ESCANEO COMPLETADO:\n\nSe encontraron ${idsParaBorrar.length} registros duplicados en "${coleccion.toUpperCase()}".\n\n¿Deseas eliminarlos definitivamente ahora mismo? (Se conservará 1 registro original de cada cliente).`);
-
-                if (confirmarBorrado) {
-                    // Firestore permite borrar en lotes (batch) de hasta 500 documentos en un segundo
-                    const batch = db.batch();
-                    // Procesamos en bloques de 450 por seguridad
-                    const lote = idsParaBorrar.slice(0, 450);
-                    
-                    lote.forEach(id => {
-                        const docRef = db.collection(coleccion).doc(id);
-                        batch.delete(docRef);
-                    });
-
-                    await batch.commit();
-                    alert(`🎉 ¡Limpieza exitosa! Se eliminaron ${lote.length} contactos duplicados.`);
-                    cargarDatosMovil(); // Recargamos la lista limpia
-                }
-
-            } catch (error) {
-                console.error("Error depurando duplicados:", error);
-                alert("❌ Ocurrió un error durante la limpieza: " + error.message);
-            }
-        };
-// --- FUNCIÓN PARA ELIMINAR CLIENTES ---
-window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado) {
-    // 1. Lanzamos la alerta de confirmación que pediste
-    const confirmacion = confirm("⚠️ ¿Estás seguro que deseas eliminar este cliente? Esta acción no se puede deshacer.");
-    
-    if (confirmacion) {
-        try {
-            // Detectamos tu base de datos de Firestore
-            let dbFirestore = window.dbCRM || window.firebase.firestore();
-            
-            // Eliminamos el documento de la nube
-            await dbFirestore.collection(coleccion).doc(idDocumento).delete();
-            
-            alert("✅ Cliente eliminado correctamente.");
-            
-            // Hacemos que la tarjeta desaparezca de la pantalla automáticamente sin tener que recargar toda la página
-            const tarjeta = botonPulsado.closest('div[style*="border"], .card, div[style*="background"]'); 
-            if (tarjeta) tarjeta.style.display = 'none';
-
-        } catch (error) {
-            console.error("Error eliminando:", error);
-            alert("❌ Hubo un error al eliminar. Revisa tu conexión.");
-        }
-    }
-};
 
         async function cargarDatosMovil() {
             const contenedor = document.getElementById('lista-tarjetas');
@@ -432,6 +352,7 @@ window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado)
             const contenedor = document.getElementById('lista-tarjetas');
             const contador = document.getElementById('total-registros');
             contenedor.innerHTML = '';
+
             const etiquetasVista = {
                 'cobros': 'cobros',
                 'afiliados': 'afiliados',
@@ -441,6 +362,11 @@ window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado)
             };
             let palabraVista = etiquetasVista[vistaActual] || 'registros';
             contador.innerHTML = `<span style="background: rgba(99, 102, 241, 0.25); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.5); padding: 3px 9px; border-radius: 12px; font-weight: bold;">${lista.length} ${palabraVista}</span>`;
+
+            if (lista.length === 0) {
+                contenedor.innerHTML = `<div class="loading" style="color:#94a3b8;">🎉 No hay registros para este filtro.</div>`;
+                return;
+            }
 
             let fechaHoy = new Date();
             let diaActualNum = fechaHoy.getDate();
@@ -484,19 +410,22 @@ window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado)
                     }
                 } else if (vistaActual === 'afiliados') {
                     badgeClass = "badge-purple";
-                    badgeText = `🗂️ ESTADO / DÍA: ${diaPago.toUpperCase()}`;
+                    badgeText = `🗂️ ESTADO / DÍA: ${String(diaPago).toUpperCase()}`;
                 } else if (vistaActual === 'renovaciones') {
                     badgeClass = "badge-yellow";
                     badgeText = fechaVenta ? `🗓️ COMPRA: ${String(fechaVenta).toUpperCase()}` : `⏳ RENOVACIÓN`;
                 }
 
-                let numLimpio = String(celular).replace(/\D/g, '');
-                if (numLimpio.length === 10) numLimpio = '57' + numLimpio;
-                
+                let celularLimpioReal = String(celular).split('-')[0].replace(/\D/g, '');
+                if (celularLimpioReal.length >= 12 && celularLimpioReal.startsWith('57')) {
+                    celularLimpioReal = celularLimpioReal.substring(2, 12);
+                } else {
+                    celularLimpioReal = celularLimpioReal.substring(0, 10);
+                }
+
                 let primerNombre = nombre.split(' ')[0];
                 primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
 
-                // 🎯 CONSTRUCCIÓN DE MENSAJE SEGÚN LÓGICA DE LA EXTENSIÓN
                 let msgWpp = "";
                 let hora = fechaHoy.getHours();
                 let saludoTiempo = "¡Feliz día! ☀️";
@@ -513,23 +442,10 @@ window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado)
                 if (vistaActual === 'cobros') {
                     msgWpp = `hola ${primerNombre} 👋 espero estes muy bien ${deseoCobro}\nquedamos en que te recordara del pago hoy ${diaActualNum}.\n\nsi necesitas que te envie alguna cuenta o que te oriente con esto me avisas. 🙌`;
                 } else {
-                    // PLANTILLA UNIFICADA DE RENOVACIONES / PROSPECTOS DE LA EXTENSIÓN
                     msgWpp = `Hola, *${primerNombre}*. 😊 ¡Espero que te encuentres muy bien! ${saludoTiempo}\n\nEstaba revisando las afiliaciones que se renuevan este mes y vi que la tuya ya está próxima, por eso quise escribirte con tiempo.\n\nMe gustaría ayudarte para que continúes disfrutando de todos los beneficios, descuentos y auxilios de tu membresía Previser. 💙\n\nAntes de continuar, cuéntame una cosita. 😊\n\n¿Tu grupo familiar continúa igual o hubo algún cambio que quieras incluir este año?\n\nSi te parece, lo hacemos por aquí mismo o, si prefieres, agendamos una llamada. ¿Qué te queda más cómodo? 🤝`;
                 }
 
-               // Tomamos el número original, cortamos en el guion (si existe) y dejamos solo números
-let celularLimpioReal = String(celular).split('-')[0].replace(/\D/g, '');
-
-// Si el número traía el 57 pegado desde la base de datos (12 dígitos), lo removemos para estandarizar
-if (celularLimpioReal.length >= 12 && celularLimpioReal.startsWith('57')) {
-    celularLimpioReal = celularLimpioReal.substring(2, 12);
-} else {
-    // Nos aseguramos de tomar exactamente los 10 dígitos del celular (evitando cortar el número real)
-    celularLimpioReal = celularLimpioReal.substring(0, 10);
-}
-
-// Armamos la URL agregando un único '57' al inicio
-let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${encodeURIComponent(msgWpp)}`;
+                let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${encodeURIComponent(msgWpp)}`;
 
                 let valorSelectAccion = "lista";
                 if (esRenovado) valorSelectAccion = "renovado";
@@ -677,6 +593,7 @@ let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${
             });
 
             renderizarTarjetas(filtrados);
+        }
 
         function activarHeyAndru() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -755,7 +672,7 @@ let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${
                 }
             };
 
-            recognition.onerror = function(e) {
+            recognition.onerror = function() {
                 btnVoz.classList.remove('listening');
             };
 
@@ -809,6 +726,87 @@ let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${
                 alert("❌ Error al guardar: " + err.message);
             }
         }
+
+        window.depurarDuplicadosCRM = async function() {
+            let coleccion = 'afiliados';
+            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
+            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+
+            const confirmarInicio = confirm(`🔍 Se analizará toda la base de datos de "${coleccion.toUpperCase()}" buscando cédulas o nombres repetidos.\n\n¿Deseas iniciar el escaneo?`);
+            if (!confirmarInicio) return;
+
+            try {
+                const snapshot = await db.collection(coleccion).get();
+                let unicos = {};
+                let idsParaBorrar = [];
+
+                snapshot.forEach(doc => {
+                    let d = doc.data();
+                    let cedula = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
+                    let nombre = String(d.titular || d.nombre || d.nombreCompleto || d.cliente || "").trim().toUpperCase();
+                    
+                    let llaveUnica = cedula.length > 4 ? `CED_${cedula}` : (nombre ? `NOM_${nombre}` : null);
+
+                    if (llaveUnica) {
+                        if (!unicos[llaveUnica]) {
+                            unicos[llaveUnica] = { id: doc.id, data: d };
+                        } else {
+                            let prev = unicos[llaveUnica];
+                            let nuevoTieneDatos = (d.nota_seguimiento || d.nota_cobro || (d.estado && d.estado !== "En lista"));
+                            let prevTieneDatos = (prev.data.nota_seguimiento || prev.data.nota_cobro || (prev.data.estado && prev.data.estado !== "En lista"));
+
+                            if (nuevoTieneDatos && !prevTieneDatos) {
+                                idsParaBorrar.push(prev.id);
+                                unicos[llaveUnica] = { id: doc.id, data: d };
+                            } else {
+                                idsParaBorrar.push(doc.id);
+                            }
+                        }
+                    }
+                });
+
+                if (idsParaBorrar.length === 0) {
+                    alert("✨ ¡Tu base de datos está limpia! No se encontraron registros duplicados.");
+                    return;
+                }
+
+                const confirmarBorrado = confirm(`⚠️ ESCANEO COMPLETADO:\n\nSe encontraron ${idsParaBorrar.length} registros duplicados en "${coleccion.toUpperCase()}".\n\n¿Deseas eliminarlos definitivamente ahora mismo?`);
+
+                if (confirmarBorrado) {
+                    const batch = db.batch();
+                    const lote = idsParaBorrar.slice(0, 450);
+                    
+                    lote.forEach(id => {
+                        const docRef = db.collection(coleccion).doc(id);
+                        batch.delete(docRef);
+                    });
+
+                    await batch.commit();
+                    alert(`🎉 ¡Limpieza exitosa! Se eliminaron ${lote.length} contactos duplicados.`);
+                    cargarDatosMovil();
+                }
+
+            } catch (error) {
+                console.error("Error depurando duplicados:", error);
+                alert("❌ Ocurrió un error durante la limpieza: " + error.message);
+            }
+        };
+
+        window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado) {
+            const confirmacion = confirm("⚠️ ¿Estás seguro que deseas eliminar este cliente? Esta acción no se puede deshacer.");
+            if (confirmacion) {
+                try {
+                    await db.collection(coleccion).doc(idDocumento).delete();
+                    alert("✅ Cliente eliminado correctamente.");
+                    
+                    const tarjeta = botonPulsado.closest('.card'); 
+                    if (tarjeta) tarjeta.style.display = 'none';
+                } catch (error) {
+                    console.error("Error eliminando:", error);
+                    alert("❌ Hubo un error al eliminar. Revisa tu conexión.");
+                }
+            }
+        };
 
         cargarDatosMovil();
     </script>
