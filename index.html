@@ -350,8 +350,18 @@
         let ordenVencimientoAsc = true;
         let ordenNombreAsc = true;
 
+        function limpiarTextoSeguro(val) {
+            if (val === undefined || val === null) return "";
+            if (typeof val === "object") return "";
+            return String(val).replace(/[\r\n]+/g, ' ').trim();
+        }
+
+        function escaparComillasJS(str) {
+            return limpiarTextoSeguro(str).replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        }
+
         function formatearMonedaCOP(valor) {
-            if (valor === undefined || valor === null || valor === "") return null;
+            if (valor === undefined || valor === null || valor === "" || typeof valor === "object") return null;
             let str = String(valor).trim();
             if (str === "0" || str === "$0" || str === "$ 0") return "$ 0";
             let numLimpio = parseFloat(str.replace(/[^0-9.-]+/g, ""));
@@ -361,9 +371,8 @@
             return str;
         }
 
-        // DETECTOR INTELIGENTE DE DIRECCIÓN EN CUALQUIER CAMPO DE FIREBASE
         function extraerDireccionCliente(item) {
-            if (!item) return "";
+            if (!item || typeof item !== "object") return "";
             const candidatosDirectos = [
                 item.direccion, item.Direccion, item.DIRECCION,
                 item.direccion_residencia, item.direccion_cliente, item.direccion_titular,
@@ -371,17 +380,17 @@
                 item.domicilio, item.ubicacion, item.barrio
             ];
             for (let val of candidatosDirectos) {
-                if (val && String(val).trim() !== "" && String(val).trim() !== "---" && String(val).toLowerCase() !== "sin direccion") {
-                    return String(val).trim();
+                let limpio = limpiarTextoSeguro(val);
+                if (limpio && limpio !== "---" && limpio.toLowerCase() !== "sin direccion") {
+                    return limpio;
                 }
             }
-            // Búsqueda dinámica por si el Excel subió la columna con otro nombre similar
             for (let key of Object.keys(item)) {
-                let kNorm = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                let kNorm = key.toLowerCase();
                 if (kNorm.includes("direc") || kNorm.includes("domicil") || kNorm.includes("barrio") || kNorm.includes("ubicac")) {
-                    let v = item[key];
-                    if (v && String(v).trim() !== "" && String(v).trim() !== "---") {
-                        return String(v).trim();
+                    let limpio = limpiarTextoSeguro(item[key]);
+                    if (limpio && limpio !== "---" && limpio.toLowerCase() !== "sin direccion") {
+                        return limpio;
                     }
                 }
             }
@@ -473,7 +482,7 @@
             let dia = parseInt(item.dia_pago, 10);
             if (!isNaN(dia)) return dia;
 
-            let fechaStr = String(item.fecha_venta || item.fec_vinc || item.fecha_compra || "");
+            let fechaStr = limpiarTextoSeguro(item.fecha_venta || item.fec_vinc || item.fecha_compra || "");
             let match = fechaStr.match(/\b([0-2]?[0-9]|3[01])\b/);
             if (match) return parseInt(match[1], 10);
 
@@ -494,7 +503,7 @@
                     const snapAfiliados = await db.collection("afiliados").get();
                     snapAfiliados.forEach(docA => {
                         let dataA = docA.data();
-                        let ced = String(dataA.cedula || dataA.cedula_cliente || "").trim().replace(/^0+/, '');
+                        let ced = limpiarTextoSeguro(dataA.cedula || dataA.cedula_cliente).replace(/^0+/, '');
                         if (ced) mapaCedulasAfiliados[ced] = true;
                     });
                 }
@@ -510,8 +519,8 @@
                     d.idDoc = doc.id;
                     d.coleccionOrigen = coleccion;
 
-                    let est = (d.estado || "").toLowerCase();
-                    let cedulaLimpia = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
+                    let est = limpiarTextoSeguro(d.estado).toLowerCase();
+                    let cedulaLimpia = limpiarTextoSeguro(d.cedula || d.cedula_cliente || d.cedula_prospecto).replace(/^0+/, '');
                     
                     let yaRenovo = (mapaCedulasAfiliados[cedulaLimpia] === true) || d.archivado === true || est.includes("afiliado") || est.includes("exitosa") || est.includes("renovado");
                     let esNoRenueva = est.includes("no renueva") || est.includes("no interesado") || est.includes("cancelado") || est.includes("❌");
@@ -520,10 +529,10 @@
                     d.esNoRenuevaFlag = esNoRenueva;
 
                     if (vistaActual === 'cobros') {
-                        let rawDia = String(d.dia_pago || "").trim();
+                        let rawDia = limpiarTextoSeguro(d.dia_pago);
                         let diaCobroNum = parseInt(rawDia, 10);
                         let esNumeroValido = !isNaN(diaCobroNum) && diaCobroNum >= 1 && diaCobroNum <= 31;
-                        let estadoCobro = (d.estado_cobro || "").toLowerCase();
+                        let estadoCobro = limpiarTextoSeguro(d.estado_cobro).toLowerCase();
 
                         if (esNumeroValido) {
                             let esDelDia = diaCobroNum === diaActualNum;
@@ -550,6 +559,7 @@
                 filtrarLista();
 
             } catch (err) {
+                console.error(err);
                 contenedor.innerHTML = `<div class="loading" style="color:#dc2626;">❌ Error al cargar: ${err.message}</div>`;
             }
         }
@@ -578,168 +588,171 @@
             let diaActualNum = fechaHoy.getDate();
 
             lista.forEach(item => {
-                let nombre = String(item.titular || item.nombre || item.nombreCompleto || item.cliente || "Sin Nombre").toUpperCase();
-                let cedula = item.cedula || item.cedula_cliente || item.cedula_prospecto || item.idDoc || "---";
-                let celular = String(item.celular || item.telefono || item.movil || "");
-                let empresa = item.empresa || item.convenio || item.empresa_interes || "Independiente / No vinculado";
-                let ciudad = item.ciudad || item.ciudad_prospecto || "Palmira";
-                let direccion = extraerDireccionCliente(item);
-                let diaPago = item.dia_pago || "---";
-                let fechaVenta = item.fecha_venta || item.fec_vinc || item.fecha_compra || item.mes_compra || "";
-                let notaCobro = item.nota_cobro || item.nota_seguimiento || item.observaciones || "";
+                try {
+                    let nombre = (limpiarTextoSeguro(item.titular || item.nombre || item.nombreCompleto || item.cliente) || "Sin Nombre").toUpperCase();
+                    let cedula = limpiarTextoSeguro(item.cedula || item.cedula_cliente || item.cedula_prospecto || item.idDoc) || "---";
+                    let celular = limpiarTextoSeguro(item.celular || item.telefono || item.movil);
+                    let empresa = limpiarTextoSeguro(item.empresa || item.convenio || item.empresa_interes) || "Independiente / No vinculado";
+                    let ciudad = limpiarTextoSeguro(item.ciudad || item.ciudad_prospecto) || "Palmira";
+                    let direccion = extraerDireccionCliente(item);
+                    let diaPago = limpiarTextoSeguro(item.dia_pago) || "---";
+                    let fechaVenta = limpiarTextoSeguro(item.fecha_venta || item.fec_vinc || item.fecha_compra || item.mes_compra);
+                    let notaCobro = limpiarTextoSeguro(item.nota_cobro || item.nota_seguimiento || item.observaciones);
 
-                // LECTURA DE DATOS DE PAGO Y SALDO DE FIREBASE
-                let rawPagado = item.valor_pagado ?? item.pagado ?? item.abono ?? item.monto_pagado ?? item.pago ?? "";
-                let rawSaldo = item.saldo ?? item.debe ?? item.saldo_pendiente ?? item.valor_pendiente ?? item.pendiente ?? "";
-                let rawTotal = item.valor_plan ?? item.valor_total ?? item.valor ?? item.precio ?? item.cuota ?? "";
+                    // LECTURA DE DATOS DE PAGO Y SALDO DE FIREBASE
+                    let rawPagado = item.valor_pagado ?? item.pagado ?? item.abono ?? item.monto_pagado ?? item.pago ?? "";
+                    let rawSaldo = item.saldo ?? item.debe ?? item.saldo_pendiente ?? item.valor_pendiente ?? item.pendiente ?? "";
+                    let rawTotal = item.valor_plan ?? item.valor_total ?? item.valor ?? item.precio ?? item.cuota ?? "";
 
-                let pagadoFmt = formatearMonedaCOP(rawPagado);
-                let saldoFmt = formatearMonedaCOP(rawSaldo);
-                let totalFmt = formatearMonedaCOP(rawTotal);
+                    let pagadoFmt = formatearMonedaCOP(rawPagado);
+                    let saldoFmt = formatearMonedaCOP(rawSaldo);
+                    let totalFmt = formatearMonedaCOP(rawTotal);
 
-                let badgeClass = "badge-yellow";
-                let badgeText = "EN GESTIÓN";
-                let tarjetaEstiloClase = "";
+                    let badgeClass = "badge-yellow";
+                    let badgeText = "EN GESTIÓN";
+                    let tarjetaEstiloClase = "";
 
-                let esNoRenueva = item.esNoRenuevaFlag === true;
-                let esRenovado = item.yaRenovoComprado === true;
+                    let esNoRenueva = item.esNoRenuevaFlag === true;
+                    let esRenovado = item.yaRenovoComprado === true;
 
-                if (esRenovado) {
-                    tarjetaEstiloClase = "estado-renovado";
-                    badgeClass = "badge-green";
-                    badgeText = "✅ RENOVADO / LOGRADO";
-                } else if (esNoRenueva) {
-                    tarjetaEstiloClase = "estado-no-renueva";
-                    badgeClass = "badge-red";
-                    badgeText = "❌ NO RENUEVA";
-                } else if (vistaActual === 'cobros') {
-                    let diaNum = parseInt(diaPago, 10);
-                    let esDelDia = !isNaN(diaNum) && diaNum === diaActualNum;
-
-                    if (esDelDia) {
+                    if (esRenovado) {
+                        tarjetaEstiloClase = "estado-renovado";
                         badgeClass = "badge-green";
-                        badgeText = `📅 COBRO HOY (DÍA ${diaPago})`;
-                    } else {
+                        badgeText = "✅ RENOVADO / LOGRADO";
+                    } else if (esNoRenueva) {
+                        tarjetaEstiloClase = "estado-no-renueva";
                         badgeClass = "badge-red";
-                        badgeText = `💳 DÍA DE COBRO: ${diaPago}`;
+                        badgeText = "❌ NO RENUEVA";
+                    } else if (vistaActual === 'cobros') {
+                        let diaNum = parseInt(diaPago, 10);
+                        let esDelDia = !isNaN(diaNum) && diaNum === diaActualNum;
+
+                        if (esDelDia) {
+                            badgeClass = "badge-green";
+                            badgeText = `📅 COBRO HOY (DÍA ${diaPago})`;
+                        } else {
+                            badgeClass = "badge-red";
+                            badgeText = `💳 DÍA DE COBRO: ${diaPago}`;
+                        }
+                    } else if (vistaActual === 'afiliados') {
+                        badgeClass = "badge-purple";
+                        badgeText = `🗂️ ESTADO / DÍA: ${diaPago.toUpperCase()}`;
+                    } else if (vistaActual === 'renovaciones') {
+                        badgeClass = "badge-yellow";
+                        badgeText = fechaVenta ? `🗓️ COMPRA: ${fechaVenta.toUpperCase()}` : `⏳ RENOVACIÓN`;
                     }
-                } else if (vistaActual === 'afiliados') {
-                    badgeClass = "badge-purple";
-                    badgeText = `🗂️ ESTADO / DÍA: ${String(diaPago).toUpperCase()}`;
-                } else if (vistaActual === 'renovaciones') {
-                    badgeClass = "badge-yellow";
-                    badgeText = fechaVenta ? `🗓️ COMPRA: ${String(fechaVenta).toUpperCase()}` : `⏳ RENOVACIÓN`;
-                }
 
-                let celularLimpioReal = String(celular).split('-')[0].replace(/\D/g, '');
-                if (celularLimpioReal.length >= 12 && celularLimpioReal.startsWith('57')) {
-                    celularLimpioReal = celularLimpioReal.substring(2, 12);
-                } else {
-                    celularLimpioReal = celularLimpioReal.substring(0, 10);
-                }
+                    let celularLimpioReal = celular.split('-')[0].replace(/\D/g, '');
+                    if (celularLimpioReal.length >= 12 && celularLimpioReal.startsWith('57')) {
+                        celularLimpioReal = celularLimpioReal.substring(2, 12);
+                    } else {
+                        celularLimpioReal = celularLimpioReal.substring(0, 10);
+                    }
 
-                let primerNombre = nombre.split(' ')[0];
-                primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+                    let primerNombre = nombre.split(' ')[0];
+                    primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
 
-                let msgWpp = "";
-                let hora = fechaHoy.getHours();
-                let saludoTiempo = "¡Feliz día! ☀️";
-                let deseoCobro = "feliz día";
+                    let msgWpp = "";
+                    let hora = fechaHoy.getHours();
+                    let saludoTiempo = "¡Feliz día! ☀️";
+                    let deseoCobro = "feliz día";
 
-                if (hora >= 12 && hora < 19) {
-                    saludoTiempo = "¡Feliz tarde! ☀️";
-                    deseoCobro = "feliz tarde";
-                } else if (hora >= 19 || hora < 5) {
-                    saludoTiempo = "¡Feliz noche! 🌙";
-                    deseoCobro = "feliz noche";
-                }
+                    if (hora >= 12 && hora < 19) {
+                        saludoTiempo = "¡Feliz tarde! ☀️";
+                        deseoCobro = "feliz tarde";
+                    } else if (hora >= 19 || hora < 5) {
+                        saludoTiempo = "¡Feliz noche! 🌙";
+                        deseoCobro = "feliz noche";
+                    }
 
-                if (vistaActual === 'cobros') {
-                    let textoSaldoWpp = saldoFmt && saldoFmt !== "$ 0" ? ` (saldo pendiente de *${saldoFmt}*)` : "";
-                    msgWpp = `hola ${primerNombre} 👋 espero estes muy bien ${deseoCobro}\nquedamos en que te recordara del pago hoy ${diaActualNum}${textoSaldoWpp}.\n\nsi necesitas que te envie alguna cuenta o que te oriente con esto me avisas. 🙌`;
-                } else {
-                    msgWpp = `Hola, *${primerNombre}*. 😊 ¡Espero que te encuentres muy bien! ${saludoTiempo}\n\nEstaba revisando las afiliaciones que se renuevan este mes y vi que la tuya ya está próxima, por eso quise escribirte con tiempo.\n\nMe gustaría ayudarte para que continúes disfrutando de todos los beneficios, descuentos y auxilios de tu membresía Previser. 💙\n\nAntes de continuar, cuéntame una cosita. 😊\n\n¿Tu grupo familiar continúa igual o hubo algún cambio que quieras incluir este año?\n\nSi te parece, lo hacemos por aquí mismo o, si prefieres, agendamos una llamada. ¿Qué te queda más cómodo? 🤝`;
-                }
+                    if (vistaActual === 'cobros') {
+                        let textoSaldoWpp = saldoFmt && saldoFmt !== "$ 0" ? ` (saldo pendiente de *${saldoFmt}*)` : "";
+                        msgWpp = `hola ${primerNombre} 👋 espero estes muy bien ${deseoCobro}\nquedamos en que te recordara del pago hoy ${diaActualNum}${textoSaldoWpp}.\n\nsi necesitas que te envie alguna cuenta o que te oriente con esto me avisas. 🙌`;
+                    } else {
+                        msgWpp = `Hola, *${primerNombre}*. 😊 ¡Espero que te encuentres muy bien! ${saludoTiempo}\n\nEstaba revisando las afiliaciones que se renuevan este mes y vi que la tuya ya está próxima, por eso quise escribirte con tiempo.\n\nMe gustaría ayudarte para que continúes disfrutando de todos los beneficios, descuentos y auxilios de tu membresía Previser. 💙\n\nAntes de continuar, cuéntame una cosita. 😊\n\n¿Tu grupo familiar continúa igual o hubo algún cambio que quieras incluir este año?\n\nSi te parece, lo hacemos por aquí mismo o, si prefieres, agendamos una llamada. ¿Qué te queda más cómodo? 🤝`;
+                    }
 
-                let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${encodeURIComponent(msgWpp)}`;
+                    let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${encodeURIComponent(msgWpp)}`;
 
-                // RUTA GOOGLE MAPS: PRIORIZA SIEMPRE LA DIRECCIÓN EXACTA DEL CLIENTE
-                let destinoBusqueda = "";
-                if (direccion) {
-                    destinoBusqueda = `${direccion}, ${ciudad}, Valle del Cauca, Colombia`;
-                } else if (empresa && !empresa.toLowerCase().includes("no esta vinculado") && !empresa.toLowerCase().includes("independiente")) {
-                    destinoBusqueda = `${empresa}, ${ciudad}, Valle del Cauca, Colombia`;
-                } else {
-                    destinoBusqueda = `${ciudad}, Valle del Cauca, Colombia`;
-                }
-                let urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinoBusqueda)}`;
+                    // RUTA GOOGLE MAPS: PRIORIZA SIEMPRE LA DIRECCIÓN EXACTA DEL CLIENTE
+                    let destinoBusqueda = "";
+                    if (direccion) {
+                        destinoBusqueda = `${direccion}, ${ciudad}, Valle del Cauca, Colombia`;
+                    } else if (empresa && !empresa.toLowerCase().includes("no vinculado") && !empresa.toLowerCase().includes("independiente")) {
+                        destinoBusqueda = `${empresa}, ${ciudad}, Valle del Cauca, Colombia`;
+                    } else {
+                        destinoBusqueda = `${ciudad}, Valle del Cauca, Colombia`;
+                    }
+                    let urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinoBusqueda)}`;
 
-                // URL DIRECTA A GOOGLE CALENDAR PARA AGENDAR SEGUIMIENTO
-                let tituloCal = encodeURIComponent(`📞 Gestión Previser: ${nombre}`);
-                let detallesCal = encodeURIComponent(`Cliente: ${nombre}\nCédula: ${cedula}\nTeléfono: ${celularLimpioReal}\nEmpresa: ${empresa}\nCiudad: ${ciudad}\nDirección: ${direccion || 'No registrada'}\nPagó: ${pagadoFmt || 'N/A'} | Debe: ${saldoFmt || 'N/A'}\nNota: ${notaCobro || 'Seguimiento de renovación / membresía'}`);
-                let urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${tituloCal}&details=${detallesCal}`;
+                    // URL DIRECTA A GOOGLE CALENDAR PARA AGENDAR SEGUIMIENTO
+                    let tituloCal = encodeURIComponent(`📞 Gestión Previser: ${nombre}`);
+                    let detallesCal = encodeURIComponent(`Cliente: ${nombre}\nCédula: ${cedula}\nTeléfono: ${celularLimpioReal}\nEmpresa: ${empresa}\nCiudad: ${ciudad}\nDirección: ${direccion || 'No registrada'}\nPagó: ${pagadoFmt || 'N/A'} | Debe: ${saldoFmt || 'N/A'}\nNota: ${notaCobro || 'Seguimiento de renovación / membresía'}`);
+                    let urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${tituloCal}&details=${detallesCal}`;
 
-                let valorSelectAccion = "lista";
-                if (esRenovado) valorSelectAccion = "renovado";
-                else if (esNoRenueva) valorSelectAccion = "no_renueva";
+                    let valorSelectAccion = "lista";
+                    if (esRenovado) valorSelectAccion = "renovado";
+                    else if (esNoRenueva) valorSelectAccion = "no_renueva";
 
-                let card = document.createElement('div');
-                card.className = `card ${tarjetaEstiloClase}`;
-                card.id = `card-doc-${item.idDoc}`;
-                card.innerHTML = `
-                    <div class="card-header">
-                        <div class="card-title-group">
-                            <span class="card-title">👤 ${nombre}</span>
-                            <button class="btn-edit-note" title="Editar Nota / Observación" onclick="editarNotaEspecial('${item.idDoc}', '${item.coleccionOrigen}', '${nombre.replace(/'/g, "\\'")}', '${notaCobro.replace(/'/g, "\\'")}')">✏️</button>
-                        </div>
-                        <span class="badge ${badgeClass}">${badgeText}</span>
-                    </div>
-                    <div class="card-body">
-                        <div>🪪 Cédula: <strong>${cedula}</strong></div>
-                        <div>📞 <strong>${celular || 'Sin celular registrado'}</strong></div>
-                        <div>🏢 ${empresa} | 📍 ${ciudad}</div>
-                        <div style="display:flex; align-items:center; gap:5px;">
-                            <span>🏠 Dir: <strong id="dir-text-${item.idDoc}" style="${direccion ? '' : 'color:#94a3b8; font-weight:normal;'}">${direccion || 'Sin dirección (Toca ✏️ para añadir)'}</strong></span>
-                            <button class="btn-edit-note" title="Editar Dirección para Maps" onclick="editarDireccionCliente('${item.idDoc}', '${item.coleccionOrigen}', '${nombre.replace(/'/g, "\\'")}', '${direccion.replace(/'/g, "\\'")}', '${ciudad.replace(/'/g, "\\'")}')">✏️</button>
-                        </div>
-                        ${fechaVenta ? `<div>🗓️ Fecha / Venta: <strong style="color:#d97706;">${String(fechaVenta).toUpperCase()}</strong></div>` : ''}
-                        
-                        <!-- BLOQUE FINANCIERO DE PAGO Y SALDO -->
-                        <div class="finance-box" id="finance-box-${item.idDoc}">
-                            <div class="finance-metrics">
-                                <span class="metric-paid">💵 Pagó: ${pagadoFmt || '---'}</span>
-                                <span class="metric-debt">⏳ Debe: ${saldoFmt || '---'}</span>
-                                ${totalFmt ? `<span class="metric-plan">🏷️ Plan: ${totalFmt}</span>` : ''}
+                    let card = document.createElement('div');
+                    card.className = `card ${tarjetaEstiloClase}`;
+                    card.id = `card-doc-${item.idDoc}`;
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <span class="card-title">👤 ${nombre}</span>
+                                <button class="btn-edit-note" title="Editar Nota / Observación" onclick="editarNotaEspecial('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(notaCobro)}')">✏️</button>
                             </div>
-                            <button class="btn-edit-finance" onclick="editarValoresPago('${item.idDoc}', '${item.coleccionOrigen}', '${nombre.replace(/'/g, "\\'")}', '${String(rawPagado).replace(/'/g, "")}', '${String(rawSaldo).replace(/'/g, "")}')">✏️ Pago/Saldo</button>
+                            <span class="badge ${badgeClass}">${badgeText}</span>
                         </div>
+                        <div class="card-body">
+                            <div>🪪 Cédula: <strong>${cedula}</strong></div>
+                            <div>📞 <strong>${celular || 'Sin celular registrado'}</strong></div>
+                            <div>🏢 ${empresa} | 📍 ${ciudad}</div>
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <span>🏠 Dir: <strong id="dir-text-${item.idDoc}" style="${direccion ? '' : 'color:#94a3b8; font-weight:normal;'}">${direccion || 'Sin dirección (Toca ✏️ para añadir)'}</strong></span>
+                                <button class="btn-edit-note" title="Editar Dirección para Maps" onclick="editarDireccionCliente('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(direccion)}', '${escaparComillasJS(ciudad)}')">✏️</button>
+                            </div>
+                            ${fechaVenta ? `<div>🗓️ Fecha / Venta: <strong style="color:#d97706;">${fechaVenta.toUpperCase()}</strong></div>` : ''}
+                            
+                            <!-- BLOQUE FINANCIERO DE PAGO Y SALDO -->
+                            <div class="finance-box" id="finance-box-${item.idDoc}">
+                                <div class="finance-metrics">
+                                    <span class="metric-paid">💵 Pagó: ${pagadoFmt || '---'}</span>
+                                    <span class="metric-debt">⏳ Debe: ${saldoFmt || '---'}</span>
+                                    ${totalFmt ? `<span class="metric-plan">🏷️ Plan: ${totalFmt}</span>` : ''}
+                                </div>
+                                <button class="btn-edit-finance" onclick="editarValoresPago('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(rawPagado)}', '${escaparComillasJS(rawSaldo)}')">✏️ Pago/Saldo</button>
+                            </div>
 
-                        <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-                            <span style="font-size:11px; font-weight:bold; color: var(--text-secondary);">Estado:</span>
-                            <select class="select-accion" onchange="cambiarEstadoCliente('${item.idDoc}', '${item.coleccionOrigen}', this.value)">
-                                <option value="lista" ${valorSelectAccion === 'lista' ? 'selected' : ''}>📋 En Lista / Gestión</option>
-                                <option value="no_renueva" ${valorSelectAccion === 'no_renueva' ? 'selected' : ''}>❌ No Renueva</option>
-                                <option value="renovado" ${valorSelectAccion === 'renovado' ? 'selected' : ''}>✅ Renovado / Venta</option>
-                            </select>
-                        </div>
+                            <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                                <span style="font-size:11px; font-weight:bold; color: var(--text-secondary);">Estado:</span>
+                                <select class="select-accion" onchange="cambiarEstadoCliente('${item.idDoc}', '${item.coleccionOrigen}', this.value)">
+                                    <option value="lista" ${valorSelectAccion === 'lista' ? 'selected' : ''}>📋 En Lista / Gestión</option>
+                                    <option value="no_renueva" ${valorSelectAccion === 'no_renueva' ? 'selected' : ''}>❌ No Renueva</option>
+                                    <option value="renovado" ${valorSelectAccion === 'renovado' ? 'selected' : ''}>✅ Renovado / Venta</option>
+                                </select>
+                            </div>
 
-                        <div id="nota-text-${item.idDoc}" style="color: var(--note-color); font-style:italic; margin-top:4px; font-weight: 500;">
-                            ${notaCobro ? `📝 ${notaCobro}` : '📝 Sin observaciones. (Toca el ✏️ para añadir)'}
+                            <div id="nota-text-${item.idDoc}" style="color: var(--note-color); font-style:italic; margin-top:4px; font-weight: 500;">
+                                ${notaCobro ? `📝 ${notaCobro}` : '📝 Sin observaciones. (Toca el ✏️ para añadir)'}
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-actions">
-                        <a href="${urlWpp}" target="_blank" class="btn btn-wpp">💬 Wpp</a>
-                        <a href="tel:${celularLimpioReal}" class="btn btn-call">📞 Llamar</a>
-                        <a href="${urlMaps}" id="btn-maps-${item.idDoc}" target="_blank" class="btn btn-maps" title="Abrir ruta en Google Maps">📍 Ir</a>
-                        <a href="${urlCal}" target="_blank" class="btn btn-cal">📅 Agendar</a>
-                        <button class="btn btn-delete" onclick="eliminarClienteCRM('${item.idDoc}', '${item.coleccionOrigen}', this)">🗑️</button>
-                    </div>
-                `;
-                contenedor.appendChild(card);
+                        <div class="card-actions">
+                            <a href="${urlWpp}" target="_blank" class="btn btn-wpp">💬 Wpp</a>
+                            <a href="tel:${celularLimpioReal}" class="btn btn-call">📞 Llamar</a>
+                            <a href="${urlMaps}" id="btn-maps-${item.idDoc}" target="_blank" class="btn btn-maps" title="Abrir ruta en Google Maps">📍 Ir</a>
+                            <a href="${urlCal}" target="_blank" class="btn btn-cal">📅 Agendar</a>
+                            <button class="btn btn-delete" onclick="eliminarClienteCRM('${item.idDoc}', '${item.coleccionOrigen}', this)">🗑️</button>
+                        </div>
+                    `;
+                    contenedor.appendChild(card);
+                } catch (cardErr) {
+                    console.error("Error dibujando tarjeta:", cardErr, item);
+                }
             });
         }
 
-        // FUNCIÓN PARA EDITAR LA DIRECCIÓN Y ACTUALIZAR AL INSTANTE EL BOTÓN "📍 IR"
         async function editarDireccionCliente(idDoc, coleccion, nombre, dirActual, ciudad) {
             let nuevaDir = prompt(`🏠 Escribe la dirección o barrio para:\n👤 ${nombre}\n(Esto actualizará el botón 📍 Ir de Google Maps)`, dirActual);
             if (nuevaDir === null) return;
@@ -888,30 +901,30 @@
                 if (!valorRaw) return true;
 
                 if (campo === "mes_compra") {
-                    let fechaVentaBD = String(data.fecha_venta || data.fec_vinc || data.fecha_compra || data.mes_compra || "").toLowerCase().trim();
+                    let fechaVentaBD = limpiarTextoSeguro(data.fecha_venta || data.fec_vinc || data.fecha_compra || data.mes_compra).toLowerCase();
                     return textMesAbreviado ? fechaVentaBD.includes(textMesAbreviado) : fechaVentaBD.includes(valorRaw.toLowerCase().trim());
                 } else if (campo === "titular") {
-                    let nombreBD = String(data.titular || data.nombre || data.nombreCompleto || data.cliente || "").toLowerCase().trim();
+                    let nombreBD = limpiarTextoSeguro(data.titular || data.nombre || data.nombreCompleto || data.cliente).toLowerCase();
                     return nombreBD.includes(valorRaw.toLowerCase().trim());
                 } else if (campo === "cedula") {
-                    let cedulaBD = String(data.cedula || data.cedula_cliente || data.cedula_prospecto || data.idDoc || "").toLowerCase().trim();
+                    let cedulaBD = limpiarTextoSeguro(data.cedula || data.cedula_cliente || data.cedula_prospecto || data.idDoc).toLowerCase();
                     return cedulaBD.includes(valorRaw.toLowerCase().trim());
                 } else if (campo === "empresa") {
-                    let empresaBD = String(data.empresa || data.convenio || data.empresa_interes || "").toLowerCase().trim();
+                    let empresaBD = limpiarTextoSeguro(data.empresa || data.convenio || data.empresa_interes).toLowerCase();
                     return empresaBD.includes(valorRaw.toLowerCase().trim());
                 } else if (campo === "ciudad") {
-                    let ciudadBD = String(data.ciudad || data.ciudad_prospecto || extraerDireccionCliente(data) || "").toLowerCase().trim();
+                    let ciudadBD = limpiarTextoSeguro(data.ciudad || data.ciudad_prospecto || extraerDireccionCliente(data)).toLowerCase();
                     return ciudadBD.includes(valorRaw.toLowerCase().trim());
                 } else {
-                    let textoCompleto = JSON.stringify(data).toLowerCase();
+                    let textoCompleto = Object.values(data).filter(v => typeof v === 'string' || typeof v === 'number').join(' ').toLowerCase();
                     return textoCompleto.includes(valorRaw.toLowerCase().trim());
                 }
             });
 
             filtrados.sort((a, b) => {
                 if (tipoOrdenActual === 'nombre') {
-                    let nomA = String(a.titular || a.nombre || a.nombreCompleto || a.cliente || "").trim().toUpperCase();
-                    let nomB = String(b.titular || b.nombre || b.nombreCompleto || b.cliente || "").trim().toUpperCase();
+                    let nomA = limpiarTextoSeguro(a.titular || a.nombre || a.nombreCompleto || a.cliente).toUpperCase();
+                    let nomB = limpiarTextoSeguro(b.titular || b.nombre || b.nombreCompleto || b.cliente).toUpperCase();
                     return ordenNombreAsc ? nomA.localeCompare(nomB) : nomB.localeCompare(nomA);
                 } else {
                     let diaA = extraerDiaNum(a);
@@ -979,4 +992,167 @@
 
                 } else if (comando.includes('empresa') || comando.includes('convenio')) {
                     let emp = comando.replace(/hey andrew|hey andru|muéstrame|muestrame|muestra|mis clientes de la empresa|empresa|convenio/g, '').trim();
-                    selectCriterio.value
+                    selectCriterio.value = 'empresa';
+                    inputBuscar.value = emp;
+                    cambiarVista('afiliados');
+
+                } else if (comando.includes('cliente') || comando.includes('titular') || comando.includes('nombre')) {
+                    let nom = comando.replace(/hey andrew|hey andru|muéstrame|muestrame|muestra|mis clientes|cliente|titular|nombre/g, '').trim();
+                    selectCriterio.value = 'titular';
+                    inputBuscar.value = nom;
+                    cambiarVista('afiliados');
+
+                } else {
+                    let textoGen = comando
+                        .replace(/hey andrew|hey andru|andrew|andru/g, '')
+                        .replace(/muéstrame|muestrame|muestra|busca|buscar|filtra|filtrar|mis/g, '')
+                        .trim();
+                    selectCriterio.value = 'todo';
+                    inputBuscar.value = textoGen;
+                    cambiarVista('afiliados');
+                }
+            };
+
+            recognition.onerror = function() {
+                btnVoz.classList.remove('listening');
+            };
+
+            recognition.onend = function() {
+                btnVoz.classList.remove('listening');
+            };
+        }
+
+        function abrirModalNuevo() {
+            document.getElementById('modal-prospecto').style.display = 'flex';
+        }
+        function cerrarModalNuevo() {
+            document.getElementById('modal-prospecto').style.display = 'none';
+        }
+
+        async function guardarProspecto() {
+            let nombre = document.getElementById('nuevo-nombre').value.trim();
+            let celular = document.getElementById('nuevo-celular').value.trim();
+            let direccion = document.getElementById('nuevo-direccion').value.trim();
+            let ciudad = document.getElementById('nuevo-ciudad').value.trim();
+            let empresa = document.getElementById('nuevo-empresa').value.trim();
+            let nota = document.getElementById('nuevo-nota').value.trim();
+
+            if (!nombre || !celular) {
+                alert("Por favor ingresa al menos el Nombre y el Celular.");
+                return;
+            }
+
+            try {
+                let nuevoDoc = {
+                    nombre: nombre,
+                    celular: celular,
+                    direccion: direccion || "",
+                    ciudad_prospecto: ciudad || "Palmira",
+                    empresa_interes: empresa || "Independiente",
+                    nota_seguimiento: nota || "Ingresado desde la Web App Móvil",
+                    fecha_registro: new Date().toISOString(),
+                    origen: "App Movil"
+                };
+
+                await db.collection("prospectos").add(nuevoDoc);
+                alert("✅ Prospecto guardado con éxito en Firebase.");
+                
+                document.getElementById('nuevo-nombre').value = '';
+                document.getElementById('nuevo-celular').value = '';
+                document.getElementById('nuevo-direccion').value = '';
+                document.getElementById('nuevo-nota').value = '';
+                cerrarModalNuevo();
+
+                if (vistaActual === 'prospectos') {
+                    cargarDatosMovil();
+                }
+            } catch (err) {
+                alert("❌ Error al guardar: " + err.message);
+            }
+        }
+
+        window.depurarDuplicadosCRM = async function() {
+            let coleccion = 'afiliados';
+            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
+            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+
+            const confirmarInicio = confirm(`🔍 Se analizará toda la base de datos de "${coleccion.toUpperCase()}" buscando cédulas o nombres repetidos.\n\n¿Deseas iniciar el escaneo?`);
+            if (!confirmarInicio) return;
+
+            try {
+                const snapshot = await db.collection(coleccion).get();
+                let unicos = {};
+                let idsParaBorrar = [];
+
+                snapshot.forEach(doc => {
+                    let d = doc.data();
+                    let cedula = limpiarTextoSeguro(d.cedula || d.cedula_cliente || d.cedula_prospecto).replace(/^0+/, '');
+                    let nombre = limpiarTextoSeguro(d.titular || d.nombre || d.nombreCompleto || d.cliente).toUpperCase();
+                    
+                    let llaveUnica = cedula.length > 4 ? `CED_${cedula}` : (nombre ? `NOM_${nombre}` : null);
+
+                    if (llaveUnica) {
+                        if (!unicos[llaveUnica]) {
+                            unicos[llaveUnica] = { id: doc.id, data: d };
+                        } else {
+                            let prev = unicos[llaveUnica];
+                            let nuevoTieneDatos = (d.nota_seguimiento || d.nota_cobro || (d.estado && d.estado !== "En lista"));
+                            let prevTieneDatos = (prev.data.nota_seguimiento || prev.data.nota_cobro || (prev.data.estado && prev.data.estado !== "En lista"));
+
+                            if (nuevoTieneDatos && !prevTieneDatos) {
+                                idsParaBorrar.push(prev.id);
+                                unicos[llaveUnica] = { id: doc.id, data: d };
+                            } else {
+                                idsParaBorrar.push(doc.id);
+                            }
+                        }
+                    }
+                });
+
+                if (idsParaBorrar.length === 0) {
+                    alert("✨ ¡Tu base de datos está limpia! No se encontraron registros duplicados.");
+                    return;
+                }
+
+                const confirmarBorrado = confirm(`⚠️ ESCANEO COMPLETADO:\n\nSe encontraron ${idsParaBorrar.length} registros duplicados en "${coleccion.toUpperCase()}".\n\n¿Deseas eliminarlos definitivamente ahora mismo?`);
+
+                if (confirmarBorrado) {
+                    const batch = db.batch();
+                    const lote = idsParaBorrar.slice(0, 450);
+                    
+                    lote.forEach(id => {
+                        const docRef = db.collection(coleccion).doc(id);
+                        batch.delete(docRef);
+                    });
+
+                    await batch.commit();
+                    alert(`🎉 ¡Limpieza exitosa! Se eliminaron ${lote.length} contactos duplicados.`);
+                    cargarDatosMovil();
+                }
+
+            } catch (error) {
+                console.error("Error depurando duplicados:", error);
+                alert("❌ Ocurrió un error durante la limpieza: " + error.message);
+            }
+        };
+
+        window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado) {
+            const confirmacion = confirm("⚠️ ¿Estás seguro que deseas eliminar este cliente? Esta acción no se puede deshacer.");
+            if (confirmacion) {
+                try {
+                    await db.collection(coleccion).doc(idDocumento).delete();
+                    alert("✅ Cliente eliminado correctamente.");
+                    
+                    const tarjeta = botonPulsado.closest('.card'); 
+                    if (tarjeta) tarjeta.style.display = 'none';
+                } catch (error) {
+                    console.error("Error eliminando:", error);
+                    alert("❌ Hubo un error al eliminar. Revisa tu conexión.");
+                }
+            }
+        };
+
+        cargarDatosMovil();
+    </script>
+</body>
+</html>
