@@ -440,12 +440,15 @@
         </div>
     </div>
 
-    <!-- MODAL EDITAR / CREAR ÍTEM DEL REPORTE OFICIAL (reportes_acumulados -> items) -->
+    <!-- MODAL EDITAR / CREAR ÍTEM DEL REPORTE OFICIAL (MULTIPLICACIÓN AUTOMÁTICA x 1000) -->
     <div class="modal" id="modal-item-reporte">
         <div class="modal-content">
             <div class="modal-title">
-                <span id="modal-item-rep-titulo">🧾 Editar Ítem del Reporte Oficial</span>
+                <span id="modal-item-rep-titulo">🧾 Ítem del Reporte Oficial</span>
                 <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalItemReporte()">✕</span>
+            </div>
+            <div style="font-size:11px; color:#059669; font-weight:bold; background:#ecfdf5; padding:6px 8px; border-radius:6px; border:1px solid #a7f3d0;">
+                💡 Escribe valores cortos (Ej: 120 = 120.000 | 60 = 60.000). Los tres ceros se ponen en automático.
             </div>
             <div class="form-row-2">
                 <div class="form-group">
@@ -469,24 +472,24 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Suscripción ($)</label>
-                    <input type="number" id="rep-suscripcion" class="form-input" placeholder="Ej: 120000">
+                    <label>Suscripción (Base ej: 120)</label>
+                    <input type="number" id="rep-suscripcion" class="form-input" placeholder="Ej: 120">
                 </div>
             </div>
             <div class="form-row-2">
                 <div class="form-group">
-                    <label>Aporte Adicional ($)</label>
-                    <input type="number" id="rep-adicional" class="form-input" placeholder="Ej: 300000">
+                    <label>Adicional (Base ej: 60)</label>
+                    <input type="number" id="rep-adicional" class="form-input" placeholder="Ej: 60">
                 </div>
                 <div class="form-group">
-                    <label>Premiación ($)</label>
-                    <input type="number" id="rep-premiacion" class="form-input" placeholder="Ej: 0">
+                    <label>Premiación (Base ej: 300)</label>
+                    <input type="number" id="rep-premiacion" class="form-input" placeholder="Ej: 300 (o 0)">
                 </div>
             </div>
             <div class="form-row-2">
                 <div class="form-group">
-                    <label>Saldo ($)</label>
-                    <input type="number" id="rep-saldo" class="form-input" placeholder="Ej: 0">
+                    <label>Saldo (Base ej: 300)</label>
+                    <input type="number" id="rep-saldo" class="form-input" placeholder="Ej: 300 (o 0)">
                 </div>
                 <div class="form-group">
                     <label>Titular (Opcional)</label>
@@ -638,6 +641,13 @@
             if (typeof valor === "number") return valor;
             let num = parseFloat(String(valor).replace(/[^0-9.-]+/g, ""));
             return isNaN(num) ? 0 : num;
+        }
+
+        // Convierte entradas cortas (ej: 120 -> 120000, 60 -> 60000) automáticamente
+        function normalizarValorMiles(valorInput) {
+            let num = parseFloat(valorInput) || 0;
+            if (num <= 0) return 0;
+            return num < 1000 ? Math.round(num * 1000) : Math.round(num);
         }
 
         function extraerDatosFinancieros(item) {
@@ -830,8 +840,8 @@
                         let act = dataDoc.actualizado ? new Date(dataDoc.actualizado).toLocaleString('es-CO') : 'Reciente';
                         document.getElementById('lbl-actualizado-reporte').innerText = `🔄 Sincronizado: ${act}`;
 
-                        if (dataDoc.firma) {
-                            firmaReporteNube = dataDoc.firma;
+                        if (dataDoc.firma && String(dataDoc.firma).startsWith('data:image')) {
+                            firmaReporteNube = String(dataDoc.firma).trim();
                             document.getElementById('lbl-firma-status').innerText = "✅ Firma digital lista desde la nube";
                             document.getElementById('lbl-firma-status').style.color = "#059669";
                         } else {
@@ -1247,13 +1257,21 @@
             reader.readAsDataURL(file);
         }
 
-        // --- 1. SOPORTE OFICIAL ORIGINAL IDÉNTICO AL DE LA EXTENSIÓN (13 COLUMNAS + FIRMA -> PDF) ---
+        // --- 1. SOPORTE OFICIAL ORIGINAL IDÉNTICO AL DE LA EXTENSIÓN (13 COLUMNAS + FIRMA -> PDF SIN RECORTES) ---
         async function descargarSoporteOriginalExtensionPDF() {
             let incluidos = listaFiltradaActual.filter(r => r._incluirEnPdf !== false);
             if (incluidos.length === 0) {
                 alert("⚠️ No hay registros seleccionados para generar el Soporte Oficial.");
                 return;
             }
+
+            // Leemos el documento más reciente por si acabas de subir la firma en el PC
+            try {
+                const freshSnap = await db.collection('reportes_acumulados').doc('semana_actual').get();
+                if (freshSnap.exists && freshSnap.data().firma) {
+                    firmaReporteNube = String(freshSnap.data().firma).trim();
+                }
+            } catch (e) {}
 
             const fechaHoy = new Date();
             const ultimoDiaMes = new Date(fechaHoy.getFullYear(), fechaHoy.getMonth() + 1, 0).getDate();
@@ -1268,26 +1286,28 @@
             if (!numSem) return;
             let semElegida = parseInt(numSem) || semSug;
 
-            let casillasSem = `<table style="border-collapse: collapse; display: inline-table; margin-right: 15px; font-size: 11px;">
+            let casillasSem = `<table style="border-collapse: collapse; display: inline-table; margin-right: 12px; font-size: 10px;">
                 <tr><td style="border:1px solid #000; padding:2px 4px; font-weight:bold; background:#f8fafc;">No.</td><td style="border:1px solid #000; padding:2px 5px;">1</td><td style="border:1px solid #000; padding:2px 5px;">2</td><td style="border:1px solid #000; padding:2px 5px;">3</td><td style="border:1px solid #000; padding:2px 5px;">4</td><td style="border:1px solid #000; padding:2px 5px;">5</td></tr>
                 <tr><td style="border:1px solid #000; padding:2px 4px; font-weight:bold; background:#f8fafc;">SEM</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 1 ? 'X' : ''}</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 2 ? 'X' : ''}</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 3 ? 'X' : ''}</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 4 ? 'X' : ''}</td><td style="border:1px solid #000; padding:2px 5px; font-weight:bold;">${semElegida === 5 ? 'X' : ''}</td></tr>
             </table>`;
 
-            let fHTML = firmaReporteNube ? `<img src="${firmaReporteNube}" style="max-height: 95px; max-width: 260px; vertical-align: middle; margin-left: 5px;">` : "_________________________";
+            let fHTML = firmaReporteNube
+                ? `<img id="img-firma-pdf-render" src="${firmaReporteNube}" style="max-height: 75px; max-width: 210px; vertical-align: middle; margin-left: 5px; display: inline-block;">`
+                : "_________________________";
 
             let htmlCuerpo = `
-            <div style="font-family: Arial, sans-serif; padding: 10px; color: #000; font-size: 10px; background: #fff; width: 100%;">
+            <div style="font-family: Arial, sans-serif; padding: 8px; color: #000; font-size: 9.5px; background: #fff; width: 1020px; box-sizing: border-box;">
                 <style>
-                    table.reporte-ext { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                    table.reporte-ext th, table.reporte-ext td { border: 1px solid #000; padding: 6px 3px; text-align: center; white-space: nowrap; color: #000; }
-                    table.reporte-ext th { background: #f8fafc; font-size: 8.5px; line-height: 1.1; white-space: normal; }
+                    table.reporte-ext { width: 100%; border-collapse: collapse; margin-top: 4px; table-layout: auto; }
+                    table.reporte-ext th, table.reporte-ext td { border: 1px solid #000; padding: 5px 3px; text-align: center; white-space: nowrap; color: #000; font-size: 9px; }
+                    table.reporte-ext th { background: #f8fafc; font-size: 8px; line-height: 1.1; white-space: normal; }
                     .num-col { font-size: 7px; color: #475569; display: block; }
                     .pass-cell { background-color: #d1fae5 !important; font-weight: bold; }
                 </style>
-                <div style="text-align: center; margin-bottom: 12px;"><h3 style="margin: 0; font-size: 16px; letter-spacing: 1px; color: #000;">SOPORTE DE REPORTE SEMANAL</h3></div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 13px; border-bottom: 1px solid #000; padding-bottom: 8px; color: #000;">
+                <div style="text-align: center; margin-bottom: 10px;"><h3 style="margin: 0; font-size: 15px; letter-spacing: 1px; color: #000;">SOPORTE DE REPORTE SEMANAL</h3></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 12px; border-bottom: 1px solid #000; padding-bottom: 6px; color: #000;">
                     <div>${casillasSem} <span><strong>COD.</strong> 8125</span> <span style="margin-left:8px;"><strong>NOMBRE:</strong> Andru Trochez</span></div>
-                    <div><span><strong>QUINCENA DEL:</strong> <u>${tQuincena.trim()}</u></span> <span style="margin-left: 15px;"><strong>FIRMA:</strong> ${fHTML}</span></div>
+                    <div style="display:flex; align-items:center;"><span><strong>QUINCENA DEL:</strong> <u>${tQuincena.trim()}</u></span> <span style="margin-left: 12px;"><strong>FIRMA:</strong> ${fHTML}</span></div>
                 </div>
                 <table class="reporte-ext">
                     <thead>
@@ -1325,25 +1345,50 @@
                 let tot = sus + adic + prem, ganFila = cServ + cSoc + cMov + cAlim + cAdicPrem;
 
                 tS+=sus; tA+=adic; tP+=prem; tSal+=sal; tTotR+=tot; tServ+=cServ; tSoc+=cSoc; tMov+=cMov; tAlim+=cAlim; tAdPr+=cAdicPrem; tGanar+=ganFila;
-                let cv = prem > 0 ? 'pass-cell' : '', pT = prem > 0 ? ' <span style="color: #065f46; font-size:9px;">PASS</span>' : '';
+                let cv = prem > 0 ? 'pass-cell' : '', pT = prem > 0 ? ' <span style="color: #065f46; font-size:8.5px;">PASS</span>' : '';
 
                 htmlCuerpo += `<tr><td>${item.fecha}</td><td>${item.membresia}</td><td class="${cv}">${fmt(sus)}${pT}</td><td class="${cv}">${fmt(adic)}</td><td class="${cv}">${fmt(prem)}</td><td>${fmt(sal)}</td><td class="${cv}" style="font-weight:bold;">$${tot.toLocaleString()}</td><td class="${cv}">${fmt(cServ)}</td><td class="${cv}">${fmt(cSoc)}</td><td class="${cv}">${fmt(cMov)}</td><td class="${cv}">${fmt(cAlim)}</td><td class="${cv}">${fmt(cAdicPrem)}</td><td class="${cv}"><strong>$${Math.round(ganFila).toLocaleString()}</strong></td></tr>`;
             });
 
             htmlCuerpo += `<tr style="background:#f1f5f9;"><td colspan="2" style="text-align:left; padding-left:6px; font-weight:bold;">TOTALES</td><td style="font-weight:bold;">$${tS.toLocaleString()}</td><td style="font-weight:bold;">$${tA.toLocaleString()}</td><td style="font-weight:bold;">$${tP.toLocaleString()}</td><td style="font-weight:bold;">$${tSal.toLocaleString()}</td><td style="color:#dc2626; font-weight:bold;">$${tTotR.toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tServ).toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tSoc).toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tMov).toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tAlim).toLocaleString()}</td><td style="font-weight:bold;">$${Math.round(tAdPr).toLocaleString()}</td><td style="color:#dc2626; font-weight:bold;">$${Math.round(tGanar).toLocaleString()}</td></tr></tbody></table></div>`;
 
-            // Convertimos exactamente ese documento original a PDF horizontal (Landscape)
             if (window.html2pdf) {
                 let contenedorTemp = document.createElement('div');
-                contenedorTemp.style.width = '1060px';
+                contenedorTemp.style.position = 'fixed';
+                contenedorTemp.style.left = '0';
+                contenedorTemp.style.top = '0';
+                contenedorTemp.style.width = '1020px';
+                contenedorTemp.style.background = '#ffffff';
+                contenedorTemp.style.zIndex = '99999';
                 contenedorTemp.innerHTML = htmlCuerpo;
                 document.body.appendChild(contenedorTemp);
 
+                // Esperar explícitamente a que la firma Base64 decodifique antes de capturar el PDF
+                const imgFirma = contenedorTemp.querySelector('#img-firma-pdf-render');
+                if (imgFirma) {
+                    try {
+                        if (imgFirma.decode) {
+                            await imgFirma.decode();
+                        } else if (!imgFirma.complete) {
+                            await new Promise(res => { imgFirma.onload = res; imgFirma.onerror = res; });
+                        }
+                    } catch (e) {}
+                }
+                await new Promise(res => setTimeout(res, 150));
+
                 const opcionesPDF = {
-                    margin: 6,
+                    margin: [5, 5, 5, 5],
                     filename: `Soporte_Reporte_Oficial_${new Date().toISOString().split('T')[0]}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        width: 1020,
+                        windowWidth: 1020,
+                        scrollX: 0,
+                        scrollY: 0
+                    },
                     jsPDF: { unit: 'mm', format: 'letter', orientation: 'landscape' }
                 };
 
@@ -1353,7 +1398,6 @@
                     contenedorTemp.remove();
                 }
             } else {
-                // Respaldo exacto HTML si no cargó html2pdf
                 let htmlCompleto = `<html><head><meta charset="UTF-8"><style>@page { size: landscape; margin: 8mm; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }</style></head><body>${htmlCuerpo}</body></html>`;
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(new Blob([htmlCompleto], {type: 'text/html'}));
@@ -1362,7 +1406,7 @@
             }
         }
 
-        // --- 2. REPORTE RESUMEN PDF (EL OTRO FORMATO DISPONIBLE) ---
+        // --- 2. REPORTE RESUMEN PDF ---
         function descargarReporteResumenPDF() {
             let incluidos = listaFiltradaActual.filter(r => r._incluirEnPdf !== false);
             if (incluidos.length === 0) {
@@ -1471,7 +1515,7 @@
             doc.save(nombreArchivo);
         }
 
-        // --- FUNCIONES CRUD PARA reportes_acumulados / semana_actual -> items ---
+        // --- FUNCIONES CRUD PARA reportes_acumulados / semana_actual -> items (CON CONVERSIÓN AUTOMÁTICA DE MILES) ---
         function abrirModalItemReporte(idxArray) {
             itemReporteEditandoIdx = idxArray;
             let titulo = document.getElementById('modal-item-rep-titulo');
@@ -1482,20 +1526,27 @@
                 document.getElementById('rep-membresia').value = limpiarTextoSeguro(it.membresia);
                 document.getElementById('rep-fecha').value = limpiarTextoSeguro(it.fecha);
                 document.getElementById('rep-referencia').value = normalizarTexto(it.referencia) || "clasica";
-                document.getElementById('rep-suscripcion').value = parsearNumeroMoneda(it.suscripcion);
-                document.getElementById('rep-adicional').value = parsearNumeroMoneda(it.adicional);
-                document.getElementById('rep-saldo').value = parsearNumeroMoneda(it.saldo);
-                document.getElementById('rep-premiacion').value = parsearNumeroMoneda(it.premiacion);
+                
+                // Mostramos el valor base corto (sin los 3 ceros) si es múltiplo de 1000 para editar igual de rápido
+                let s = parsearNumeroMoneda(it.suscripcion);
+                let a = parsearNumeroMoneda(it.adicional);
+                let sal = parsearNumeroMoneda(it.saldo);
+                let p = parsearNumeroMoneda(it.premiacion);
+
+                document.getElementById('rep-suscripcion').value = s >= 1000 && s % 1000 === 0 ? s / 1000 : s;
+                document.getElementById('rep-adicional').value = a >= 1000 && a % 1000 === 0 ? a / 1000 : a;
+                document.getElementById('rep-saldo').value = sal >= 1000 && sal % 1000 === 0 ? sal / 1000 : sal;
+                document.getElementById('rep-premiacion').value = p >= 1000 && p % 1000 === 0 ? p / 1000 : p;
                 document.getElementById('rep-titular').value = limpiarTextoSeguro(it.titular || it.nombre);
             } else {
                 titulo.innerText = "➕ Nuevo Ítem en Reporte Oficial";
                 document.getElementById('rep-membresia').value = "";
                 document.getElementById('rep-fecha').value = new Date().toISOString().split('T')[0];
                 document.getElementById('rep-referencia').value = "clasica";
-                document.getElementById('rep-suscripcion').value = "120000";
-                document.getElementById('rep-adicional').value = "0";
-                document.getElementById('rep-saldo').value = "0";
-                document.getElementById('rep-premiacion').value = "0";
+                document.getElementById('rep-suscripcion').value = "";
+                document.getElementById('rep-adicional').value = "";
+                document.getElementById('rep-saldo').value = "";
+                document.getElementById('rep-premiacion').value = "";
                 document.getElementById('rep-titular').value = "";
             }
 
@@ -1511,10 +1562,12 @@
             let membresia = document.getElementById('rep-membresia').value.trim();
             let fecha = document.getElementById('rep-fecha').value.trim();
             let referencia = document.getElementById('rep-referencia').value.trim() || "clasica";
-            let suscripcion = Number(document.getElementById('rep-suscripcion').value || 0);
-            let adicional = Number(document.getElementById('rep-adicional').value || 0);
-            let saldo = Number(document.getElementById('rep-saldo').value || 0);
-            let premiacion = Number(document.getElementById('rep-premiacion').value || 0);
+            
+            // Agrega los 3 ceros en automático (ej: 120 -> 120000, 60 -> 60000)
+            let suscripcion = normalizarValorMiles(document.getElementById('rep-suscripcion').value);
+            let adicional = normalizarValorMiles(document.getElementById('rep-adicional').value);
+            let saldo = normalizarValorMiles(document.getElementById('rep-saldo').value);
+            let premiacion = normalizarValorMiles(document.getElementById('rep-premiacion').value);
             let titular = document.getElementById('rep-titular').value.trim();
 
             if (!membresia || !fecha) {
