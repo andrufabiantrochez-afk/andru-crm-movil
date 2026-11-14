@@ -106,7 +106,7 @@
         .card-title-group { display: flex; align-items: center; gap: 6px; flex: 1; }
         .card-title { font-size: 14px; font-weight: 800; color: var(--text-accent); word-break: break-word; }
         
-        .btn-edit-note { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px; }
+        .btn-edit-note { background: none; border: none; cursor: pointer; font-size: 13px; padding: 2px; }
 
         .select-accion { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: bold; outline: none; cursor: pointer; }
 
@@ -350,7 +350,6 @@
         let ordenVencimientoAsc = true;
         let ordenNombreAsc = true;
 
-        // Formateador de moneda colombiana ($ 45.000)
         function formatearMonedaCOP(valor) {
             if (valor === undefined || valor === null || valor === "") return null;
             let str = String(valor).trim();
@@ -360,6 +359,33 @@
                 return "$ " + Math.round(numLimpio).toLocaleString('es-CO');
             }
             return str;
+        }
+
+        // DETECTOR INTELIGENTE DE DIRECCIÓN EN CUALQUIER CAMPO DE FIREBASE
+        function extraerDireccionCliente(item) {
+            if (!item) return "";
+            const candidatosDirectos = [
+                item.direccion, item.Direccion, item.DIRECCION,
+                item.direccion_residencia, item.direccion_cliente, item.direccion_titular,
+                item.dir, item.Dir, item.DIR, item.dir_residencia,
+                item.domicilio, item.ubicacion, item.barrio
+            ];
+            for (let val of candidatosDirectos) {
+                if (val && String(val).trim() !== "" && String(val).trim() !== "---" && String(val).toLowerCase() !== "sin direccion") {
+                    return String(val).trim();
+                }
+            }
+            // Búsqueda dinámica por si el Excel subió la columna con otro nombre similar
+            for (let key of Object.keys(item)) {
+                let kNorm = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (kNorm.includes("direc") || kNorm.includes("domicil") || kNorm.includes("barrio") || kNorm.includes("ubicac")) {
+                    let v = item[key];
+                    if (v && String(v).trim() !== "" && String(v).trim() !== "---") {
+                        return String(v).trim();
+                    }
+                }
+            }
+            return "";
         }
 
         function cambiarVista(vista) {
@@ -555,14 +581,14 @@
                 let nombre = String(item.titular || item.nombre || item.nombreCompleto || item.cliente || "Sin Nombre").toUpperCase();
                 let cedula = item.cedula || item.cedula_cliente || item.cedula_prospecto || item.idDoc || "---";
                 let celular = String(item.celular || item.telefono || item.movil || "");
-                let empresa = item.empresa || item.convenio || item.empresa_interes || "No esta vinculado a una empresa";
+                let empresa = item.empresa || item.convenio || item.empresa_interes || "Independiente / No vinculado";
                 let ciudad = item.ciudad || item.ciudad_prospecto || "Palmira";
-                let direccion = item.direccion || item.dir || item.barrio || item.ubicacion || "";
+                let direccion = extraerDireccionCliente(item);
                 let diaPago = item.dia_pago || "---";
                 let fechaVenta = item.fecha_venta || item.fec_vinc || item.fecha_compra || item.mes_compra || "";
                 let notaCobro = item.nota_cobro || item.nota_seguimiento || item.observaciones || "";
 
-                // LECTURA INTELIGENTE DE DATOS DE PAGO Y SALDO DE FIREBASE
+                // LECTURA DE DATOS DE PAGO Y SALDO DE FIREBASE
                 let rawPagado = item.valor_pagado ?? item.pagado ?? item.abono ?? item.monto_pagado ?? item.pago ?? "";
                 let rawSaldo = item.saldo ?? item.debe ?? item.saldo_pendiente ?? item.valor_pendiente ?? item.pendiente ?? "";
                 let rawTotal = item.valor_plan ?? item.valor_total ?? item.valor ?? item.precio ?? item.cuota ?? "";
@@ -637,7 +663,7 @@
 
                 let urlWpp = `https://api.whatsapp.com/send?phone=57${celularLimpioReal}&text=${encodeURIComponent(msgWpp)}`;
 
-                // URL DIRECTA A GOOGLE MAPS PARA VISITAS PRESENCIALES / COBROS
+                // RUTA GOOGLE MAPS: PRIORIZA SIEMPRE LA DIRECCIÓN EXACTA DEL CLIENTE
                 let destinoBusqueda = "";
                 if (direccion) {
                     destinoBusqueda = `${direccion}, ${ciudad}, Valle del Cauca, Colombia`;
@@ -672,7 +698,10 @@
                         <div>🪪 Cédula: <strong>${cedula}</strong></div>
                         <div>📞 <strong>${celular || 'Sin celular registrado'}</strong></div>
                         <div>🏢 ${empresa} | 📍 ${ciudad}</div>
-                        ${direccion ? `<div>🏠 Dir: <strong>${direccion}</strong></div>` : ''}
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <span>🏠 Dir: <strong id="dir-text-${item.idDoc}" style="${direccion ? '' : 'color:#94a3b8; font-weight:normal;'}">${direccion || 'Sin dirección (Toca ✏️ para añadir)'}</strong></span>
+                            <button class="btn-edit-note" title="Editar Dirección para Maps" onclick="editarDireccionCliente('${item.idDoc}', '${item.coleccionOrigen}', '${nombre.replace(/'/g, "\\'")}', '${direccion.replace(/'/g, "\\'")}', '${ciudad.replace(/'/g, "\\'")}')">✏️</button>
+                        </div>
                         ${fechaVenta ? `<div>🗓️ Fecha / Venta: <strong style="color:#d97706;">${String(fechaVenta).toUpperCase()}</strong></div>` : ''}
                         
                         <!-- BLOQUE FINANCIERO DE PAGO Y SALDO -->
@@ -701,7 +730,7 @@
                     <div class="card-actions">
                         <a href="${urlWpp}" target="_blank" class="btn btn-wpp">💬 Wpp</a>
                         <a href="tel:${celularLimpioReal}" class="btn btn-call">📞 Llamar</a>
-                        <a href="${urlMaps}" target="_blank" class="btn btn-maps" title="Abrir ruta en Google Maps">📍 Ir</a>
+                        <a href="${urlMaps}" id="btn-maps-${item.idDoc}" target="_blank" class="btn btn-maps" title="Abrir ruta en Google Maps">📍 Ir</a>
                         <a href="${urlCal}" target="_blank" class="btn btn-cal">📅 Agendar</a>
                         <button class="btn btn-delete" onclick="eliminarClienteCRM('${item.idDoc}', '${item.coleccionOrigen}', this)">🗑️</button>
                     </div>
@@ -710,7 +739,41 @@
             });
         }
 
-        // FUNCIÓN PARA EDITAR CUÁNTO PAGÓ Y CUÁNTO DEBE DESDE EL MÓVIL
+        // FUNCIÓN PARA EDITAR LA DIRECCIÓN Y ACTUALIZAR AL INSTANTE EL BOTÓN "📍 IR"
+        async function editarDireccionCliente(idDoc, coleccion, nombre, dirActual, ciudad) {
+            let nuevaDir = prompt(`🏠 Escribe la dirección o barrio para:\n👤 ${nombre}\n(Esto actualizará el botón 📍 Ir de Google Maps)`, dirActual);
+            if (nuevaDir === null) return;
+
+            try {
+                let dirLimpia = nuevaDir.trim();
+                await db.collection(coleccion).doc(idDoc).update({
+                    direccion: dirLimpia
+                });
+
+                let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
+                if (registroLocal) {
+                    registroLocal.direccion = dirLimpia;
+                }
+
+                let elDir = document.getElementById(`dir-text-${idDoc}`);
+                if (elDir) {
+                    elDir.innerText = dirLimpia || 'Sin dirección (Toca ✏️ para añadir)';
+                    elDir.style.color = dirLimpia ? '' : '#94a3b8';
+                    elDir.style.fontWeight = dirLimpia ? 'bold' : 'normal';
+                }
+
+                let btnMaps = document.getElementById(`btn-maps-${idDoc}`);
+                if (btnMaps) {
+                    let destino = dirLimpia ? `${dirLimpia}, ${ciudad}, Valle del Cauca, Colombia` : `${ciudad}, Valle del Cauca, Colombia`;
+                    btnMaps.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destino)}`;
+                }
+
+                alert("✅ Dirección guardada. El botón 📍 Ir ya apunta a esta ubicación.");
+            } catch (err) {
+                alert("❌ Error al guardar la dirección: " + err.message);
+            }
+        }
+
         async function editarValoresPago(idDoc, coleccion, nombre, pagadoActual, saldoActual) {
             let nuevoPagado = prompt(`💵 ¿Cuánto PAGÓ el cliente?\n👤 ${nombre}\n(Escribe solo el número, ej: 45000)`, pagadoActual || "0");
             if (nuevoPagado === null) return;
@@ -837,7 +900,7 @@
                     let empresaBD = String(data.empresa || data.convenio || data.empresa_interes || "").toLowerCase().trim();
                     return empresaBD.includes(valorRaw.toLowerCase().trim());
                 } else if (campo === "ciudad") {
-                    let ciudadBD = String(data.ciudad || data.ciudad_prospecto || data.direccion || data.barrio || "").toLowerCase().trim();
+                    let ciudadBD = String(data.ciudad || data.ciudad_prospecto || extraerDireccionCliente(data) || "").toLowerCase().trim();
                     return ciudadBD.includes(valorRaw.toLowerCase().trim());
                 } else {
                     let textoCompleto = JSON.stringify(data).toLowerCase();
@@ -916,167 +979,4 @@
 
                 } else if (comando.includes('empresa') || comando.includes('convenio')) {
                     let emp = comando.replace(/hey andrew|hey andru|muéstrame|muestrame|muestra|mis clientes de la empresa|empresa|convenio/g, '').trim();
-                    selectCriterio.value = 'empresa';
-                    inputBuscar.value = emp;
-                    cambiarVista('afiliados');
-
-                } else if (comando.includes('cliente') || comando.includes('titular') || comando.includes('nombre')) {
-                    let nom = comando.replace(/hey andrew|hey andru|muéstrame|muestrame|muestra|mis clientes|cliente|titular|nombre/g, '').trim();
-                    selectCriterio.value = 'titular';
-                    inputBuscar.value = nom;
-                    cambiarVista('afiliados');
-
-                } else {
-                    let textoGen = comando
-                        .replace(/hey andrew|hey andru|andrew|andru/g, '')
-                        .replace(/muéstrame|muestrame|muestra|busca|buscar|filtra|filtrar|mis/g, '')
-                        .trim();
-                    selectCriterio.value = 'todo';
-                    inputBuscar.value = textoGen;
-                    cambiarVista('afiliados');
-                }
-            };
-
-            recognition.onerror = function() {
-                btnVoz.classList.remove('listening');
-            };
-
-            recognition.onend = function() {
-                btnVoz.classList.remove('listening');
-            };
-        }
-
-        function abrirModalNuevo() {
-            document.getElementById('modal-prospecto').style.display = 'flex';
-        }
-        function cerrarModalNuevo() {
-            document.getElementById('modal-prospecto').style.display = 'none';
-        }
-
-        async function guardarProspecto() {
-            let nombre = document.getElementById('nuevo-nombre').value.trim();
-            let celular = document.getElementById('nuevo-celular').value.trim();
-            let direccion = document.getElementById('nuevo-direccion').value.trim();
-            let ciudad = document.getElementById('nuevo-ciudad').value.trim();
-            let empresa = document.getElementById('nuevo-empresa').value.trim();
-            let nota = document.getElementById('nuevo-nota').value.trim();
-
-            if (!nombre || !celular) {
-                alert("Por favor ingresa al menos el Nombre y el Celular.");
-                return;
-            }
-
-            try {
-                let nuevoDoc = {
-                    nombre: nombre,
-                    celular: celular,
-                    direccion: direccion || "",
-                    ciudad_prospecto: ciudad || "Palmira",
-                    empresa_interes: empresa || "Independiente",
-                    nota_seguimiento: nota || "Ingresado desde la Web App Móvil",
-                    fecha_registro: new Date().toISOString(),
-                    origen: "App Movil"
-                };
-
-                await db.collection("prospectos").add(nuevoDoc);
-                alert("✅ Prospecto guardado con éxito en Firebase.");
-                
-                document.getElementById('nuevo-nombre').value = '';
-                document.getElementById('nuevo-celular').value = '';
-                document.getElementById('nuevo-direccion').value = '';
-                document.getElementById('nuevo-nota').value = '';
-                cerrarModalNuevo();
-
-                if (vistaActual === 'prospectos') {
-                    cargarDatosMovil();
-                }
-            } catch (err) {
-                alert("❌ Error al guardar: " + err.message);
-            }
-        }
-
-        window.depurarDuplicadosCRM = async function() {
-            let coleccion = 'afiliados';
-            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
-            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
-
-            const confirmarInicio = confirm(`🔍 Se analizará toda la base de datos de "${coleccion.toUpperCase()}" buscando cédulas o nombres repetidos.\n\n¿Deseas iniciar el escaneo?`);
-            if (!confirmarInicio) return;
-
-            try {
-                const snapshot = await db.collection(coleccion).get();
-                let unicos = {};
-                let idsParaBorrar = [];
-
-                snapshot.forEach(doc => {
-                    let d = doc.data();
-                    let cedula = String(d.cedula || d.cedula_cliente || d.cedula_prospecto || "").trim().replace(/^0+/, '');
-                    let nombre = String(d.titular || d.nombre || d.nombreCompleto || d.cliente || "").trim().toUpperCase();
-                    
-                    let llaveUnica = cedula.length > 4 ? `CED_${cedula}` : (nombre ? `NOM_${nombre}` : null);
-
-                    if (llaveUnica) {
-                        if (!unicos[llaveUnica]) {
-                            unicos[llaveUnica] = { id: doc.id, data: d };
-                        } else {
-                            let prev = unicos[llaveUnica];
-                            let nuevoTieneDatos = (d.nota_seguimiento || d.nota_cobro || (d.estado && d.estado !== "En lista"));
-                            let prevTieneDatos = (prev.data.nota_seguimiento || prev.data.nota_cobro || (prev.data.estado && prev.data.estado !== "En lista"));
-
-                            if (nuevoTieneDatos && !prevTieneDatos) {
-                                idsParaBorrar.push(prev.id);
-                                unicos[llaveUnica] = { id: doc.id, data: d };
-                            } else {
-                                idsParaBorrar.push(doc.id);
-                            }
-                        }
-                    }
-                });
-
-                if (idsParaBorrar.length === 0) {
-                    alert("✨ ¡Tu base de datos está limpia! No se encontraron registros duplicados.");
-                    return;
-                }
-
-                const confirmarBorrado = confirm(`⚠️ ESCANEO COMPLETADO:\n\nSe encontraron ${idsParaBorrar.length} registros duplicados en "${coleccion.toUpperCase()}".\n\n¿Deseas eliminarlos definitivamente ahora mismo?`);
-
-                if (confirmarBorrado) {
-                    const batch = db.batch();
-                    const lote = idsParaBorrar.slice(0, 450);
-                    
-                    lote.forEach(id => {
-                        const docRef = db.collection(coleccion).doc(id);
-                        batch.delete(docRef);
-                    });
-
-                    await batch.commit();
-                    alert(`🎉 ¡Limpieza exitosa! Se eliminaron ${lote.length} contactos duplicados.`);
-                    cargarDatosMovil();
-                }
-
-            } catch (error) {
-                console.error("Error depurando duplicados:", error);
-                alert("❌ Ocurrió un error durante la limpieza: " + error.message);
-            }
-        };
-
-        window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado) {
-            const confirmacion = confirm("⚠️ ¿Estás seguro que deseas eliminar este cliente? Esta acción no se puede deshacer.");
-            if (confirmacion) {
-                try {
-                    await db.collection(coleccion).doc(idDocumento).delete();
-                    alert("✅ Cliente eliminado correctamente.");
-                    
-                    const tarjeta = botonPulsado.closest('.card'); 
-                    if (tarjeta) tarjeta.style.display = 'none';
-                } catch (error) {
-                    console.error("Error eliminando:", error);
-                    alert("❌ Hubo un error al eliminar. Revisa tu conexión.");
-                }
-            }
-        };
-
-        cargarDatosMovil();
-    </script>
-</body>
-</html>
+                    selectCriterio.value
