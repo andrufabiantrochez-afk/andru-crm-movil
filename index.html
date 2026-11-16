@@ -1232,30 +1232,23 @@
             });
         }
 
-        // --- SUBIR FIRMA DIGITAL DESDE EL CELULAR HACIA FIREBASE (BIDIRECCIONAL CON EXTENSIÓN) ---
-        async function subirFirmaDesdeMovil(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const base64Firma = e.target.result;
-                try {
-                    await db.collection('reportes_acumulados').doc('semana_actual').set({
-                        firma: base64Firma,
-                        actualizado: new Date().toISOString()
-                    }, { merge: true });
-
-                    firmaReporteNube = base64Firma;
-                    document.getElementById('lbl-firma-status').innerText = "✅ Firma digital guardada en la nube";
-                    document.getElementById('lbl-firma-status').style.color = "#059669";
-                    alert("✅ ¡Firma subida a la nube! Ya quedó disponible en el celular y en la extensión del computador.");
-                } catch (err) {
-                    alert("❌ Error al subir la firma: " + err.message);
-                }
-            };
-            reader.readAsDataURL(file);
+        // --- FUNCIÓN AUXILIAR: CONVIERTE CUALQUIER IMAGEN (WEBP/JPG/PNG) A PNG COMPATIBLE CON JSPDF ---
+function convertirImagenAPngBase64(fuenteImagen) {
+    return new Promise((resolve) => {
+        if (!fuenteImagen || typeof fuenteImagen !== 'string') {
+            resolve(null);
+            return;
         }
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = function () {
+            try {
+                const canvas = document.createElement('canvas');
+                // Redimensionamos a un tamaño óptimo para firma (evita archivos pesados en Firestore)
+                const maxW = 500;
+                const scale = img.width > maxW ? (maxW / img.width) : 1;
+                canvas.width = Math.round(img.width * scale);
+                canvas.
 
         // --- 1. SOPORTE OFICIAL ORIGINAL IDÉNTICO AL DE LA EXTENSIÓN (13 COLUMNAS + FIRMA -> PDF VECTORIAL SIN RECORTES) ---
         async function descargarSoporteOriginalExtensionPDF() {
