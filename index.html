@@ -617,8 +617,9 @@
             for (let raw of candidatos) {
                 let txt = limpiarTextoSeguro(raw);
                 if (!txt) continue;
-                let primerBloque = txt.split(/[\/,;|-]/)[0];
-                let soloDigitos = primerBloque.replace(/\D/g, '');
+                // Solo separa si hay dos teléfonos distintos divididos por /, comma o ; (NO por guion de formato)
+                let primerTelefono = txt.split(/[\/,;]/)[0];
+                let soloDigitos = primerTelefono.replace(/\D/g, '');
                 if (soloDigitos.startsWith('57') && soloDigitos.length >= 12) {
                     soloDigitos = soloDigitos.slice(2);
                 }
