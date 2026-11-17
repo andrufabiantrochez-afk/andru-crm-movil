@@ -214,8 +214,6 @@
         <div class="search-row">
             <select id="select-criterio" class="filter-select" onchange="filtrarLista()">
                 <option value="todo">🔍 Todo (General)</option>
-                <option value="promesas">🤝 Promesas de Pago</option>
-                <option value="mora_critica">🚨 Mora Crítica / Vencidas</option>
                 <option value="con_saldo">💸 Con Saldo Pendiente</option>
                 <option value="mes_compra">📅 Mes de Compra</option>
                 <option value="titular">👤 Titular / Nombre</option>
@@ -233,9 +231,6 @@
                 🔤 Nombre (A-Z)
             </button>
         </div>
-        <button id="btn-limpiar-duplicados" class="btn-orden" style="background: #fee2e2; color: #b91c1c; border-color: #fca5a5;" onclick="depurarDuplicadosCRM()">
-            🧹 Depurar Duplicados de esta Vista
-        </button>
     </div>
 
     <div class="nav-tabs">
@@ -247,11 +242,9 @@
         <button class="tab-btn" id="tab-btn-ganados" onclick="cambiarVista('ganados')">✅ Ventas Logradas</button>
     </div>
 
-    <!-- SUBMENÚ PARA COBROS (CON PROMESAS Y MORA CRÍTICA) -->
+    <!-- SUBMENÚ PARA COBROS -->
     <div class="sub-nav" id="subnav-cobros">
         <button class="sub-btn active" id="btn-sub-dia" onclick="cambiarSubFiltroCobros('DIA_ACTUAL')">📅 Del Día</button>
-        <button class="sub-btn" id="btn-sub-promesas" onclick="cambiarSubFiltroCobros('PROMESAS')">🤝 Promesas</button>
-        <button class="sub-btn" id="btn-sub-mora" onclick="cambiarSubFiltroCobros('MORA_CRITICA')">🚨 Mora Crítica</button>
         <button class="sub-btn" id="btn-sub-postergados" onclick="cambiarSubFiltroCobros('POSTERGADOS')">⏳ Postergados</button>
         <button class="sub-btn" id="btn-sub-todos" onclick="cambiarSubFiltroCobros('TODOS_PENDIENTES')">📋 Todos</button>
     </div>
@@ -997,16 +990,18 @@
                         let diaCobroNum = parseInt(rawDia, 10);
                         let esNumeroValido = !isNaN(diaCobroNum) && diaCobroNum >= 1 && diaCobroNum <= 31;
                         let estadoCobro = limpiarTextoSeguro(d.estado_cobro).toLowerCase();
-                        let evalPM = evaluarEstadoPromesaYMora(d);
 
-                        if (subFiltroCobros === 'PROMESAS') {
-                            if (evalPM.tienePromesa && !estadoCobro.includes("pagado")) {
-                                registrosGlobales.push(d);
-                            }
-                        } else if (subFiltroCobros === 'MORA_CRITICA') {
-                            if (evalPM.esMoraCritica && !estadoCobro.includes("pagado")) {
-                                registrosGlobales.push(d);
-                            }
+                        if (esNumeroValido) {
+                            let esDelDia = (diaCobroNum === diaActualNum);
+                            let esPostergado = estadoCobro.includes("postergado") || estadoCobro.includes("pendiente") || (diaCobroNum < diaActualNum);
+
+                            let incluir = false;
+                            if (subFiltroCobros === 'DIA_ACTUAL' && esDelDia && !estadoCobro.includes("pagado")) incluir = true;
+                            else if (subFiltroCobros === 'POSTERGADOS' && esPostergado && !esDelDia && !estadoCobro.includes("pagado")) incluir = true;
+                            else if (subFiltroCobros === 'TODOS_PENDIENTES' && !estadoCobro.includes("pagado")) incluir = true;
+
+                            if (incluir) registrosGlobales.push(d);
+                        }
                         } else if (esNumeroValido || evalPM.esPromesaHoy) {
                             let esDelDia = (diaCobroNum === diaActualNum) || evalPM.esPromesaHoy;
                             let esPostergado = estadoCobro.includes("postergado") || estadoCobro.includes("pendiente") || (!isNaN(diaCobroNum) && diaCobroNum < diaActualNum);
@@ -1108,6 +1103,39 @@
             }
         }
 
+        function extraerTelefonoValido(item) {
+            if (!item || typeof item !== "object") return "";
+            const candidatos = [
+                item.celular, item.Celular, item.CELULAR,
+                item.telefono, item.Telefono, item.TELEFONO,
+                item.movil, item.Movil, item.whatsapp, item.WhatsApp,
+                item.cel, item.tel, item.numero_celular, item.contacto,
+                item._cruzadoAfiliado?.celular, item._cruzadoAfiliado?.telefono
+            ];
+
+            for (let key of Object.keys(item)) {
+                let k = key.toLowerCase();
+                if (k.includes("cel") || k.includes("tel") || k.includes("movil") || k.includes("what")) {
+                    candidatos.push(item[key]);
+                }
+            }
+
+            for (let raw of candidatos) {
+                let txt = limpiarTextoSeguro(raw);
+                if (!txt) continue;
+                // Si hay varios números separados por guion, slash o coma, tomamos el primero
+                let primerBloque = txt.split(/[\/,;|-]/)[0];
+                let soloDigitos = primerBloque.replace(/\D/g, '');
+                if (soloDigitos.startsWith('57') && soloDigitos.length >= 12) {
+                    soloDigitos = soloDigitos.slice(2);
+                }
+                if (soloDigitos.length >= 7) {
+                    return soloDigitos.slice(0, 10);
+                }
+            }
+            return "";
+        }
+
         function abrirModalPlantillasWpp(idDoc) {
             const item = registrosGlobales.find(r => r.idDoc === idDoc);
             if (!item) return;
@@ -1116,16 +1144,10 @@
             let primerNombre = nombreCompleto.split(' ')[0];
             primerNombre = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
 
-            const celular = limpiarTextoSeguro(item.celular || item.telefono || item.movil);
-            let celularLimpioReal = celular.split('-')[0].replace(/\D/g, '');
-            if (celularLimpioReal.length >= 12 && celularLimpioReal.startsWith('57')) {
-                celularLimpioReal = celularLimpioReal.substring(2, 12);
-            } else {
-                celularLimpioReal = celularLimpioReal.substring(0, 10);
-            }
+            const celularLimpioReal = extraerTelefonoValido(item);
 
-            if (!celularLimpioReal || celularLimpioReal.length < 7) {
-                alert("⚠️ Este cliente no tiene un número de celular válido registrado.");
+            if (!celularLimpioReal) {
+                alert("⚠️ Este cliente no tiene un número de celular registrado en Firebase.");
                 return;
             }
 
@@ -1134,7 +1156,6 @@
                 fin = extraerDatosFinancieros(item._cruzadoAfiliado);
             }
             const saldoFmt = formatearMonedaCOP(fin.rawSaldo);
-            const evalPM = evaluarEstadoPromesaYMora(item);
 
             contextoWppActual = {
                 idDoc,
@@ -1143,16 +1164,13 @@
                 telefono: celularLimpioReal,
                 saldoFmt,
                 diaPago: limpiarTextoSeguro(item.dia_pago),
-                notaPromesa: evalPM.notaPromesa
+                notaPromesa: ""
             };
 
             document.getElementById('wpp-modal-cliente').innerText = nombreCompleto;
             document.getElementById('wpp-modal-tel').innerText = celularLimpioReal;
 
-            let plantillaSugerida = 'cobro_amable';
-            if (evalPM.esPromesaHoy) plantillaSugerida = 'promesa_hoy';
-            else if (evalPM.esMoraCritica) plantillaSugerida = 'mora_critica';
-            else if (vistaActual === 'renovaciones') plantillaSugerida = 'renovacion';
+            let plantillaSugerida = (vistaActual === 'renovaciones') ? 'renovacion' : 'cobro_amable';
 
             const botones = document.querySelectorAll('#wpp-chips-container .chip-btn');
             botones.forEach(btn => {
@@ -1186,7 +1204,9 @@
         function enviarMensajeWppConfirmado() {
             if (!contextoWppActual) return;
             const texto = document.getElementById('wpp-mensaje-texto').value.trim();
-            const url = `https://api.whatsapp.com/send?phone=57${contextoWppActual.telefono}&text=${encodeURIComponent(texto)}`;
+            // Si tiene 10 dígitos (celular Colombia) antepone 57; si es fijo de 7 dígitos lo deja directo
+            const prefijo = contextoWppActual.telefono.length === 10 ? '57' : '';
+            const url = `https://api.whatsapp.com/send?phone=${prefijo}${contextoWppActual.telefono}&text=${encodeURIComponent(texto)}`;
             window.open(url, '_blank');
             cerrarModalWpp();
         }
@@ -1309,7 +1329,25 @@
                 alert("❌ Error al quitar la promesa: " + err.message);
             }
         }
+function agendarTareaRecordatorio(idDoc) {
+            const item = registrosGlobales.find(r => r.idDoc === idDoc);
+            if (!item) return;
 
+            const nombre = (limpiarTextoSeguro(item.titular || item.nombre || item.nombreCompleto || item.cliente) || "Cliente").toUpperCase();
+            const tel = extraerTelefonoValido(item) || "Sin teléfono";
+            const fin = extraerDatosFinancieros(item);
+            const saldo = formatearMonedaCOP(fin.rawSaldo) || "$ 0";
+            const nota = limpiarTextoSeguro(item.nota_cobro || item.nota_seguimiento);
+
+            const textoTarea = `📌 Recordar gestión Previser: ${nombre} | Tel: ${tel} | Saldo: ${saldo}${nota ? ` | Nota: ${nota}` : ''}`;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textoTarea).catch(() => {});
+            }
+
+            // Abre Google Tasks (Tareas) en el celular/navegador
+            window.open('https://tasks.google.com/embed/?origin=https://mail.google.com&fullWidth=1', '_blank');
+        }
         function renderizarTarjetas(lista) {
             listaFiltradaActual = lista;
             const contenedor = document.getElementById('lista-tarjetas');
@@ -1474,9 +1512,7 @@
                     }
                     let urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinoBusqueda)}`;
 
-                    let tituloCal = encodeURIComponent(`📞 Gestión Previser: ${nombre}`);
-                    let detallesCal = encodeURIComponent(`Cliente: ${nombre}\nCédula: ${cedula}\nTeléfono: ${celularLimpioReal}\nEmpresa: ${empresa}\nCiudad: ${ciudad}\nPromesa: ${evalPM.fechaPromesa || 'N/A'} (${evalPM.notaPromesa || ''})\nPagó: ${pagadoFmt || 'N/A'} | Debe: ${saldoFmt || 'N/A'}\nNota: ${notaCobro || 'Seguimiento Previser'}`);
-                    let urlCal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${tituloCal}&details=${detallesCal}`;
+                    let celularLimpioReal = extraerTelefonoValido(item);
 
                     let valorSelectAccion = "lista";
                     if (esRenovado) valorSelectAccion = "renovado";
@@ -1526,7 +1562,6 @@
                                     ${totalFmt ? `<span class="metric-plan">🏷️ Plan: ${totalFmt}</span>` : ''}
                                 </div>
                                 <div class="finance-btns">
-                                    <button class="btn-promesa-pill" title="Agendar 'Recuérdame el viernes'" onclick="abrirModalPromesaPago('${item.idDoc}')">🤝 Promesa</button>
                                     <button class="btn-edit-finance" onclick="editarValoresPago('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(fin.rawPagado)}', '${escaparComillasJS(fin.rawSaldo)}')">✏️ Pago</button>
                                     <button class="btn-inspect-bd" title="Ver campos crudos en Firebase" onclick="verCamposFirebase('${item.idDoc}')">🔎</button>
                                 </div>
@@ -1549,7 +1584,7 @@
                             <button type="button" onclick="abrirModalPlantillasWpp('${item.idDoc}')" class="btn btn-wpp">💬 Wpp</button>
                             <a href="tel:${celularLimpioReal}" class="btn btn-call">📞 Llamar</a>
                             <a href="${urlMaps}" id="btn-maps-${item.idDoc}" target="_blank" class="btn btn-maps" title="Abrir ruta en Google Maps">📍 Ir</a>
-                            <a href="${urlCal}" target="_blank" class="btn btn-cal">📅 Agendar</a>
+                            <button type="button" onclick="agendarTareaRecordatorio('${item.idDoc}')" class="btn btn-cal">☑️ Tarea</button>
                             <button class="btn btn-delete" onclick="eliminarClienteCRM('${item.idDoc}', '${item.coleccionOrigen}', this)">🗑️</button>
                         </div>
                     `;
