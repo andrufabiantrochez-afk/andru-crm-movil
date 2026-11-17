@@ -77,10 +77,13 @@
         body { background: var(--bg-body); color: var(--text-primary); padding-bottom: 90px; transition: background 0.25s, color 0.25s; }
         
         header { background: var(--bg-header); padding: 14px 15px; border-bottom: 3px solid var(--border-header); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; color: var(--text-header); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
-        h1 { font-size: 16px; color: #ffffff; display: flex; align-items: center; gap: 6px; font-weight: 800; }
+        h1 { font-size: 15px; color: #ffffff; display: flex; align-items: center; gap: 5px; font-weight: 800; }
         
-        .theme-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .theme-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; border-radius: 50%; width: 31px; height: 31px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .theme-btn:active { transform: scale(0.92); }
+
+        .offline-pill { font-size: 9.5px; padding: 2px 6px; border-radius: 10px; font-weight: 800; background: #10b981; color: #ffffff; white-space: nowrap; }
+        .offline-pill.is-offline { background: #dc2626; animation: pulse 1.5s infinite; }
 
         .search-container { padding: 10px 15px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; flex-direction: column; }
         .search-row { display: flex; gap: 8px; }
@@ -88,7 +91,7 @@
         .search-input { flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 13px; outline: none; }
         .search-input:focus, .filter-select:focus { border-color: var(--brand-blue); }
 
-        .btn-orden { background: var(--btn-orden-bg); color: var(--btn-orden-text); border: 1px solid var(--btn-orden-border); padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; }
+        .btn-orden { background: var(--btn-orden-bg); color: var(--btn-orden-text); border: 1px solid var(--btn-orden-border); padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; }
 
         .nav-tabs { display: flex; background: var(--bg-surface); padding: 8px 15px; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--border-color); }
         .tab-btn { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.2s; }
@@ -99,6 +102,12 @@
         .sub-btn.active { background: #f59e0b; color: #0f172a; border-color: #d97706; font-weight: 800; }
 
         .reporte-panel { display: none; background: var(--bg-surface); padding: 12px 15px; border-bottom: 2px solid #059669; flex-direction: column; gap: 8px; }
+        .comision-box { background: linear-gradient(135deg, #003380 0%, #1e40af 100%); color: #ffffff; border-radius: 10px; padding: 10px 12px; border: 1.5px solid #f59e0b; display: flex; flex-direction: column; gap: 6px; }
+        .comision-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 800; }
+        .progress-track { width: 100%; height: 10px; background: rgba(255,255,255,0.2); border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #10b981); width: 0%; transition: width 0.4s ease; }
+        .comision-sub { display: flex; justify-content: space-between; font-size: 10.5px; color: #e2e8f0; }
+
         .reporte-resumen-bar { display: flex; justify-content: space-between; align-items: center; background: var(--finance-box-bg); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px; gap: 8px; }
         .reporte-botones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .btn-pdf-original { grid-column: span 2; background: #003380; color: #ffffff; border: 2px solid #f59e0b; padding: 11px; border-radius: 8px; font-size: 12.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 3px 8px rgba(0, 51, 128, 0.25); }
@@ -113,14 +122,7 @@
         .card { background: var(--bg-surface); border-radius: 12px; padding: 14px; border: 1px solid var(--border-color); border-left: 4px solid var(--brand-blue); box-shadow: var(--card-shadow); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
         .card.estado-no-renueva { background: rgba(220, 38, 38, 0.08) !important; border: 1px solid #dc2626 !important; border-left: 4px solid #dc2626 !important; }
         .card.estado-renovado { background: rgba(16, 185, 129, 0.1) !important; border: 1px solid #059669 !important; border-left: 4px solid #059669 !important; }
-        .card.estado-mora-critica { background: rgba(220, 38, 38, 0.07) !important; border: 1.5px solid #dc2626 !important; border-left: 5px solid #dc2626 !important; }
-        .card.estado-promesa-hoy { background: rgba(124, 58, 237, 0.08) !important; border: 1.5px solid #7c3aed !important; border-left: 5px solid #7c3aed !important; }
         .card.excluido-pdf { opacity: 0.55; border-left: 4px solid #94a3b8; }
-
-        .promesa-banner { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; border-radius: 8px; padding: 6px 9px; font-size: 11px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-        .promesa-banner.vencida { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
-        body.dark-mode .promesa-banner { background: rgba(124, 58, 237, 0.25); color: #ddd6fe; border-color: rgba(167, 139, 250, 0.4); }
-        body.dark-mode .promesa-banner.vencida { background: rgba(220, 38, 38, 0.25); color: #fecaca; border-color: rgba(248, 113, 113, 0.4); }
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
         .card-title-group { display: flex; align-items: center; gap: 6px; flex: 1; }
@@ -154,7 +156,6 @@
         
         .finance-btns { display: flex; gap: 4px; flex-wrap: wrap; }
         .btn-edit-finance { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 6px; padding: 3px 7px; font-size: 10px; font-weight: 800; cursor: pointer; }
-        .btn-promesa-pill { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; border-radius: 6px; padding: 3px 7px; font-size: 10px; font-weight: 800; cursor: pointer; }
         .btn-inspect-bd { background: #e0e7ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 6px; padding: 3px 6px; font-size: 10px; font-weight: 800; cursor: pointer; }
         
         .card-actions { display: flex; gap: 5px; margin-top: 6px; }
@@ -186,6 +187,9 @@
         .chip-btn.active { background: #16a34a; color: #ffffff; border-color: #15803d; }
         .wpp-textarea { width: 100%; min-height: 150px; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 12.5px; line-height: 1.45; resize: vertical; outline: none; }
 
+        .plan-card-item { background: var(--bg-input); border: 1px solid var(--border-color); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .hist-item { background: var(--bg-input); border: 1px solid var(--border-color); border-left: 4px solid #059669; border-radius: 8px; padding: 9px 10px; font-size: 11.5px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
         .cmd-list { font-size: 12px; display: flex; flex-direction: column; gap: 8px; line-height: 1.4; }
         .cmd-item { background: var(--bg-input); padding: 8px 10px; border-radius: 8px; border-left: 3px solid #f59e0b; }
         .cmd-item strong { color: var(--text-accent); display: block; margin-bottom: 2px; }
@@ -196,9 +200,13 @@
 <body>
 
     <header>
-        <h1>🎯 Andru CRM <span style="font-size:9px; background:#f59e0b; color:#0f172a; padding:2px 6px; border-radius:4px; font-weight:900;">PREVISER</span></h1>
-        <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+            <h1>🎯 Andru CRM <span style="font-size:9px; background:#f59e0b; color:#0f172a; padding:2px 6px; border-radius:4px; font-weight:900;">PREVISER</span></h1>
+            <span id="badge-red-estado" class="offline-pill">🟢 Online</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
             <span id="total-registros" style="font-size:11px;">Cargando...</span>
+            <button class="theme-btn" title="Tarjeta Digital y Catálogo" onclick="abrirModalTarjetaCatalogo()">🪪</button>
             <button class="theme-btn" title="Ver Comandos de Voz" onclick="abrirModalComandos()">?</button>
             <button id="btn-toggle-tema" class="theme-btn" title="Cambiar Modo Claro / Oscuro" onclick="alternarTemaVisual()">🌙</button>
         </div>
@@ -230,6 +238,9 @@
             <button id="btn-ordenar-nombre" class="btn-orden" style="flex: 1; background: var(--btn-orden-inactive-bg); border-color: var(--border-color); color: var(--btn-orden-inactive-text);" onclick="alternarOrdenNombre()">
                 🔤 Nombre (A-Z)
             </button>
+            <button class="btn-orden" style="background: #ecfdf5; color: #065f46; border-color: #6ee7b7;" onclick="exportarVistaExcel()">
+                📥 Excel
+            </button>
         </div>
     </div>
 
@@ -249,8 +260,23 @@
         <button class="sub-btn" id="btn-sub-todos" onclick="cambiarSubFiltroCobros('TODOS_PENDIENTES')">📋 Todos</button>
     </div>
 
-    <!-- PANEL PARA REPORTE OFICIAL -->
+    <!-- PANEL PARA REPORTE OFICIAL + TERMÓMETRO + CIERRE DE SEMANA -->
     <div class="reporte-panel" id="panel-reporte-oficial">
+        <!-- TERMÓMETRO DE COMISIONES EN TIEMPO REAL -->
+        <div class="comision-box">
+            <div class="comision-top">
+                <span>🌡️ Comisión Neta Estimada: <span id="lbl-comision-neta" style="color:#fbbf24;">$ 0</span></span>
+                <button onclick="editarMetaComision()" style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:6px; padding:2px 7px; font-size:10px; font-weight:bold; cursor:pointer;">🎯 Meta</button>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="barra-progreso-comision"></div>
+            </div>
+            <div class="comision-sub">
+                <span id="lbl-meta-comision">Meta semanal: $ 1.000.000</span>
+                <span id="lbl-porcentaje-meta" style="font-weight:800; color:#fbbf24;">0%</span>
+            </div>
+        </div>
+
         <div class="reporte-resumen-bar">
             <div>
                 <div style="font-size:10px; color:var(--text-secondary);" id="lbl-actualizado-reporte">📊 reportes_acumulados / semana_actual</div>
@@ -269,6 +295,8 @@
             <button class="btn-pdf-original" onclick="descargarSoporteOriginalExtensionPDF()">🖨️ Soporte Oficial Original (13 Col + Firma PDF)</button>
             <button class="btn-pdf-oficial" onclick="descargarReporteResumenPDF()">📑 Reporte Resumen PDF</button>
             <button class="btn-nuevo-pago-rep" onclick="abrirModalItemReporte(-1)">➕ Agregar Ítem</button>
+            <button class="btn-pdf-oficial" style="background:#b45309;" onclick="cerrarSemanaConHistorico()">🔒 Cerrar Semana</button>
+            <button class="btn-nuevo-pago-rep" style="background:#475569;" onclick="abrirModalHistoricoSemanas()">📚 Histórico</button>
         </div>
     </div>
 
@@ -314,44 +342,6 @@
             <div style="display:flex; gap:8px;">
                 <button class="btn-save" style="flex:1; background:#475569;" onclick="copiarMensajeWpp()">📋 Copiar</button>
                 <button class="btn-save" style="flex:2; background:#16a34a;" onclick="enviarMensajeWppConfirmado()">🚀 Enviar por WhatsApp</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL PROMESA DE PAGO ("RECUÉRDAME EL VIERNES") -->
-    <div class="modal" id="modal-promesa-pago">
-        <div class="modal-content">
-            <div class="modal-title">
-                <span>🤝 Agendar Promesa de Pago</span>
-                <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalPromesa()">✕</span>
-            </div>
-            <div style="font-size:12px; color:var(--text-secondary);">
-                Cliente: <strong id="promesa-modal-nombre" style="color:var(--text-accent);">---</strong>
-            </div>
-
-            <div class="form-group">
-                <label>Atajos rápidos (Cuando el cliente dice "recuérdame..."):</label>
-                <div class="chips-grid">
-                    <button type="button" class="chip-btn" onclick="setFechaRapidaPromesa('manana')">🌅 Mañana</button>
-                    <button type="button" class="chip-btn" onclick="setFechaRapidaPromesa('viernes')">📅 Este Viernes</button>
-                    <button type="button" class="chip-btn" onclick="setFechaRapidaPromesa('lunes')">🗓️ Próximo Lunes</button>
-                    <button type="button" class="chip-btn" onclick="setFechaRapidaPromesa('quincena')">💵 Próxima Quincena (15/30)</button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Fecha exacta de recordatorio *</label>
-                <input type="date" id="promesa-fecha-input" class="form-input">
-            </div>
-
-            <div class="form-group">
-                <label>Detalle del acuerdo (Ej: "Recuérdame el viernes por transferencia")</label>
-                <input type="text" id="promesa-nota-input" class="form-input" placeholder="Ej: Paga el viernes en la tarde por PSE / Bancolombia">
-            </div>
-
-            <div style="display:flex; gap:8px;">
-                <button type="button" class="btn-save" style="flex:1; background:#dc2626;" onclick="limpiarPromesaPago()">🗑️ Quitar Promesa</button>
-                <button type="button" class="btn-save" style="flex:2; background:#003380;" onclick="guardarPromesaPago()">💾 Guardar Recordatorio</button>
             </div>
         </div>
     </div>
@@ -451,6 +441,44 @@
         </div>
     </div>
 
+    <!-- MODAL TARJETA DIGITAL Y CATÁLOGO DE PLANES PREVISER -->
+    <div class="modal" id="modal-tarjeta-catalogo">
+        <div class="modal-content">
+            <div class="modal-title">
+                <span>🪪 Tarjeta Digital y Catálogo</span>
+                <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalTarjetaCatalogo()">✕</span>
+            </div>
+
+            <div style="background:linear-gradient(135deg,#003380,#1e40af); color:#fff; padding:12px; border-radius:10px; border-bottom:3px solid #f59e0b;">
+                <div style="font-size:14px; font-weight:900;">Andru Fabian Trochez López</div>
+                <div style="font-size:11px; color:#fbbf24; font-weight:700;">Ejecutivo Comercial • Previser Suroccidente</div>
+                <div style="font-size:11px; margin-top:4px;">📱 318 796 8389 | 🌐 www.previser.com.co</div>
+                <div style="display:flex; gap:6px; margin-top:8px;">
+                    <button onclick="compartirTarjetaWpp()" style="flex:1; background:#16a34a; color:#fff; border:none; padding:7px; border-radius:6px; font-size:11px; font-weight:800; cursor:pointer;">💬 Enviar Tarjeta</button>
+                    <button onclick="copiarTextoPortapapeles(generarTextoTarjetaDigital(), '🪪 Tarjeta copiada')" style="flex:1; background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.4); padding:7px; border-radius:6px; font-size:11px; font-weight:800; cursor:pointer;">📋 Copiar</button>
+                </div>
+            </div>
+
+            <div style="font-size:12px; font-weight:800; color:var(--text-accent); margin-top:2px;">📦 Catálogo de Membresías (1 toque para enviar):</div>
+            <div id="lista-planes-catalogo" style="display:flex; flex-direction:column; gap:6px;"></div>
+
+            <button onclick="compartirCatalogoCompletoWpp()" class="btn-save" style="background:#059669;">📲 Enviar Catálogo Completo por WhatsApp</button>
+        </div>
+    </div>
+
+    <!-- MODAL HISTÓRICO DE CIERRES SEMANALES -->
+    <div class="modal" id="modal-historico-semanas">
+        <div class="modal-content">
+            <div class="modal-title">
+                <span>📚 Histórico de Cierres Semanales</span>
+                <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalHistorico()">✕</span>
+            </div>
+            <div id="contenedor-historico-lista" style="display:flex; flex-direction:column; gap:8px;">
+                <div class="loading">⏳ Cargando cierres guardados...</div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL GUÍA DE COMANDOS DE VOZ -->
     <div class="modal" id="modal-comandos">
         <div class="modal-content">
@@ -459,11 +487,6 @@
                 <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalComandos()">✕</span>
             </div>
             <div class="cmd-list">
-                <div class="cmd-item">
-                    <strong>🤝 Promesas de Pago y Mora Crítica:</strong>
-                    "Ver promesas de pago" / "Promesas de hoy"<br>
-                    "Mostrar mora crítica" / "Clientes en mora"
-                </div>
                 <div class="cmd-item">
                     <strong>📄 Reporte Oficial de Pagos:</strong>
                     "Abrir reporte oficial" / "Reporte de pagos"
@@ -539,6 +562,26 @@
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.firestore();
+
+        // MODO OFFLINE REAL (CACHÉ PERSISTENTE DE FIRESTORE)
+        db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+            console.warn("Persistencia offline:", err.code);
+        });
+
+        function actualizarIndicadorRed() {
+            const badge = document.getElementById('badge-red-estado');
+            if (!badge) return;
+            if (navigator.onLine) {
+                badge.innerText = '🟢 Online';
+                badge.classList.remove('is-offline');
+            } else {
+                badge.innerText = '🔴 Offline (Caché)';
+                badge.classList.add('is-offline');
+            }
+        }
+        window.addEventListener('online', actualizarIndicadorRed);
+        window.addEventListener('offline', actualizarIndicadorRed);
+        actualizarIndicadorRed();
 
         let vistaActual = 'cobros';
         let subFiltroCobros = 'DIA_ACTUAL';
@@ -617,7 +660,6 @@
             for (let raw of candidatos) {
                 let txt = limpiarTextoSeguro(raw);
                 if (!txt) continue;
-                // Solo separa si hay dos teléfonos distintos divididos por /, comma o ; (NO por guion de formato)
                 let primerTelefono = txt.split(/[\/,;]/)[0];
                 let soloDigitos = primerTelefono.replace(/\D/g, '');
                 if (soloDigitos.startsWith('57') && soloDigitos.length >= 12) {
@@ -1003,13 +1045,50 @@
             if (vistaActual !== 'reporte') return;
             let seleccionados = listaFiltradaActual.filter(r => r._incluirEnPdf !== false);
             let sumaTotal = 0;
+            let comisionTotalNeta = 0;
+
             seleccionados.forEach(item => {
                 let susc = parsearNumeroMoneda(item.suscripcion);
                 let adic = parsearNumeroMoneda(item.adicional);
                 let prem = parsearNumeroMoneda(item.premiacion);
+                let ref = normalizarTexto(item.referencia);
+
                 sumaTotal += (susc + adic + prem);
+
+                let pct = ref === "bipersonal" ? 0.185 : ref === "premium" ? 0.31 : ref === "vip" ? 0.298 : ref === "diamante" ? 0.264 : 0.33;
+                let cServ = susc * pct;
+                let cSoc = susc * 0.06;
+                let cMov = susc * 0.02;
+                let cAlim = susc * 0.02;
+                let cAdicPrem = (adic * 0.15) + (prem * 0.15) + (prem > 0 ? 96600 : 0);
+                comisionTotalNeta += (cServ + cSoc + cMov + cAlim + cAdicPrem);
             });
+
             document.getElementById('lbl-total-reporte').innerText = `Total Reporte: $ ${Math.round(sumaTotal).toLocaleString('es-CO')} (${seleccionados.length} ítems)`;
+
+            const metaSemanal = parseFloat(localStorage.getItem('andru_meta_semanal')) || 1000000;
+            const pctMeta = Math.min(100, Math.round((comisionTotalNeta / metaSemanal) * 100));
+
+            const lblCom = document.getElementById('lbl-comision-neta');
+            const lblMeta = document.getElementById('lbl-meta-comision');
+            const lblPct = document.getElementById('lbl-porcentaje-meta');
+            const barra = document.getElementById('barra-progreso-comision');
+
+            if (lblCom) lblCom.innerText = `$ ${Math.round(comisionTotalNeta).toLocaleString('es-CO')}`;
+            if (lblMeta) lblMeta.innerText = `Meta semanal: $ ${Math.round(metaSemanal).toLocaleString('es-CO')}`;
+            if (lblPct) lblPct.innerText = `${pctMeta}%`;
+            if (barra) barra.style.width = `${pctMeta}%`;
+        }
+
+        function editarMetaComision() {
+            const actual = parseFloat(localStorage.getItem('andru_meta_semanal')) || 1000000;
+            const nueva = prompt("🎯 Escribe tu meta semanal de comisiones (en pesos, ej: 1200000):", actual);
+            if (!nueva) return;
+            const num = parseFloat(nueva.replace(/\D/g, ''));
+            if (!isNaN(num) && num > 0) {
+                localStorage.setItem('andru_meta_semanal', num);
+                actualizarTotalesReportePDF();
+            }
         }
 
         function alternarInclusionPDF(idxArray, marcado) {
@@ -1180,7 +1259,7 @@
                 'ganados': 'ventas'
             };
             let palabraVista = etiquetasVista[vistaActual] || 'registros';
-            contador.innerHTML = `<span style="background: #f59e0b; color: #0f172a; padding: 3px 10px; border-radius: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">${lista.length} ${palabraVista}</span>`;
+            contador.innerHTML = `<span style="background: #f59e0b; color: #0f172a; padding: 3px 9px; border-radius: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">${lista.length} ${palabraVista}</span>`;
 
             if (vistaActual === 'reporte') {
                 actualizarTotalesReportePDF();
@@ -2299,6 +2378,231 @@
                 }
             }
         };
+
+        // --- EXPORTAR VISTA ACTUAL A EXCEL (.CSV COMPATIBLE) ---
+        function exportarVistaExcel() {
+            if (!listaFiltradaActual || listaFiltradaActual.length === 0) {
+                alert("⚠️ No hay registros visibles en esta pestaña para exportar.");
+                return;
+            }
+
+            let encabezados = [];
+            let filas = [];
+
+            if (vistaActual === 'reporte') {
+                encabezados = ["Fecha", "Membresia", "Titular", "Referencia", "Suscripcion", "Adicional", "Premiacion", "Saldo", "Total_Fila"];
+                filas = listaFiltradaActual.map(it => {
+                    let s = parsearNumeroMoneda(it.suscripcion);
+                    let a = parsearNumeroMoneda(it.adicional);
+                    let p = parsearNumeroMoneda(it.premiacion);
+                    let sal = parsearNumeroMoneda(it.saldo);
+                    return [
+                        limpiarTextoSeguro(it.fecha),
+                        limpiarTextoSeguro(it.membresia),
+                        limpiarTextoSeguro(it.titular),
+                        limpiarTextoSeguro(it.referencia),
+                        s, a, p, sal, (s + a + p)
+                    ];
+                });
+            } else {
+                encabezados = ["Nombre_Titular", "Cedula", "Telefono", "Empresa_Convenio", "Ciudad", "Direccion", "Dia_Pago", "Pagado", "Saldo", "Estado", "Nota"];
+                filas = listaFiltradaActual.map(it => {
+                    let fin = extraerDatosFinancieros(it);
+                    return [
+                        limpiarTextoSeguro(it.titular || it.nombre || it.cliente),
+                        limpiarTextoSeguro(it.cedula || it.cedula_cliente || it.idDoc),
+                        extraerTelefonoValido(it),
+                        limpiarTextoSeguro(it.empresa || it.convenio || it.empresa_interes),
+                        limpiarTextoSeguro(it.ciudad || it.ciudad_prospecto),
+                        extraerDireccionCliente(it),
+                        limpiarTextoSeguro(it.dia_pago),
+                        parsearNumeroMoneda(fin.rawPagado),
+                        parsearNumeroMoneda(fin.rawSaldo),
+                        limpiarTextoSeguro(it.estado || it.estado_cobro),
+                        limpiarTextoSeguro(it.nota_cobro || it.nota_seguimiento)
+                    ];
+                });
+            }
+
+            const escaparCSV = val => `"${String(val ?? "").replace(/"/g, '""')}"`;
+            let contenidoCSV = "\uFEFF" + encabezados.map(escaparCSV).join(";") + "\n";
+            filas.forEach(f => {
+                contenidoCSV += f.map(escaparCSV).join(";") + "\n";
+            });
+
+            const blob = new Blob([contenidoCSV], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Andru_CRM_${vistaActual}_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- CIERRE DE SEMANA CON HISTÓRICO ---
+        async function cerrarSemanaConHistorico() {
+            if (!itemsReporteCrudos || itemsReporteCrudos.length === 0) {
+                alert("⚠️ No hay ítems en la semana actual para cerrar.");
+                return;
+            }
+
+            const etiqueta = prompt("🔒 Nombre o etiqueta para este cierre semanal:", `Semana cerrada ${new Date().toLocaleDateString('es-CO')}`);
+            if (!etiqueta) return;
+
+            if (!confirm(`¿Confirmas cerrar "${etiqueta}"?\n\nSe guardará una copia en el Histórico y la lista de la semana actual quedará limpia para empezar la nueva semana.`)) return;
+
+            try {
+                let totalBruto = 0;
+                let comisionNeta = 0;
+                itemsReporteCrudos.forEach(item => {
+                    let s = parsearNumeroMoneda(item.suscripcion);
+                    let a = parsearNumeroMoneda(item.adicional);
+                    let p = parsearNumeroMoneda(item.premiacion);
+                    let ref = normalizarTexto(item.referencia);
+                    totalBruto += (s + a + p);
+                    let pct = ref === "bipersonal" ? 0.185 : ref === "premium" ? 0.31 : ref === "vip" ? 0.298 : ref === "diamante" ? 0.264 : 0.33;
+                    comisionNeta += (s * pct) + (s * 0.10) + (a * 0.15) + (p * 0.15) + (p > 0 ? 96600 : 0);
+                });
+
+                await db.collection('reportes_historico').add({
+                    etiqueta: etiqueta.trim(),
+                    fecha_cierre: new Date().toISOString(),
+                    cantidad_items: itemsReporteCrudos.length,
+                    total_reporte: Math.round(totalBruto),
+                    comision_neta: Math.round(comisionNeta),
+                    items: itemsReporteCrudos
+                });
+
+                await db.collection('reportes_acumulados').doc('semana_actual').set({
+                    actualizado: new Date().toISOString(),
+                    items: []
+                }, { merge: true });
+
+                alert("✅ ¡Semana cerrada y archivada en el Histórico con éxito!");
+                cargarDatosMovil();
+            } catch (err) {
+                alert("❌ Error al cerrar semana: " + err.message);
+            }
+        }
+
+        async function abrirModalHistoricoSemanas() {
+            const modal = document.getElementById('modal-historico-semanas');
+            const cont = document.getElementById('contenedor-historico-lista');
+            modal.style.display = 'flex';
+            cont.innerHTML = `<div class="loading">⏳ Consultando histórico en Firebase...</div>`;
+
+            try {
+                const snap = await db.collection('reportes_historico').orderBy('fecha_cierre', 'desc').limit(20).get();
+                if (snap.empty) {
+                    cont.innerHTML = `<div class="loading" style="color:var(--text-secondary);">📭 Aún no tienes cierres semanales archivados.</div>`;
+                    return;
+                }
+
+                cont.innerHTML = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const fechaStr = d.fecha_cierre ? new Date(d.fecha_cierre).toLocaleDateString('es-CO') : '---';
+                    const div = document.createElement('div');
+                    div.className = 'hist-item';
+                    div.innerHTML = `
+                        <div>
+                            <strong style="color:var(--text-accent);">${limpiarTextoSeguro(d.etiqueta)}</strong><br>
+                            <span>📅 ${fechaStr} • ${d.cantidad_items || 0} ítems</span><br>
+                            <span style="color:#059669; font-weight:800;">Total: $ ${(d.total_reporte || 0).toLocaleString('es-CO')} | Comisión: $ ${(d.comision_neta || 0).toLocaleString('es-CO')}</span>
+                        </div>
+                        <button onclick="exportarCierreHistoricoCSV('${doc.id}')" style="background:#003380; color:#fff; border:none; padding:6px 9px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">📥 CSV</button>
+                    `;
+                    cont.appendChild(div);
+                });
+            } catch (err) {
+                cont.innerHTML = `<div class="loading" style="color:#dc2626;">❌ Error: ${err.message}</div>`;
+            }
+        }
+
+        function cerrarModalHistorico() {
+            document.getElementById('modal-historico-semanas').style.display = 'none';
+        }
+
+        async function exportarCierreHistoricoCSV(docId) {
+            try {
+                const snap = await db.collection('reportes_historico').doc(docId).get();
+                if (!snap.exists) return;
+                const d = snap.data();
+                const items = Array.isArray(d.items) ? d.items : [];
+                let csv = "\uFEFFFecha;Membresia;Titular;Referencia;Suscripcion;Adicional;Premiacion;Saldo\n";
+                items.forEach(it => {
+                    csv += `"${it.fecha || ''}";"${it.membresia || ''}";"${it.titular || ''}";"${it.referencia || ''}";${parsearNumeroMoneda(it.suscripcion)};${parsearNumeroMoneda(it.adicional)};${parsearNumeroMoneda(it.premiacion)};${parsearNumeroMoneda(it.saldo)}\n`;
+                });
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `Historico_${limpiarTextoSeguro(d.etiqueta).replace(/\s+/g, '_')}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert("❌ Error exportando histórico: " + e.message);
+            }
+        }
+
+        // --- TARJETA DIGITAL Y CATÁLOGO DE PLANES PREVISER ---
+        const PLANES_PREVISER_CATALOGO = [
+            { nombre: "Membresía Clásica", detalle: "Cobertura básica familiar + red de descuentos médicos y odontológicos." },
+            { nombre: "Membresía Bipersonal", detalle: "Ideal para 2 personas (titular + 1 beneficiario) con tarifas preferenciales." },
+            { nombre: "Membresía Premium", detalle: "Mayor cobertura en especialistas, exámenes diagnósticos y asistencias." },
+            { nombre: "Membresía VIP Gold", detalle: "Atención preferencial ampliada, especialistas y beneficios exclusivos." },
+            { nombre: "Membresía Diamante Plus", detalle: "Nuestro plan más completo con máximos topes y cobertura integral." }
+        ];
+
+        function generarTextoTarjetaDigital() {
+            return `Hola 👋, te comparto mi contacto oficial como *Ejecutivo Comercial de Previser*:\n\n👤 *Andru Fabian Trochez López*\n🏢 *Previser* (Suroccidente Colombiano)\n📱 *WhatsApp / Celular:* 318 796 8389\n📧 *Correo:* ejecutivocomercialpreviser@gmail.com\n🌐 *Web oficial:* www.previser.com.co\n\nQuedo a tu disposición para asesorarte con tu membresía o grupo familiar. 🤝💙`;
+        }
+
+        function abrirModalTarjetaCatalogo() {
+            const cont = document.getElementById('lista-planes-catalogo');
+            cont.innerHTML = '';
+            PLANES_PREVISER_CATALOGO.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'plan-card-item';
+                div.innerHTML = `
+                    <div>
+                        <strong style="font-size:12px; color:var(--text-accent);">${p.nombre}</strong>
+                        <div style="font-size:10.5px; color:var(--text-secondary);">${p.detalle}</div>
+                    </div>
+                    <button onclick="enviarPlanIndividualWpp(${i})" style="background:#16a34a; color:#fff; border:none; padding:6px 9px; border-radius:6px; font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap;">💬 Enviar</button>
+                `;
+                cont.appendChild(div);
+            });
+            document.getElementById('modal-tarjeta-catalogo').style.display = 'flex';
+        }
+
+        function cerrarModalTarjetaCatalogo() {
+            document.getElementById('modal-tarjeta-catalogo').style.display = 'none';
+        }
+
+        function copiarTextoPortapapeles(texto, msg) {
+            navigator.clipboard.writeText(texto).then(() => alert(msg)).catch(() => alert("No se pudo copiar."));
+        }
+
+        function compartirTarjetaWpp() {
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(generarTextoTarjetaDigital())}`;
+            window.open(url, '_blank');
+        }
+
+        function enviarPlanIndividualWpp(idx) {
+            const p = PLANES_PREVISER_CATALOGO[idx];
+            if (!p) return;
+            const msg = `Hola 👋, te comparto la información de nuestra *${p.nombre} de Previser*:\n\n✅ ${p.detalle}\n\nSi deseas que revisemos las personas de tu grupo familiar y te envíe la cotización exacta, dime por aquí. 🤝\n\n*Andru Trochez* - Ejecutivo Comercial Previser\n📱 318 796 8389`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function compartirCatalogoCompletoWpp() {
+            let listado = PLANES_PREVISER_CATALOGO.map(p => `🔹 *${p.nombre}:* ${p.detalle}`).join('\n');
+            const msg = `Hola 👋, te presento el *Portafolio Oficial de Membresías Previser* 💙:\n\n${listado}\n\n🌐 Más info en: www.previser.com.co\n📱 *Asesoría directa:* Andru Trochez - 318 796 8389\n\n¿Cuál de estos planes te gustaría cotizar para ti o tu familia? 🤝`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        }
 
         cargarDatosMovil();
     </script>
