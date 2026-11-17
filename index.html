@@ -553,9 +553,7 @@
         let firmaReporteNube = "";
         let itemReporteEditandoIdx = -1;
         let listaFiltradaActual = [];
-
         let contextoWppActual = null;
-        let contextoPromesaActual = null;
 
         function normalizarTexto(str) {
             return String(str || "")
@@ -599,55 +597,36 @@
             return num < 1000 ? Math.round(num * 1000) : Math.round(num);
         }
 
-        function obtenerFechaHoyISO() {
-            const hoy = new Date();
-            const y = hoy.getFullYear();
-            const m = String(hoy.getMonth() + 1).padStart(2, '0');
-            const d = String(hoy.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
-        }
+        function extraerTelefonoValido(item) {
+            if (!item || typeof item !== "object") return "";
+            const candidatos = [
+                item.celular, item.Celular, item.CELULAR,
+                item.telefono, item.Telefono, item.TELEFONO,
+                item.movil, item.Movil, item.whatsapp, item.WhatsApp,
+                item.cel, item.tel, item.numero_celular, item.contacto,
+                item._cruzadoAfiliado?.celular, item._cruzadoAfiliado?.telefono
+            ];
 
-        function evaluarEstadoPromesaYMora(item) {
-            const hoyISO = obtenerFechaHoyISO();
-            const fechaPromesa = limpiarTextoSeguro(item.fecha_promesa || item.promesa_pago);
-            const notaPromesa = limpiarTextoSeguro(item.nota_promesa);
-            const fin = extraerDatosFinancieros(item);
-            const saldoNum = parsearNumeroMoneda(fin.rawSaldo);
-            const tieneSaldo = saldoNum > 0;
-
-            let tienePromesa = Boolean(fechaPromesa && /^\d{4}-\d{2}-\d{2}$/.test(fechaPromesa));
-            let esPromesaHoy = tienePromesa && fechaPromesa === hoyISO;
-            let esPromesaVencida = tienePromesa && fechaPromesa < hoyISO;
-            let esPromesaFutura = tienePromesa && fechaPromesa > hoyISO;
-
-            let diasAtraso = 0;
-            const diaPagoNum = parseInt(limpiarTextoSeguro(item.dia_pago), 10);
-            const diaHoyNum = new Date().getDate();
-            if (!isNaN(diaPagoNum) && diaPagoNum >= 1 && diaPagoNum <= 31 && diaHoyNum > diaPagoNum) {
-                diasAtraso = diaHoyNum - diaPagoNum;
+            for (let key of Object.keys(item)) {
+                let k = key.toLowerCase();
+                if (k.includes("cel") || k.includes("tel") || k.includes("movil") || k.includes("what")) {
+                    candidatos.push(item[key]);
+                }
             }
 
-            let esMoraCritica = tieneSaldo && (esPromesaVencida || diasAtraso >= 5);
-
-            return {
-                tienePromesa,
-                fechaPromesa,
-                notaPromesa,
-                esPromesaHoy,
-                esPromesaVencida,
-                esPromesaFutura,
-                tieneSaldo,
-                saldoNum,
-                diasAtraso,
-                esMoraCritica
-            };
-        }
-
-        function formatearFechaBonita(fechaISO) {
-            if (!fechaISO || !/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) return fechaISO;
-            const [y, m, d] = fechaISO.split('-').map(Number);
-            const fechaObj = new Date(y, m - 1, d);
-            return fechaObj.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
+            for (let raw of candidatos) {
+                let txt = limpiarTextoSeguro(raw);
+                if (!txt) continue;
+                let primerBloque = txt.split(/[\/,;|-]/)[0];
+                let soloDigitos = primerBloque.replace(/\D/g, '');
+                if (soloDigitos.startsWith('57') && soloDigitos.length >= 12) {
+                    soloDigitos = soloDigitos.slice(2);
+                }
+                if (soloDigitos.length >= 7) {
+                    return soloDigitos.slice(0, 10);
+                }
+            }
+            return "";
         }
 
         function convertirImagenAPngBase64(fuenteImagen) {
@@ -811,8 +790,6 @@
             subFiltroCobros = subFiltro;
             document.querySelectorAll('#subnav-cobros .sub-btn').forEach(btn => btn.classList.remove('active'));
             if (subFiltro === 'DIA_ACTUAL') document.getElementById('btn-sub-dia').classList.add('active');
-            if (subFiltro === 'PROMESAS') document.getElementById('btn-sub-promesas').classList.add('active');
-            if (subFiltro === 'MORA_CRITICA') document.getElementById('btn-sub-mora').classList.add('active');
             if (subFiltro === 'POSTERGADOS') document.getElementById('btn-sub-postergados').classList.add('active');
             if (subFiltro === 'TODOS_PENDIENTES') document.getElementById('btn-sub-todos').classList.add('active');
             cargarDatosMovil();
@@ -1002,17 +979,6 @@
 
                             if (incluir) registrosGlobales.push(d);
                         }
-                        } else if (esNumeroValido || evalPM.esPromesaHoy) {
-                            let esDelDia = (diaCobroNum === diaActualNum) || evalPM.esPromesaHoy;
-                            let esPostergado = estadoCobro.includes("postergado") || estadoCobro.includes("pendiente") || (!isNaN(diaCobroNum) && diaCobroNum < diaActualNum);
-
-                            let incluir = false;
-                            if (subFiltroCobros === 'DIA_ACTUAL' && esDelDia && !estadoCobro.includes("pagado")) incluir = true;
-                            else if (subFiltroCobros === 'POSTERGADOS' && esPostergado && !esDelDia && !estadoCobro.includes("pagado")) incluir = true;
-                            else if (subFiltroCobros === 'TODOS_PENDIENTES' && !estadoCobro.includes("pagado")) incluir = true;
-
-                            if (incluir) registrosGlobales.push(d);
-                        }
 
                     } else if (vistaActual === 'afiliados') {
                         registrosGlobales.push(d);
@@ -1063,7 +1029,6 @@
             renderizarTarjetas(listaFiltradaActual);
         }
 
-        // --- PLANTILLAS DINÁMICAS DE WHATSAPP (CON LOS 12 MEDIOS DE PAGO OFICIALES DE PREVISER) ---
         function generarTextoPlantillaWpp(tipo, ctx) {
             const hora = new Date().getHours();
             let saludo = "buen día";
@@ -1080,17 +1045,16 @@
             const diaHoy = new Date().getDate();
             const tieneSaldo = ctx.saldoFmt && ctx.saldoFmt !== "$ 0" && ctx.saldoFmt !== "---";
             const textoSaldo = tieneSaldo ? ` por valor de *${ctx.saldoFmt}*` : "";
-            const notaAcuerdo = ctx.notaPromesa ? ` (*"${ctx.notaPromesa}"*)` : "";
 
             switch (tipo) {
                 case 'cobro_amable':
                     return `Hola ${nombre} 👋, espero que estés teniendo ${deseo}.\n\nPaso por aquí para recordarte amablemente el pago de tu membresía Previser del día ${ctx.diaPago || diaHoy}${textoSaldo}.\n\nSi deseas realizarlo por transferencia o convenio y necesitas que te envíe los medios de pago o te oriente, me avisas por aquí. ¡Quedo atento! 🙌`;
 
                 case 'promesa_hoy':
-                    return `Hola ${nombre} 👋, muy ${saludo}. ¿Cómo vas?\n\nTal como habíamos acordado${notaAcuerdo}, paso a recordarte hoy el pago pendiente de tu membresía Previser${textoSaldo}.\n\nConfírmame por favor si lo realizas hoy para dejarte el soporte aplicado de una vez. ¡Gracias! 🤝`;
+                    return `Hola ${nombre} 👋, muy ${saludo}. ¿Cómo vas?\n\nTal como habíamos acordado, paso a recordarte hoy el pago pendiente de tu membresía Previser${textoSaldo}.\n\nConfírmame por favor si lo realizas hoy para dejarte el soporte aplicado de una vez. ¡Gracias! 🤝`;
 
                 case 'mora_critica':
-                    return `Hola ${nombre}, ${saludo}. 👋\n\nTe escribo de manera preventiva respecto a tu membresía Previser, ya que registramos un saldo pendiente${textoSaldo} con días de atraso.\n\nQueremos evitar que se presente alguna novedad o suspensión en la cobertura y descuentos para ti y tu grupo familiar. 💙 Cuéntame por favor para qué día exacto lo programamos y así ayudarte a mantenerla al día. 🤝`;
+                    return `Hola ${nombre}, ${saludo}. 👋\n\nTe escribo de manera preventiva respecto a tu membresía Previser, ya que registramos un saldo pendiente${textoSaldo}.\n\nQueremos evitar que se presente alguna novedad o suspensión en la cobertura y descuentos para ti y tu grupo familiar. 💙 Cuéntame por favor para qué día exacto lo programamos y así ayudarte a mantenerla al día. 🤝`;
 
                 case 'renovacion':
                     return `Hola, *${nombre}*. 😊 ¡Espero que te encuentres muy bien! Te deseo ${deseo}.\n\nEstaba revisando las afiliaciones próximas a renovar y quise escribirte con tiempo para ayudarte a continuar disfrutando de todos los beneficios, descuentos y auxilios de tu membresía Previser. 💙\n\nCuéntame: ¿tu grupo familiar continúa igual o deseas incluir algún cambio este año? Si quieres lo gestionamos por aquí mismo. 🤝`;
@@ -1101,39 +1065,6 @@
                 default:
                     return `Hola ${nombre} 👋, espero estés muy bien.`;
             }
-        }
-
-        function extraerTelefonoValido(item) {
-            if (!item || typeof item !== "object") return "";
-            const candidatos = [
-                item.celular, item.Celular, item.CELULAR,
-                item.telefono, item.Telefono, item.TELEFONO,
-                item.movil, item.Movil, item.whatsapp, item.WhatsApp,
-                item.cel, item.tel, item.numero_celular, item.contacto,
-                item._cruzadoAfiliado?.celular, item._cruzadoAfiliado?.telefono
-            ];
-
-            for (let key of Object.keys(item)) {
-                let k = key.toLowerCase();
-                if (k.includes("cel") || k.includes("tel") || k.includes("movil") || k.includes("what")) {
-                    candidatos.push(item[key]);
-                }
-            }
-
-            for (let raw of candidatos) {
-                let txt = limpiarTextoSeguro(raw);
-                if (!txt) continue;
-                // Si hay varios números separados por guion, slash o coma, tomamos el primero
-                let primerBloque = txt.split(/[\/,;|-]/)[0];
-                let soloDigitos = primerBloque.replace(/\D/g, '');
-                if (soloDigitos.startsWith('57') && soloDigitos.length >= 12) {
-                    soloDigitos = soloDigitos.slice(2);
-                }
-                if (soloDigitos.length >= 7) {
-                    return soloDigitos.slice(0, 10);
-                }
-            }
-            return "";
         }
 
         function abrirModalPlantillasWpp(idDoc) {
@@ -1163,8 +1094,7 @@
                 primerNombre,
                 telefono: celularLimpioReal,
                 saldoFmt,
-                diaPago: limpiarTextoSeguro(item.dia_pago),
-                notaPromesa: ""
+                diaPago: limpiarTextoSeguro(item.dia_pago)
             };
 
             document.getElementById('wpp-modal-cliente').innerText = nombreCompleto;
@@ -1204,7 +1134,6 @@
         function enviarMensajeWppConfirmado() {
             if (!contextoWppActual) return;
             const texto = document.getElementById('wpp-mensaje-texto').value.trim();
-            // Si tiene 10 dígitos (celular Colombia) antepone 57; si es fijo de 7 dígitos lo deja directo
             const prefijo = contextoWppActual.telefono.length === 10 ? '57' : '';
             const url = `https://api.whatsapp.com/send?phone=${prefijo}${contextoWppActual.telefono}&text=${encodeURIComponent(texto)}`;
             window.open(url, '_blank');
@@ -1216,120 +1145,7 @@
             contextoWppActual = null;
         }
 
-        function abrirModalPromesaPago(idDoc) {
-            const item = registrosGlobales.find(r => r.idDoc === idDoc);
-            if (!item) return;
-
-            const nombre = (limpiarTextoSeguro(item.titular || item.nombre || item.nombreCompleto || item.cliente) || "Cliente").toUpperCase();
-            contextoPromesaActual = {
-                idDoc,
-                coleccion: item.coleccionOrigen,
-                nombre
-            };
-
-            document.getElementById('promesa-modal-nombre').innerText = nombre;
-            document.getElementById('promesa-fecha-input').value = limpiarTextoSeguro(item.fecha_promesa || item.promesa_pago) || obtenerFechaHoyISO();
-            document.getElementById('promesa-nota-input').value = limpiarTextoSeguro(item.nota_promesa) || "";
-            document.getElementById('modal-promesa-pago').style.display = 'flex';
-        }
-
-        function cerrarModalPromesa() {
-            document.getElementById('modal-promesa-pago').style.display = 'none';
-            contextoPromesaActual = null;
-        }
-
-        function setFechaRapidaPromesa(opcion) {
-            const hoy = new Date();
-            let destino = new Date(hoy);
-            let textoAuto = "";
-
-            if (opcion === 'manana') {
-                destino.setDate(hoy.getDate() + 1);
-                textoAuto = "Recuérdame mañana";
-            } else if (opcion === 'viernes') {
-                let diff = (5 - hoy.getDay() + 7) % 7;
-                if (diff === 0) diff = 7;
-                destino.setDate(hoy.getDate() + diff);
-                textoAuto = "Recuérdame el viernes";
-            } else if (opcion === 'lunes') {
-                let diff = (1 - hoy.getDay() + 7) % 7;
-                if (diff === 0) diff = 7;
-                destino.setDate(hoy.getDate() + diff);
-                textoAuto = "Recuérdame el lunes";
-            } else if (opcion === 'quincena') {
-                const dia = hoy.getDate();
-                if (dia < 15) {
-                    destino.setDate(15);
-                    textoAuto = "Recuérdame en la quincena del 15";
-                } else {
-                    destino = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-                    textoAuto = "Recuérdame a fin de mes (30)";
-                }
-            }
-
-            const y = destino.getFullYear();
-            const m = String(destino.getMonth() + 1).padStart(2, '0');
-            const d = String(destino.getDate()).padStart(2, '0');
-            document.getElementById('promesa-fecha-input').value = `${y}-${m}-${d}`;
-
-            const notaEl = document.getElementById('promesa-nota-input');
-            if (!notaEl.value.trim()) {
-                notaEl.value = textoAuto;
-            }
-        }
-
-        async function guardarPromesaPago() {
-            if (!contextoPromesaActual) return;
-            const fecha = document.getElementById('promesa-fecha-input').value.trim();
-            const nota = document.getElementById('promesa-nota-input').value.trim();
-
-            if (!fecha) {
-                alert("⚠️ Selecciona una fecha para el recordatorio.");
-                return;
-            }
-
-            try {
-                await db.collection(contextoPromesaActual.coleccion).doc(contextoPromesaActual.idDoc).update({
-                    fecha_promesa: fecha,
-                    nota_promesa: nota || "Recordar pago en esta fecha"
-                });
-
-                const reg = registrosGlobales.find(r => r.idDoc === contextoPromesaActual.idDoc);
-                if (reg) {
-                    reg.fecha_promesa = fecha;
-                    reg.nota_promesa = nota || "Recordar pago en esta fecha";
-                }
-
-                cerrarModalPromesa();
-                filtrarLista();
-                alert(`✅ Promesa guardada para el ${formatearFechaBonita(fecha)}.`);
-            } catch (err) {
-                alert("❌ Error al guardar la promesa: " + err.message);
-            }
-        }
-
-        async function limpiarPromesaPago() {
-            if (!contextoPromesaActual) return;
-            try {
-                await db.collection(contextoPromesaActual.coleccion).doc(contextoPromesaActual.idDoc).update({
-                    fecha_promesa: "",
-                    nota_promesa: ""
-                });
-
-                const reg = registrosGlobales.find(r => r.idDoc === contextoPromesaActual.idDoc);
-                if (reg) {
-                    reg.fecha_promesa = "";
-                    reg.nota_promesa = "";
-                }
-
-                cerrarModalPromesa();
-                filtrarLista();
-                alert("🗑️ Promesa de pago eliminada.");
-            } catch (err) {
-                alert("❌ Error al quitar la promesa: " + err.message);
-            }
-        }
-function agendarTareaRecordatorio(idDoc) {
+        function agendarTareaRecordatorio(idDoc) {
             const item = registrosGlobales.find(r => r.idDoc === idDoc);
             if (!item) return;
 
@@ -1345,9 +1161,9 @@ function agendarTareaRecordatorio(idDoc) {
                 navigator.clipboard.writeText(textoTarea).catch(() => {});
             }
 
-            // Abre Google Tasks (Tareas) en el celular/navegador
             window.open('https://tasks.google.com/embed/?origin=https://mail.google.com&fullWidth=1', '_blank');
         }
+
         function renderizarTarjetas(lista) {
             listaFiltradaActual = lista;
             const contenedor = document.getElementById('lista-tarjetas');
@@ -1451,8 +1267,6 @@ function agendarTareaRecordatorio(idDoc) {
                     let saldoFmt = formatearMonedaCOP(fin.rawSaldo);
                     let totalFmt = formatearMonedaCOP(fin.rawTotal);
 
-                    let evalPM = evaluarEstadoPromesaYMora(item);
-
                     let badgeClass = "badge-yellow";
                     let badgeText = "EN GESTIÓN";
                     let tarjetaEstiloClase = "";
@@ -1468,14 +1282,6 @@ function agendarTareaRecordatorio(idDoc) {
                         tarjetaEstiloClase = "estado-no-renueva";
                         badgeClass = "badge-red";
                         badgeText = "❌ NO RENUEVA";
-                    } else if (evalPM.esPromesaHoy) {
-                        tarjetaEstiloClase = "estado-promesa-hoy";
-                        badgeClass = "badge-purple";
-                        badgeText = `🔔 RECORDAR HOY`;
-                    } else if (evalPM.esMoraCritica) {
-                        tarjetaEstiloClase = "estado-mora-critica";
-                        badgeClass = "badge-red";
-                        badgeText = evalPM.esPromesaVencida ? `🚨 PROMESA VENCIDA` : `🚨 MORA CRÍTICA (${evalPM.diasAtraso}d)`;
                     } else if (vistaActual === 'cobros') {
                         let diaNum = parseInt(diaPago, 10);
                         let esDelDia = !isNaN(diaNum) && diaNum === diaActualNum;
@@ -1495,12 +1301,7 @@ function agendarTareaRecordatorio(idDoc) {
                         badgeText = fechaVenta ? `🗓️ COMPRA: ${fechaVenta.toUpperCase()}` : `⏳ RENOVACIÓN`;
                     }
 
-                    let celularLimpioReal = celular.split('-')[0].replace(/\D/g, '');
-                    if (celularLimpioReal.length >= 12 && celularLimpioReal.startsWith('57')) {
-                        celularLimpioReal = celularLimpioReal.substring(2, 12);
-                    } else {
-                        celularLimpioReal = celularLimpioReal.substring(0, 10);
-                    }
+                    let celularLimpioReal = extraerTelefonoValido(item);
 
                     let destinoBusqueda = "";
                     if (direccion) {
@@ -1512,26 +1313,9 @@ function agendarTareaRecordatorio(idDoc) {
                     }
                     let urlMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinoBusqueda)}`;
 
-                    let celularLimpioReal = extraerTelefonoValido(item);
-
                     let valorSelectAccion = "lista";
                     if (esRenovado) valorSelectAccion = "renovado";
                     else if (esNoRenueva) valorSelectAccion = "no_renueva";
-
-                    let htmlPromesa = "";
-                    if (evalPM.tienePromesa) {
-                        let etiquetaProm = evalPM.esPromesaHoy
-                            ? `🔔 RECORDAR HOY (${formatearFechaBonita(evalPM.fechaPromesa)})`
-                            : evalPM.esPromesaVencida
-                                ? `⚠️ PROMESA VENCIDA (${formatearFechaBonita(evalPM.fechaPromesa)})`
-                                : `🤝 Promesa: ${formatearFechaBonita(evalPM.fechaPromesa)}`;
-                        htmlPromesa = `
-                            <div class="promesa-banner ${evalPM.esPromesaVencida ? 'vencida' : ''}">
-                                <span>${etiquetaProm}${evalPM.notaPromesa ? ` • "${evalPM.notaPromesa}"` : ''}</span>
-                                <button onclick="abrirModalPromesaPago('${item.idDoc}')" style="background:none; border:none; cursor:pointer; font-size:12px;">✏️</button>
-                            </div>
-                        `;
-                    }
 
                     let card = document.createElement('div');
                     card.className = `card ${tarjetaEstiloClase}`;
@@ -1545,9 +1329,8 @@ function agendarTareaRecordatorio(idDoc) {
                             <span class="badge ${badgeClass}">${badgeText}</span>
                         </div>
                         <div class="card-body">
-                            ${htmlPromesa}
                             <div>🪪 Cédula: <strong>${cedula}</strong></div>
-                            <div>📞 <strong>${celular || 'Sin celular registrado'}</strong></div>
+                            <div>📞 <strong>${celular || celularLimpioReal || 'Sin celular registrado'}</strong></div>
                             <div>🏢 ${empresa} | 📍 ${ciudad}</div>
                             <div style="display:flex; align-items:center; gap:5px;">
                                 <span>🏠 Dir: <strong id="dir-text-${item.idDoc}" style="${direccion ? '' : 'color:#94a3b8; font-weight:normal;'}">${direccion || 'Sin dirección (Toca ✏️)'}</strong></span>
@@ -1716,11 +1499,9 @@ function agendarTareaRecordatorio(idDoc) {
                 try {
                     doc.addImage(firmaPngLista, "PNG", 230, 12, 38, 15);
                 } catch (imgErr) {
-                    alert("⚠️ Se encontró la firma pero jsPDF dio error: " + imgErr.message);
                     doc.line(230, 25, 268, 25);
                 }
             } else {
-                alert("⚠️ No se encontró ninguna firma guardada en Firebase ni en el teléfono. Sube una con el botón '✒️ Firma'.");
                 doc.line(230, 25, 268, 25);
             }
 
@@ -2175,12 +1956,10 @@ function agendarTareaRecordatorio(idDoc) {
 
         async function editarNotaEspecial(idDoc, coleccion, nombre, notaActual) {
             let nuevaNota = prompt(`📝 Escribe la nota o estado para:\n👤 ${nombre}`, notaActual);
-            
             if (nuevaNota === null) return;
 
             try {
                 let campoNota = (coleccion === 'afiliados') ? 'nota_cobro' : 'nota_seguimiento';
-                
                 let updateObj = {};
                 updateObj[campoNota] = nuevaNota.trim();
 
@@ -2225,22 +2004,6 @@ function agendarTareaRecordatorio(idDoc) {
 
                 if (filtroMesAdicional) {
                     if (!coincideMes(data, filtroMesAdicional)) return false;
-                }
-
-                if (campo === "promesas") {
-                    let evalPM = evaluarEstadoPromesaYMora(data);
-                    if (!evalPM.tienePromesa) return false;
-                    if (!valorNorm) return true;
-                    let textoCompleto = Object.values(data).filter(v => typeof v === 'string' || typeof v === 'number').join(' ');
-                    return normalizarTexto(textoCompleto).includes(valorNorm);
-                }
-
-                if (campo === "mora_critica") {
-                    let evalPM = evaluarEstadoPromesaYMora(data);
-                    if (!evalPM.esMoraCritica) return false;
-                    if (!valorNorm) return true;
-                    let textoCompleto = Object.values(data).filter(v => typeof v === 'string' || typeof v === 'number').join(' ');
-                    return normalizarTexto(textoCompleto).includes(valorNorm);
                 }
 
                 if (campo === "con_saldo") {
@@ -2350,13 +2113,7 @@ function agendarTareaRecordatorio(idDoc) {
             ];
             let mesDetectado = LISTA_MESES.find(m => new RegExp(`\\b${m}\\b`).test(cmd));
 
-            if (cmd.includes("promesa") || cmd.includes("recordar hoy") || cmd.includes("recuerdame")) {
-                targetVista = 'cobros';
-                subFiltroCobros = 'PROMESAS';
-            } else if (cmd.includes("mora critica") || cmd.includes("en mora") || cmd.includes("vencida") || cmd.includes("atrasado")) {
-                targetVista = 'cobros';
-                subFiltroCobros = 'MORA_CRITICA';
-            } else if (cmd.includes("reporte oficial") || cmd.includes("reporte de pago") || cmd.includes("soporte de reporte") || cmd.includes("acumulado")) {
+            if (cmd.includes("reporte oficial") || cmd.includes("reporte de pago") || cmd.includes("soporte de reporte") || cmd.includes("acumulado")) {
                 targetVista = 'reporte';
             } else if (cmd.includes("prospecto")) {
                 targetVista = 'prospectos';
@@ -2456,8 +2213,6 @@ function agendarTareaRecordatorio(idDoc) {
 
             document.querySelectorAll('#subnav-cobros .sub-btn').forEach(btn => btn.classList.remove('active'));
             if (subFiltroCobros === 'DIA_ACTUAL') document.getElementById('btn-sub-dia').classList.add('active');
-            if (subFiltroCobros === 'PROMESAS') document.getElementById('btn-sub-promesas').classList.add('active');
-            if (subFiltroCobros === 'MORA_CRITICA') document.getElementById('btn-sub-mora').classList.add('active');
             if (subFiltroCobros === 'POSTERGADOS') document.getElementById('btn-sub-postergados').classList.add('active');
             if (subFiltroCobros === 'TODOS_PENDIENTES') document.getElementById('btn-sub-todos').classList.add('active');
 
@@ -2527,76 +2282,6 @@ function agendarTareaRecordatorio(idDoc) {
                 alert("❌ Error al guardar: " + err.message);
             }
         }
-
-        window.depurarDuplicadosCRM = async function() {
-            if (vistaActual === 'reporte') {
-                alert("En Reporte Oficial los ítems se gestionan individualmente desde cada tarjeta.");
-                return;
-            }
-
-            let coleccion = 'afiliados';
-            if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
-            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
-
-            const confirmarInicio = confirm(`🔍 Se analizará toda la base de datos de "${coleccion.toUpperCase()}" buscando cédulas o nombres repetidos.\n\n¿Deseas iniciar el escaneo?`);
-            if (!confirmarInicio) return;
-
-            try {
-                const snapshot = await db.collection(coleccion).get();
-                let unicos = {};
-                let idsParaBorrar = [];
-
-                snapshot.forEach(doc => {
-                    let d = doc.data();
-                    let cedula = limpiarTextoSeguro(d.cedula || d.cedula_cliente || d.cedula_prospecto).replace(/^0+/, '');
-                    let nombre = limpiarTextoSeguro(d.titular || d.nombre || d.nombreCompleto || d.cliente).toUpperCase();
-                    
-                    let llaveUnica = cedula.length > 4 ? `CED_${cedula}` : (nombre ? `NOM_${nombre}` : null);
-
-                    if (llaveUnica) {
-                        if (!unicos[llaveUnica]) {
-                            unicos[llaveUnica] = { id: doc.id, data: d };
-                        } else {
-                            let prev = unicos[llaveUnica];
-                            let nuevoTieneDatos = (d.nota_seguimiento || d.nota_cobro || (d.estado && d.estado !== "En lista"));
-                            let prevTieneDatos = (prev.data.nota_seguimiento || prev.data.nota_cobro || (prev.data.estado && prev.data.estado !== "En lista"));
-
-                            if (nuevoTieneDatos && !prevTieneDatos) {
-                                idsParaBorrar.push(prev.id);
-                                unicos[llaveUnica] = { id: doc.id, data: d };
-                            } else {
-                                idsParaBorrar.push(doc.id);
-                            }
-                        }
-                    }
-                });
-
-                if (idsParaBorrar.length === 0) {
-                    alert("✨ ¡Tu base de datos está limpia! No se encontraron registros duplicados.");
-                    return;
-                }
-
-                const confirmarBorrado = confirm(`⚠️ ESCANEO COMPLETADO:\n\nSe encontraron ${idsParaBorrar.length} registros duplicados en "${coleccion.toUpperCase()}".\n\n¿Deseas eliminarlos definitivamente ahora mismo?`);
-
-                if (confirmarBorrado) {
-                    const batch = db.batch();
-                    const lote = idsParaBorrar.slice(0, 450);
-                    
-                    lote.forEach(id => {
-                        const docRef = db.collection(coleccion).doc(id);
-                        batch.delete(docRef);
-                    });
-
-                    await batch.commit();
-                    alert(`🎉 ¡Limpieza exitosa! Se eliminaron ${lote.length} contactos duplicados.`);
-                    cargarDatosMovil();
-                }
-
-            } catch (error) {
-                console.error("Error depurando duplicados:", error);
-                alert("❌ Ocurrió un error durante la limpieza: " + error.message);
-            }
-        };
 
         window.eliminarClienteCRM = async function(idDocumento, coleccion, botonPulsado) {
             const confirmacion = confirm("⚠️ ¿Estás seguro que deseas eliminar este cliente? Esta acción no se puede deshacer.");
