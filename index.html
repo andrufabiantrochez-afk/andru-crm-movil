@@ -303,9 +303,16 @@
     <!-- SUBMENÚ PARA ESTADOS DE RENOVACIONES -->
     <div class="sub-nav" id="subnav-renovaciones" style="display: none;">
         <button class="sub-btn active" id="btn-ren-todos" onclick="cambiarSubFiltroRenovaciones('TODOS')">📋 Todos</button>
+        <button class="sub-btn" id="btn-ren-semana" onclick="cambiarSubFiltroRenovaciones('ESTA_SEMANA')">📆 Esta Semana (Sáb-Sáb)</button>
         <button class="sub-btn" id="btn-ren-lista" onclick="cambiarSubFiltroRenovaciones('LISTA')">⏳ En Gestión</button>
         <button class="sub-btn" id="btn-ren-renovado" onclick="cambiarSubFiltroRenovaciones('RENOVADO')">✅ Renovados</button>
         <button class="sub-btn" id="btn-ren-norenueva" onclick="cambiarSubFiltroRenovaciones('NO_RENUEVA')">❌ No Renueva</button>
+    </div>
+
+    <!-- BANNER INFORMATIVO RANGO SÁBADO A SÁBADO -->
+    <div id="banner-rango-renovaciones" style="display:none; background:var(--btn-orden-bg); color:var(--text-accent); border-bottom:1px solid var(--btn-orden-border); padding:7px 15px; font-size:11.5px; font-weight:800; justify-content:space-between; align-items:center;">
+        <span id="txt-rango-sabado">📆 Semana: ---</span>
+        <span style="font-size:10px; background:#f59e0b; color:#0f172a; padding:2px 7px; border-radius:10px;">Sáb ➔ Sáb</span>
     </div>
 
     <div class="container" id="lista-tarjetas">
@@ -487,6 +494,10 @@
                 <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalComandos()">✕</span>
             </div>
             <div class="cmd-list">
+                <div class="cmd-item">
+                    <strong>📆 Renovaciones de Esta Semana (Sábado a Sábado):</strong>
+                    "Renovaciones de esta semana" / "Próximas a renovar"
+                </div>
                 <div class="cmd-item">
                     <strong>📄 Reporte Oficial de Pagos:</strong>
                     "Abrir reporte oficial" / "Reporte de pagos"
@@ -796,6 +807,99 @@
             return "";
         }
 
+        // --- CÁLCULO AUTOMÁTICO DE SEMANA SÁBADO A SÁBADO PARA RENOVACIONES ---
+        function obtenerRangoSemanaSabadoASabado() {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const diaSemana = hoy.getDay(); // 0=Dom ... 6=Sáb
+            const diasDesdeSabado = (diaSemana + 1) % 7;
+
+            const sabadoInicio = new Date(hoy);
+            sabadoInicio.setDate(hoy.getDate() - diasDesdeSabado);
+            sabadoInicio.setHours(0, 0, 0, 0);
+
+            const sabadoFin = new Date(sabadoInicio);
+            sabadoFin.setDate(sabadoInicio.getDate() + 7);
+            sabadoFin.setHours(23, 59, 59, 999);
+
+            return { sabadoInicio, sabadoFin };
+        }
+
+        function estaEnSemanaSabadoASabado(item) {
+            const { sabadoInicio, sabadoFin } = obtenerRangoSemanaSabadoASabado();
+            const MESES_MAP = {
+                'ene': 0, 'enero': 0, 'feb': 1, 'febrero': 1, 'mar': 2, 'marzo': 2,
+                'abr': 3, 'abril': 3, 'may': 4, 'mayo': 4, 'jun': 5, 'junio': 5,
+                'jul': 6, 'julio': 6, 'ago': 7, 'agosto': 7, 'sep': 8, 'sept': 8, 'septiembre': 8,
+                'oct': 9, 'octubre': 9, 'nov': 10, 'noviembre': 10, 'dic': 11, 'diciembre': 11
+            };
+
+            const rawFecha = limpiarTextoSeguro(
+                item.fecha_vencimiento || item.fecha_renovacion || item.fecha_venta || item.fec_vinc || item.fecha_compra || item.fecha || ""
+            );
+
+            let dia = null;
+            let mes = null;
+
+            let mIso = rawFecha.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+            if (mIso) {
+                mes = parseInt(mIso[2], 10) - 1;
+                dia = parseInt(mIso[3], 10);
+            }
+
+            if (dia === null) {
+                let mTexto = normalizarTexto(rawFecha).match(/\b(\d{1,2})[\s\/\-]+([a-z]{3,10})\b/);
+                if (mTexto && MESES_MAP[mTexto[2]] !== undefined) {
+                    dia = parseInt(mTexto[1], 10);
+                    mes = MESES_MAP[mTexto[2]];
+                }
+            }
+
+            if (dia === null) {
+                let mNum = rawFecha.match(/\b(\d{1,2})[-\/](\d{1,2})(?:[-\/]\d{2,4})?\b/);
+                if (mNum) {
+                    dia = parseInt(mNum[1], 10);
+                    mes = parseInt(mNum[2], 10) - 1;
+                }
+            }
+
+            if (dia === null && item.dia_pago) {
+                let dSolo = parseInt(limpiarTextoSeguro(item.dia_pago), 10);
+                if (!isNaN(dSolo) && dSolo >= 1 && dSolo <= 31) {
+                    dia = dSolo;
+                    mes = sabadoInicio.getMonth();
+                }
+            }
+
+            if (dia === null || mes === null || isNaN(dia) || isNaN(mes)) return false;
+
+            const candidatosAnio = [sabadoInicio.getFullYear(), sabadoFin.getFullYear()];
+            for (const anio of candidatosAnio) {
+                const fechaEvaluar = new Date(anio, mes, dia, 12, 0, 0);
+                if (fechaEvaluar >= sabadoInicio && fechaEvaluar <= sabadoFin) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function actualizarBannerRangoRenovaciones() {
+            const banner = document.getElementById('banner-rango-renovaciones');
+            const txt = document.getElementById('txt-rango-sabado');
+            if (!banner || !txt) return;
+
+            if (vistaActual === 'renovaciones' && subFiltroRenovaciones === 'ESTA_SEMANA') {
+                const { sabadoInicio, sabadoFin } = obtenerRangoSemanaSabadoASabado();
+                const fmtOpts = { weekday: 'short', day: 'numeric', month: 'short' };
+                const iniStr = sabadoInicio.toLocaleDateString('es-CO', fmtOpts);
+                const finStr = sabadoFin.toLocaleDateString('es-CO', fmtOpts);
+                txt.innerText = `📆 Vencimientos: ${iniStr} ➔ ${finStr}`;
+                banner.style.display = 'flex';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
         function limpiarFiltrosCompletos() {
             document.getElementById('input-buscar').value = '';
             document.getElementById('select-criterio').value = 'todo';
@@ -806,6 +910,7 @@
             document.querySelectorAll('#subnav-renovaciones .sub-btn').forEach(btn => btn.classList.remove('active'));
             let btnTodos = document.getElementById('btn-ren-todos');
             if (btnTodos) btnTodos.classList.add('active');
+            actualizarBannerRangoRenovaciones();
 
             filtrarLista();
         }
@@ -826,6 +931,7 @@
                 document.getElementById('select-criterio').value = 'todo';
             }
 
+            actualizarBannerRangoRenovaciones();
             cargarDatosMovil();
         }
 
@@ -842,9 +948,11 @@
             subFiltroRenovaciones = estadoFiltro;
             document.querySelectorAll('#subnav-renovaciones .sub-btn').forEach(btn => btn.classList.remove('active'));
             if (estadoFiltro === 'TODOS') document.getElementById('btn-ren-todos').classList.add('active');
+            if (estadoFiltro === 'ESTA_SEMANA') document.getElementById('btn-ren-semana').classList.add('active');
             if (estadoFiltro === 'LISTA') document.getElementById('btn-ren-lista').classList.add('active');
             if (estadoFiltro === 'RENOVADO') document.getElementById('btn-ren-renovado').classList.add('active');
             if (estadoFiltro === 'NO_RENUEVA') document.getElementById('btn-ren-norenueva').classList.add('active');
+            actualizarBannerRangoRenovaciones();
             filtrarLista();
         }
 
@@ -2077,6 +2185,7 @@
 
             let filtrados = registrosGlobales.filter(data => {
                 if (vistaActual === 'renovaciones') {
+                    if (subFiltroRenovaciones === 'ESTA_SEMANA' && (!estaEnSemanaSabadoASabado(data) || data.yaRenovoComprado)) return false;
                     if (subFiltroRenovaciones === 'RENOVADO' && !data.yaRenovoComprado) return false;
                     if (subFiltroRenovaciones === 'NO_RENUEVA' && (!data.esNoRenuevaFlag || data.yaRenovoComprado)) return false;
                     if (subFiltroRenovaciones === 'LISTA' && (data.yaRenovoComprado || data.esNoRenuevaFlag)) return false;
@@ -2210,7 +2319,10 @@
                 targetVista = 'afiliados';
             }
 
-            if (cmd.includes("no se han renovado") || cmd.includes("no renovado") || cmd.includes("no renueva") || cmd.includes("no renuevan")) {
+            if (cmd.includes("esta semana") || cmd.includes("proxima semana") || cmd.includes("proximas a renovar") || cmd.includes("proximo sabado")) {
+                targetVista = 'renovaciones';
+                targetSubRenovacion = 'ESTA_SEMANA';
+            } else if (cmd.includes("no se han renovado") || cmd.includes("no renovado") || cmd.includes("no renueva") || cmd.includes("no renuevan")) {
                 targetVista = 'renovaciones';
                 targetSubRenovacion = 'NO_RENUEVA';
             } else if (cmd.includes("pendiente por renovar") || cmd.includes("pendientes por renovar") || cmd.includes("en gestion") || cmd.includes("sin renovar") || cmd.includes("faltan por renovar")) {
@@ -2298,6 +2410,7 @@
 
             document.querySelectorAll('#subnav-renovaciones .sub-btn').forEach(btn => btn.classList.remove('active'));
             if (targetSubRenovacion === 'TODOS') document.getElementById('btn-ren-todos').classList.add('active');
+            if (targetSubRenovacion === 'ESTA_SEMANA') document.getElementById('btn-ren-semana').classList.add('active');
             if (targetSubRenovacion === 'LISTA') document.getElementById('btn-ren-lista').classList.add('active');
             if (targetSubRenovacion === 'RENOVADO') document.getElementById('btn-ren-renovado').classList.add('active');
             if (targetSubRenovacion === 'NO_RENUEVA') document.getElementById('btn-ren-norenueva').classList.add('active');
