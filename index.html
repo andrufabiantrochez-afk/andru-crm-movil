@@ -122,6 +122,7 @@
         .card { background: var(--bg-surface); border-radius: 12px; padding: 14px; border: 1px solid var(--border-color); border-left: 4px solid var(--brand-blue); box-shadow: var(--card-shadow); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
         .card.estado-no-renueva { background: rgba(220, 38, 38, 0.08) !important; border: 1px solid #dc2626 !important; border-left: 4px solid #dc2626 !important; }
         .card.estado-renovado { background: rgba(16, 185, 129, 0.1) !important; border: 1px solid #059669 !important; border-left: 4px solid #059669 !important; }
+        .card.estado-por-digitar { background: rgba(124, 58, 237, 0.08) !important; border: 1px solid #7c3aed !important; border-left: 4px solid #7c3aed !important; }
         .card.excluido-pdf { opacity: 0.55; border-left: 4px solid #94a3b8; }
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
@@ -304,6 +305,7 @@
     <div class="sub-nav" id="subnav-renovaciones" style="display: none;">
         <button class="sub-btn active" id="btn-ren-todos" onclick="cambiarSubFiltroRenovaciones('TODOS')">📋 Todos</button>
         <button class="sub-btn" id="btn-ren-semana" onclick="cambiarSubFiltroRenovaciones('ESTA_SEMANA')">📆 Esta Semana (Sáb-Sáb)</button>
+        <button class="sub-btn" id="btn-ren-pordigitar" onclick="cambiarSubFiltroRenovaciones('POR_DIGITAR')">📝 Por Digitar</button>
         <button class="sub-btn" id="btn-ren-lista" onclick="cambiarSubFiltroRenovaciones('LISTA')">⏳ En Gestión</button>
         <button class="sub-btn" id="btn-ren-renovado" onclick="cambiarSubFiltroRenovaciones('RENOVADO')">✅ Renovados</button>
         <button class="sub-btn" id="btn-ren-norenueva" onclick="cambiarSubFiltroRenovaciones('NO_RENUEVA')">❌ No Renueva</button>
@@ -952,6 +954,7 @@
             if (estadoFiltro === 'LISTA') document.getElementById('btn-ren-lista').classList.add('active');
             if (estadoFiltro === 'RENOVADO') document.getElementById('btn-ren-renovado').classList.add('active');
             if (estadoFiltro === 'NO_RENUEVA') document.getElementById('btn-ren-norenueva').classList.add('active');
+            if (estadoFiltro === 'POR_DIGITAR') document.getElementById('btn-ren-pordigitar').classList.add('active');
             actualizarBannerRangoRenovaciones();
             filtrarLista();
         }
@@ -1108,9 +1111,11 @@
                     }
 
                     let yaRenovo = Boolean(regAfiliadoCruzado) || d.archivado === true || est.includes("afiliado") || est.includes("exitosa") || est.includes("renovado");
+                    let esPorDigitar = !yaRenovo && (est.includes("por digitar") || est.includes("confirmar"));
                     let esNoRenueva = est.includes("no renueva") || est.includes("no interesado") || est.includes("cancelado") || est.includes("❌");
                     
                     d.yaRenovoComprado = yaRenovo;
+                    d.esPorDigitarFlag = esPorDigitar;
                     d.esNoRenuevaFlag = esNoRenueva;
 
                     if (vistaActual === 'cobros') {
@@ -1460,12 +1465,17 @@
                     let tarjetaEstiloClase = "";
 
                     let esNoRenueva = item.esNoRenuevaFlag === true;
+                    let esPorDigitar = item.esPorDigitarFlag === true;
                     let esRenovado = item.yaRenovoComprado === true;
 
                     if (esRenovado) {
                         tarjetaEstiloClase = "estado-renovado";
                         badgeClass = "badge-green";
                         badgeText = "✅ RENOVADO / LOGRADO";
+                    } else if (esPorDigitar) {
+                        tarjetaEstiloClase = "estado-por-digitar";
+                        badgeClass = "badge-purple";
+                        badgeText = "📝 POR DIGITAR / CONFIRMAR";
                     } else if (esNoRenueva) {
                         tarjetaEstiloClase = "estado-no-renueva";
                         badgeClass = "badge-red";
@@ -1503,6 +1513,7 @@
 
                     let valorSelectAccion = "lista";
                     if (esRenovado) valorSelectAccion = "renovado";
+                    else if (esPorDigitar) valorSelectAccion = "por_digitar";
                     else if (esNoRenueva) valorSelectAccion = "no_renueva";
 
                     let card = document.createElement('div');
@@ -1542,6 +1553,7 @@
                                 <span style="font-size:11px; font-weight:bold; color: var(--text-secondary);">Estado:</span>
                                 <select class="select-accion" onchange="cambiarEstadoCliente('${item.idDoc}', '${item.coleccionOrigen}', this.value)">
                                     <option value="lista" ${valorSelectAccion === 'lista' ? 'selected' : ''}>📋 En Lista / Gestión</option>
+                                    <option value="por_digitar" ${valorSelectAccion === 'por_digitar' ? 'selected' : ''}>📝 Sí renueva (Por digitar)</option>
                                     <option value="no_renueva" ${valorSelectAccion === 'no_renueva' ? 'selected' : ''}>❌ No Renueva</option>
                                     <option value="renovado" ${valorSelectAccion === 'renovado' ? 'selected' : ''}>✅ Renovado / Venta</option>
                                 </select>
@@ -2186,9 +2198,10 @@
             let filtrados = registrosGlobales.filter(data => {
                 if (vistaActual === 'renovaciones') {
                     if (subFiltroRenovaciones === 'ESTA_SEMANA' && (!estaEnSemanaSabadoASabado(data) || data.yaRenovoComprado)) return false;
+                    if (subFiltroRenovaciones === 'POR_DIGITAR' && (!data.esPorDigitarFlag || data.yaRenovoComprado)) return false;
                     if (subFiltroRenovaciones === 'RENOVADO' && !data.yaRenovoComprado) return false;
                     if (subFiltroRenovaciones === 'NO_RENUEVA' && (!data.esNoRenuevaFlag || data.yaRenovoComprado)) return false;
-                    if (subFiltroRenovaciones === 'LISTA' && (data.yaRenovoComprado || data.esNoRenuevaFlag)) return false;
+                    if (subFiltroRenovaciones === 'LISTA' && (data.yaRenovoComprado || data.esNoRenuevaFlag || data.esPorDigitarFlag)) return false;
                 }
 
                 if (filtroMesAdicional) {
@@ -2561,10 +2574,14 @@
                 return;
             }
 
-            const etiqueta = prompt("🔒 Nombre o etiqueta para este cierre semanal:", `Semana cerrada ${new Date().toLocaleDateString('es-CO')}`);
+            const etiqueta = prompt("🔒 Nombre de esta semana:", `Semana ${new Date().toLocaleDateString('es-CO')}`);
             if (!etiqueta) return;
 
-            if (!confirm(`¿Confirmas cerrar "${etiqueta}"?\n\nSe guardará una copia en el Histórico y la lista de la semana actual quedará limpia para empezar la nueva semana.`)) return;
+            const esCierreQuincena = confirm(
+                "💰 ¿Esta es la SEMANA DE CIERRE DE QUINCENA?\n\n" +
+                "• Pulsa ACEPTAR (Sí) para consolidar la nómina total de esta quincena (juntando las semanas abiertas).\n" +
+                "• Pulsa CANCELAR (No) si es semana intermedia y aún falta otra semana para cerrar quincena."
+            );
 
             try {
                 let totalBruto = 0;
@@ -2579,12 +2596,18 @@
                     comisionNeta += (s * pct) + (s * 0.10) + (a * 0.15) + (p * 0.15) + (p > 0 ? 96600 : 0);
                 });
 
+                const idQuincenaActiva = localStorage.getItem('andru_quincena_abierta_id') || `Q_${Date.now()}`;
+
                 await db.collection('reportes_historico').add({
                     etiqueta: etiqueta.trim(),
                     fecha_cierre: new Date().toISOString(),
                     cantidad_items: itemsReporteCrudos.length,
                     total_reporte: Math.round(totalBruto),
                     comision_neta: Math.round(comisionNeta),
+                    comision_externa: 0,
+                    notas_externas: [],
+                    quincena_id: idQuincenaActiva,
+                    es_cierre_quincena: esCierreQuincena,
                     items: itemsReporteCrudos
                 });
 
@@ -2593,10 +2616,56 @@
                     items: []
                 }, { merge: true });
 
-                alert("✅ ¡Semana cerrada y archivada en el Histórico con éxito!");
+                if (esCierreQuincena) {
+                    localStorage.removeItem('andru_quincena_abierta_id');
+                    const snapQ = await db.collection('reportes_historico').where('quincena_id', '==', idQuincenaActiva).get();
+                    let totalComisionQuincena = 0;
+                    let semanasCount = 0;
+                    snapQ.forEach(docQ => {
+                        semanasCount++;
+                        totalComisionQuincena += (docQ.data().comision_neta || 0) + (docQ.data().comision_externa || 0);
+                    });
+                    alert(`🎉 ¡QUINCENA CERRADA (${semanasCount} semanas)!\n\n💵 Comisión acumulada en tus reportes: $ ${Math.round(totalComisionQuincena).toLocaleString('es-CO')}\n\n💡 Cuando te pasen el dato de pagos por empresas o cobradores, entra a "📚 Histórico" y toca "➕ Comisión Extra" para sumarlo automático.`);
+                } else {
+                    localStorage.setItem('andru_quincena_abierta_id', idQuincenaActiva);
+                    alert(`✅ Semana guardada en la quincena abierta.\n💵 Comisión acumulada esta semana: $ ${Math.round(comisionNeta).toLocaleString('es-CO')}`);
+                }
+
                 cargarDatosMovil();
             } catch (err) {
                 alert("❌ Error al cerrar semana: " + err.message);
+            }
+        }
+
+        async function sumarComisionExternaHistorico(docId, etiqueta) {
+            const valorStr = prompt(`💵 Ingresa el valor DIRECTO de comisión externa para:\n"${etiqueta}"\n(Pagos de empresas / cobradores en pesos, ej: 185000):`);
+            if (!valorStr) return;
+            const monto = parseFloat(valorStr.replace(/\D/g, ''));
+            if (isNaN(monto) || monto <= 0) {
+                alert("⚠️ Ingresa un valor numérico válido.");
+                return;
+            }
+            const concepto = prompt("📝 Concepto breve (Ej: Nómina Coprocenva / Cobrador):", "Empresas / Cobradores") || "Ingreso adicional";
+
+            try {
+                const ref = db.collection('reportes_historico').doc(docId);
+                const snap = await ref.get();
+                if (!snap.exists) return;
+                const d = snap.data();
+
+                const extActual = d.comision_externa || 0;
+                const notas = Array.isArray(d.notas_externas) ? d.notas_externas : [];
+                notas.push(`${concepto}: +$${Math.round(monto).toLocaleString('es-CO')}`);
+
+                await ref.update({
+                    comision_externa: extActual + Math.round(monto),
+                    notas_externas: notas
+                });
+
+                alert(`✅ Se sumaron $ ${Math.round(monto).toLocaleString('es-CO')} a tu comisión.`);
+                abrirModalHistoricoSemanas();
+            } catch (err) {
+                alert("❌ Error al sumar comisión externa: " + err.message);
             }
         }
 
@@ -2607,56 +2676,56 @@
             cont.innerHTML = `<div class="loading">⏳ Consultando histórico en Firebase...</div>`;
 
             try {
-                const snap = await db.collection('reportes_historico').orderBy('fecha_cierre', 'desc').limit(20).get();
+                const snap = await db.collection('reportes_historico').orderBy('fecha_cierre', 'desc').limit(25).get();
                 if (snap.empty) {
                     cont.innerHTML = `<div class="loading" style="color:var(--text-secondary);">📭 Aún no tienes cierres semanales archivados.</div>`;
                     return;
                 }
 
-                cont.innerHTML = '';
+                // Agrupar totales por quincena_id
+                const totalesQuincena = {};
+                const docs = [];
                 snap.forEach(doc => {
                     const d = doc.data();
+                    docs.push({ id: doc.id, ...d });
+                    if (d.quincena_id) {
+                        const sumaFila = (d.comision_neta || 0) + (d.comision_externa || 0);
+                        totalesQuincena[d.quincena_id] = (totalesQuincena[d.quincena_id] || 0) + sumaFila;
+                    }
+                });
+
+                cont.innerHTML = '';
+                docs.forEach(d => {
                     const fechaStr = d.fecha_cierre ? new Date(d.fecha_cierre).toLocaleDateString('es-CO') : '---';
+                    const comBase = d.comision_neta || 0;
+                    const comExt = d.comision_externa || 0;
+                    const totalSemana = comBase + comExt;
+                    const notasHtml = (Array.isArray(d.notas_externas) && d.notas_externas.length > 0)
+                        ? `<div style="font-size:10px; color:#b45309; margin-top:2px;">➕ ${d.notas_externas.join(' | ')}</div>`
+                        : '';
+                    const badgeQuincena = d.es_cierre_quincena && d.quincena_id
+                        ? `<div style="margin-top:4px; background:#003380; color:#fbbf24; padding:3px 7px; border-radius:6px; font-size:10.5px; font-weight:800;">🏆 NÓMINA QUINCENA: $ ${(totalesQuincena[d.quincena_id] || totalSemana).toLocaleString('es-CO')}</div>`
+                        : '';
+
                     const div = document.createElement('div');
                     div.className = 'hist-item';
                     div.innerHTML = `
-                        <div>
+                        <div style="flex:1;">
                             <strong style="color:var(--text-accent);">${limpiarTextoSeguro(d.etiqueta)}</strong><br>
                             <span>📅 ${fechaStr} • ${d.cantidad_items || 0} ítems</span><br>
-                            <span style="color:#059669; font-weight:800;">Total: $ ${(d.total_reporte || 0).toLocaleString('es-CO')} | Comisión: $ ${(d.comision_neta || 0).toLocaleString('es-CO')}</span>
+                            <span style="color:#059669; font-weight:800;">Comisión: $ ${totalSemana.toLocaleString('es-CO')}</span>
+                            ${notasHtml}
+                            ${badgeQuincena}
                         </div>
-                        <button onclick="exportarCierreHistoricoCSV('${doc.id}')" style="background:#003380; color:#fff; border:none; padding:6px 9px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">📥 CSV</button>
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            <button onclick="sumarComisionExternaHistorico('${d.id}', '${escaparComillasJS(d.etiqueta)}')" style="background:#f59e0b; color:#0f172a; border:none; padding:5px 7px; border-radius:6px; font-size:10px; font-weight:800; cursor:pointer; white-space:nowrap;">➕ Com. Extra</button>
+                            <button onclick="exportarCierreHistoricoCSV('${d.id}')" style="background:#003380; color:#fff; border:none; padding:5px 7px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">📥 CSV</button>
+                        </div>
                     `;
                     cont.appendChild(div);
                 });
             } catch (err) {
                 cont.innerHTML = `<div class="loading" style="color:#dc2626;">❌ Error: ${err.message}</div>`;
-            }
-        }
-
-        function cerrarModalHistorico() {
-            document.getElementById('modal-historico-semanas').style.display = 'none';
-        }
-
-        async function exportarCierreHistoricoCSV(docId) {
-            try {
-                const snap = await db.collection('reportes_historico').doc(docId).get();
-                if (!snap.exists) return;
-                const d = snap.data();
-                const items = Array.isArray(d.items) ? d.items : [];
-                let csv = "\uFEFFFecha;Membresia;Titular;Referencia;Suscripcion;Adicional;Premiacion;Saldo\n";
-                items.forEach(it => {
-                    csv += `"${it.fecha || ''}";"${it.membresia || ''}";"${it.titular || ''}";"${it.referencia || ''}";${parsearNumeroMoneda(it.suscripcion)};${parsearNumeroMoneda(it.adicional)};${parsearNumeroMoneda(it.premiacion)};${parsearNumeroMoneda(it.saldo)}\n`;
-                });
-                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `Historico_${limpiarTextoSeguro(d.etiqueta).replace(/\s+/g, '_')}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-            } catch (e) {
-                alert("❌ Error exportando histórico: " + e.message);
             }
         }
 
