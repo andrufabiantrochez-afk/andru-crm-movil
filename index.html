@@ -122,7 +122,7 @@
         .card { background: var(--bg-surface); border-radius: 12px; padding: 14px; border: 1px solid var(--border-color); border-left: 4px solid var(--brand-blue); box-shadow: var(--card-shadow); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
         .card.estado-no-renueva { background: rgba(220, 38, 38, 0.08) !important; border: 1px solid #dc2626 !important; border-left: 4px solid #dc2626 !important; }
         .card.estado-renovado { background: rgba(16, 185, 129, 0.1) !important; border: 1px solid #059669 !important; border-left: 4px solid #059669 !important; }
-        .card.estado-por-digitar { background: rgba(124, 58, 237, 0.08) !important; border: 1px solid #7c3aed !important; border-left: 4px solid #7c3aed !important; }
+        .card.estado-por-digitar { background: rgba(37, 99, 235, 0.12) !important; border: 1.5px solid #2563eb !important; border-left: 5px solid #2563eb !important; }
         .card.excluido-pdf { opacity: 0.55; border-left: 4px solid #94a3b8; }
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
@@ -1110,9 +1110,11 @@
                         d._cruzadoAfiliado = regAfiliadoCruzado;
                     }
 
-                    let yaRenovo = Boolean(regAfiliadoCruzado) || d.archivado === true || est.includes("afiliado") || est.includes("exitosa") || est.includes("renovado");
-                    let esPorDigitar = !yaRenovo && (est.includes("por digitar") || est.includes("confirmar"));
+                    let esPorDigitar = est.includes("por digitar") || est.includes("confirmar");
                     let esNoRenueva = est.includes("no renueva") || est.includes("no interesado") || est.includes("cancelado") || est.includes("❌");
+                    let yaRenovo = !esPorDigitar && !esNoRenueva && (
+                        Boolean(regAfiliadoCruzado) || d.archivado === true || est.includes("afiliado") || est.includes("exitosa") || est.includes("renovado")
+                    );
                     
                     d.yaRenovoComprado = yaRenovo;
                     d.esPorDigitarFlag = esPorDigitar;
@@ -1466,13 +1468,10 @@
 
                     let esNoRenueva = item.esNoRenuevaFlag === true;
                     let esPorDigitar = item.esPorDigitarFlag === true;
-                    let esRenovado = item.yaRenovoComprado === true;
+                    let esNoRenueva = item.esNoRenuevaFlag === true;
+                    let esRenovado = !esPorDigitar && !esNoRenueva && item.yaRenovoComprado === true;
 
-                    if (esRenovado) {
-                        tarjetaEstiloClase = "estado-renovado";
-                        badgeClass = "badge-green";
-                        badgeText = "✅ RENOVADO / LOGRADO";
-                    } else if (esPorDigitar) {
+                    if (esPorDigitar) {
                         tarjetaEstiloClase = "estado-por-digitar";
                         badgeClass = "badge-purple";
                         badgeText = "📝 POR DIGITAR / CONFIRMAR";
@@ -1480,6 +1479,10 @@
                         tarjetaEstiloClase = "estado-no-renueva";
                         badgeClass = "badge-red";
                         badgeText = "❌ NO RENUEVA";
+                    } else if (esRenovado) {
+                        tarjetaEstiloClase = "estado-renovado";
+                        badgeClass = "badge-green";
+                        badgeText = "✅ RENOVADO / LOGRADO";
                     } else if (vistaActual === 'cobros') {
                         let diaNum = parseInt(diaPago, 10);
                         let esDelDia = !isNaN(diaNum) && diaNum === diaActualNum;
@@ -2198,9 +2201,9 @@
             let filtrados = registrosGlobales.filter(data => {
                 if (vistaActual === 'renovaciones') {
                     if (subFiltroRenovaciones === 'ESTA_SEMANA' && (!estaEnSemanaSabadoASabado(data) || data.yaRenovoComprado)) return false;
-                    if (subFiltroRenovaciones === 'POR_DIGITAR' && (!data.esPorDigitarFlag || data.yaRenovoComprado)) return false;
+                    if (subFiltroRenovaciones === 'POR_DIGITAR' && !data.esPorDigitarFlag) return false;
                     if (subFiltroRenovaciones === 'RENOVADO' && !data.yaRenovoComprado) return false;
-                    if (subFiltroRenovaciones === 'NO_RENUEVA' && (!data.esNoRenuevaFlag || data.yaRenovoComprado)) return false;
+                    if (subFiltroRenovaciones === 'NO_RENUEVA' && !data.esNoRenuevaFlag) return false;
                     if (subFiltroRenovaciones === 'LISTA' && (data.yaRenovoComprado || data.esNoRenuevaFlag || data.esPorDigitarFlag)) return false;
                 }
 
