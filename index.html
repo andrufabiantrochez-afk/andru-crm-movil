@@ -1531,7 +1531,12 @@
                                 <span class="card-title">👤 ${nombre}</span>
                                 <button class="btn-edit-note" title="Editar Nota / Observación" onclick="editarNotaEspecial('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(notaCobro)}')">✏️</button>
                             </div>
-                            <span class="badge ${badgeClass}">${badgeText}</span>
+                            <span class="badge ${badgeClass}" id="badge-doc-${item.idDoc}" 
+      style="cursor:pointer;" 
+      title="Toca para cambiar el día de cobro"
+      onclick="editarDiaCobro('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(diaPago)}')">
+    ${badgeText} ✏️
+</span>
                         </div>
                         <div class="card-body">
                             <div>🪪 Cédula: <strong>${cedula}</strong></div>
@@ -2125,44 +2130,34 @@
         }
 
         async function cambiarEstadoCliente(idDoc, coleccion, nuevoValor) {
-            try {
-                let textoEstadoBD = "En lista";
-                if (nuevoValor === "por_digitar") textoEstadoBD = "Por digitar";
-                else if (nuevoValor === "no_renueva") textoEstadoBD = "No renueva";
-                else if (nuevoValor === "renovado") textoEstadoBD = "Afiliado / Renovado";
+    try {
+        let textoEstadoBD = "En lista";
+        if (nuevoValor === "por_digitar") textoEstadoBD = "Por digitar";
+        else if (nuevoValor === "no_renueva") textoEstadoBD = "No renueva";
+        else if (nuevoValor === "renovado") textoEstadoBD = "Afiliado / Renovado";
 
-                await db.collection(coleccion).doc(idDoc).update({
-                    estado: textoEstadoBD
-                });
-
-                let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
-                if (registroLocal) {
-                    registroLocal.estado = textoEstadoBD;
-                    registroLocal.yaRenovoComprado = (nuevoValor === "renovado");
-                    registroLocal.esNoRenuevaFlag = (nuevoValor === "no_renueva");
-                    registroLocal.esPorDigitarFlag = (nuevoValor === "por_digitar");
-                }
-
-                let tarjeta = document.getElementById(`card-doc-${idDoc}`);
-                if (tarjeta) {
-                    tarjeta.classList.remove('estado-no-renueva', 'estado-renovado', 'estado-por-digitar');
-                    if (nuevoValor === "por_digitar") {
-                        tarjeta.classList.add('estado-por-digitar');
-                    } else if (nuevoValor === "no_renueva") {
-                        tarjeta.classList.add('estado-no-renueva');
-                    } else if (nuevoValor === "renovado") {
-                        tarjeta.classList.add('estado-renovado');
-                    }
-                }
-
-                alert(`✅ Estado actualizado a: "${textoEstadoBD}". Sincronizado con la extensión.`);
-                if (vistaActual === 'renovaciones' && subFiltroRenovaciones !== 'TODOS') {
-                    filtrarLista();
-                }
-            } catch (err) {
-                alert("❌ Error al actualizar el estado: " + err.message);
-            }
+        let datosActualizar = { estado: textoEstadoBD };
+        if (vistaActual === 'cobros' && nuevoValor === 'renovado') {
+            datosActualizar.estado_cobro = "Pagado";
         }
+
+        await db.collection(coleccion).doc(idDoc).update(datosActualizar);
+
+        let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
+        if (registroLocal) {
+            registroLocal.estado = textoEstadoBD;
+            if (datosActualizar.estado_cobro) registroLocal.estado_cobro = datosActualizar.estado_cobro;
+            registroLocal.yaRenovoComprado = (nuevoValor === "renovado");
+            registroLocal.esNoRenuevaFlag = (nuevoValor === "no_renueva");
+            registroLocal.esPorDigitarFlag = (nuevoValor === "por_digitar");
+        }
+
+        alert(`✅ Estado actualizado a: "${textoEstadoBD}".`);
+        filtrarLista();
+    } catch (err) {
+        alert("❌ Error al actualizar el estado: " + err.message);
+    }
+}
 
         async function editarNotaEspecial(idDoc, coleccion, nombre, notaActual) {
             let nuevaNota = prompt(`📝 Escribe la nota o estado para:\n👤 ${nombre}`, notaActual);
@@ -2185,7 +2180,34 @@
                 alert("❌ Error al actualizar la nota: " + err.message);
             }
         }
+async function editarDiaCobro(idDoc, coleccion, nombre, diaActual) {
+    let nuevoDia = prompt(`📅 Escribe el nuevo DÍA DE COBRO (1 al 31) para:\n👤 ${nombre}`, diaActual === "---" ? "" : diaActual);
+    if (nuevoDia === null) return;
 
+    let diaLimpio = nuevoDia.trim();
+    let diaNum = parseInt(diaLimpio, 10);
+
+    if (isNaN(diaNum) || diaNum < 1 || diaNum > 31) {
+        alert("⚠️ Por favor ingresa un número de día válido entre 1 y 31.");
+        return;
+    }
+
+    try {
+        await db.collection(coleccion).doc(idDoc).update({
+            dia_pago: String(diaNum)
+        });
+
+        let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
+        if (registroLocal) {
+            registroLocal.dia_pago = String(diaNum);
+        }
+
+        alert(`✅ Día de cobro actualizado al día ${diaNum}.`);
+        filtrarLista();
+    } catch (err) {
+        alert("❌ Error al actualizar el día de cobro: " + err.message);
+    }
+}
         const DICCIONARIO_MESES = {
             'enero': 'ene', 'ene': 'ene', 'febrero': 'feb', 'feb': 'feb', 'marzo': 'mar', 'mar': 'mar',
             'abril': 'abr', 'abr': 'abr', 'mayo': 'may', 'may': 'may', 'junio': 'jun', 'jun': 'jun',
