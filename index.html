@@ -76,13 +76,14 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: var(--bg-body); color: var(--text-primary); padding-bottom: 90px; transition: background 0.25s, color 0.25s; }
         
-        header { background: var(--bg-header); padding: 14px 15px; border-bottom: 3px solid var(--border-header); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; color: var(--text-header); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
-        h1 { font-size: 15px; color: #ffffff; display: flex; align-items: center; gap: 5px; font-weight: 800; }
+        header { background: var(--bg-header); padding: 14px 12px; border-bottom: 3px solid var(--border-header); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; color: var(--text-header); box-shadow: 0 2px 10px rgba(0,0,0,0.15); gap: 6px; }
+        h1 { font-size: 14px; color: #ffffff; display: flex; align-items: center; gap: 4px; font-weight: 800; white-space: nowrap; }
         
-        .theme-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; border-radius: 50%; width: 31px; height: 31px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .theme-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; border-radius: 50%; width: 29px; height: 29px; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: bold; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
         .theme-btn:active { transform: scale(0.92); }
+        .theme-btn.muted { background: rgba(220, 38, 38, 0.45); border-color: #fca5a5; }
 
-        .offline-pill { font-size: 9.5px; padding: 2px 6px; border-radius: 10px; font-weight: 800; background: #10b981; color: #ffffff; white-space: nowrap; }
+        .offline-pill { font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: 800; background: #10b981; color: #ffffff; white-space: nowrap; }
         .offline-pill.is-offline { background: #dc2626; animation: pulse 1.5s infinite; }
 
         .search-container { padding: 10px 15px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; flex-direction: column; }
@@ -114,8 +115,8 @@
         .btn-pdf-oficial { background: #059669; color: #ffffff; border: none; padding: 9px; border-radius: 8px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
         .btn-nuevo-pago-rep { background: #2563eb; color: #ffffff; border: none; padding: 9px; border-radius: 8px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
 
-        .voice-banner { display: none; background: #1e3a8a; color: #ffffff; padding: 8px 15px; font-size: 12px; font-weight: bold; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 2px solid #f59e0b; }
-        .voice-banner button { background: rgba(255,255,255,0.2); border: none; color: #ffffff; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .voice-banner { display: none; background: linear-gradient(90deg, #0f172a, #1e3a8a); color: #38bdf8; padding: 8px 15px; font-size: 11.5px; font-weight: bold; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 2px solid #38bdf8; }
+        .voice-banner button { background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #ffffff; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; }
 
         .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         
@@ -168,10 +169,217 @@
         .btn-delete { background: #dc2626; color: white; flex: 0.35; }
         
         .fab-btn { position: fixed; bottom: 20px; right: 20px; background: #f59e0b; color: #0f172a; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45); border: 2px solid #ffffff; cursor: pointer; z-index: 99; }
-        .voice-btn { position: fixed; bottom: 20px; left: 20px; background: #003380; color: white; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 6px 16px rgba(0, 51, 128, 0.4); border: 2px solid #f59e0b; cursor: pointer; z-index: 99; transition: all 0.3s ease; }
-        .voice-btn.listening { background: #dc2626; border-color: #ffffff; box-shadow: 0 0 20px #dc2626; animation: pulse 1.2s infinite; }
+        .voice-btn { position: fixed; bottom: 20px; left: 20px; background: radial-gradient(circle at 30% 30%, #0284c7, #003380); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 0 18px rgba(56, 189, 248, 0.55); border: 2px solid #38bdf8; cursor: pointer; z-index: 99; transition: all 0.3s ease; }
+        .voice-btn.listening { background: radial-gradient(circle, #ef4444, #991b1b); border-color: #fbbf24; box-shadow: 0 0 25px #ef4444; animation: pulse 1.2s infinite; }
         
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.12); } 100% { transform: scale(1); } }
+
+        /* --- HUD HOLOGRÁFICO ESTILO J.A.R.V.I.S. --- */
+        .jarvis-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.86);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 2500;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #e0f2fe;
+            animation: hudFadeIn 0.25s ease-out;
+        }
+        @keyframes hudFadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
+        .jarvis-hud-card {
+            width: 100%;
+            max-width: 390px;
+            background: linear-gradient(160deg, rgba(15, 23, 42, 0.92), rgba(3, 105, 161, 0.22));
+            border: 1.5px solid rgba(56, 189, 248, 0.55);
+            box-shadow: 0 0 40px rgba(14, 165, 233, 0.28), inset 0 0 25px rgba(56, 189, 248, 0.12);
+            border-radius: 20px;
+            padding: 22px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+        }
+
+        .jarvis-top-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: "Courier New", monospace;
+            font-size: 10.5px;
+            letter-spacing: 1.2px;
+            color: #38bdf8;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+            padding-bottom: 8px;
+        }
+
+        .arc-reactor-wrap {
+            position: relative;
+            width: 132px;
+            height: 132px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 6px 0;
+            cursor: pointer;
+        }
+
+        .arc-ring-outer {
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            border: 2.5px dashed #38bdf8;
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+            animation: spinClockwise 9s linear infinite;
+        }
+
+        .arc-ring-middle {
+            position: absolute;
+            width: 104px;
+            height: 104px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: #f59e0b;
+            border-bottom-color: #38bdf8;
+            animation: spinCounter 4.5s linear infinite;
+        }
+
+        .arc-core {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #bae6fd 0%, #0284c7 55%, #0c4a6e 100%);
+            box-shadow: 0 0 28px #38bdf8, inset 0 0 14px #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            transition: all 0.3s ease;
+        }
+
+        .jarvis-overlay.state-listening .arc-core {
+            animation: coreBreathe 1.1s ease-in-out infinite;
+        }
+        .jarvis-overlay.state-speaking .arc-core {
+            background: radial-gradient(circle, #fef08a 0%, #f59e0b 55%, #78350f 100%);
+            box-shadow: 0 0 32px #fbbf24, inset 0 0 14px #ffffff;
+            animation: coreSpeak 0.55s ease-in-out infinite;
+        }
+
+        @keyframes spinClockwise { 100% { transform: rotate(360deg); } }
+        @keyframes spinCounter { 100% { transform: rotate(-360deg); } }
+        @keyframes coreBreathe { 0%, 100% { transform: scale(0.95); } 50% { transform: scale(1.08); } }
+        @keyframes coreSpeak { 0%, 100% { transform: scale(0.97); } 50% { transform: scale(1.12); } }
+
+        .jarvis-wave-bars {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 22px;
+        }
+        .jarvis-wave-bars span {
+            width: 4px;
+            height: 6px;
+            background: #38bdf8;
+            border-radius: 4px;
+            animation: waveBounce 0.9s ease-in-out infinite;
+        }
+        .jarvis-wave-bars span:nth-child(2) { animation-delay: 0.15s; background: #fbbf24; }
+        .jarvis-wave-bars span:nth-child(3) { animation-delay: 0.3s; }
+        .jarvis-wave-bars span:nth-child(4) { animation-delay: 0.45s; background: #fbbf24; }
+        .jarvis-wave-bars span:nth-child(5) { animation-delay: 0.6s; }
+        @keyframes waveBounce { 0%, 100% { height: 6px; } 50% { height: 22px; } }
+
+        .jarvis-status-label {
+            font-family: "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: #fbbf24;
+            text-transform: uppercase;
+        }
+
+        .jarvis-transcript-box {
+            width: 100%;
+            min-height: 54px;
+            background: rgba(2, 6, 23, 0.65);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13.5px;
+            line-height: 1.4;
+            color: #f8fafc;
+            text-align: center;
+        }
+
+        .jarvis-reply-box {
+            width: 100%;
+            background: rgba(14, 165, 233, 0.14);
+            border-left: 3px solid #38bdf8;
+            border-radius: 8px;
+            padding: 9px 11px;
+            font-size: 12.5px;
+            line-height: 1.45;
+            color: #bae6fd;
+            display: none;
+        }
+
+        .jarvis-quick-chips {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+        }
+        .jarvis-chip {
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #7dd3fc;
+            border-radius: 14px;
+            padding: 4px 9px;
+            font-size: 10.5px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .jarvis-chip:active { background: #0284c7; color: #fff; }
+
+        .jarvis-actions-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            margin-top: 2px;
+        }
+        .jarvis-btn-ctrl {
+            flex: 1;
+            padding: 9px;
+            border-radius: 10px;
+            font-size: 11.5px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            background: rgba(15, 23, 42, 0.8);
+            color: #38bdf8;
+        }
+        .jarvis-btn-close {
+            flex: 1;
+            padding: 9px;
+            border-radius: 10px;
+            font-size: 11.5px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            background: rgba(220, 38, 38, 0.25);
+            color: #fca5a5;
+        }
 
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.68); z-index: 1000; align-items:center; justify-content:center; padding:15px; }
         .modal-content { background: var(--bg-surface); width:100%; max-width:420px; border-radius:14px; padding:20px; border: 2px solid var(--brand-blue); display:flex; flex-direction:column; gap:10px; color: var(--text-primary); max-height: 92vh; overflow-y: auto; }
@@ -201,12 +409,13 @@
 <body>
 
     <header>
-        <div style="display:flex; align-items:center; gap:6px;">
-            <h1>🎯 Andru CRM <span style="font-size:9px; background:#f59e0b; color:#0f172a; padding:2px 6px; border-radius:4px; font-weight:900;">PREVISER</span></h1>
+        <div style="display:flex; align-items:center; gap:5px; min-width:0;">
+            <h1>🎯 Andru CRM <span style="font-size:8.5px; background:#f59e0b; color:#0f172a; padding:2px 5px; border-radius:4px; font-weight:900;">PREVISER</span></h1>
             <span id="badge-red-estado" class="offline-pill">🟢 Online</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 5px;">
-            <span id="total-registros" style="font-size:11px;">Cargando...</span>
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span id="total-registros" style="font-size:10.5px;">Cargando...</span>
+            <button id="btn-voz-audio" class="theme-btn" title="Activar / Silenciar Voz de Andru AI" onclick="alternarAudioJarvis()">🔊</button>
             <button class="theme-btn" title="Tarjeta Digital y Catálogo" onclick="abrirModalTarjetaCatalogo()">🪪</button>
             <button class="theme-btn" title="Ver Comandos de Voz" onclick="abrirModalComandos()">?</button>
             <button id="btn-toggle-tema" class="theme-btn" title="Cambiar Modo Claro / Oscuro" onclick="alternarTemaVisual()">🌙</button>
@@ -215,7 +424,7 @@
 
     <!-- BANNER DE FILTRO POR VOZ ACTIVO -->
     <div class="voice-banner" id="voice-banner">
-        <span id="voice-banner-text">🎙️ Filtro de voz activo</span>
+        <span id="voice-banner-text">🤖 ANDRU AI activo</span>
         <button onclick="limpiarFiltrosCompletos()">✕ Limpiar</button>
     </div>
 
@@ -321,8 +530,48 @@
         <div class="loading">⏳ Conectando con Firebase...</div>
     </div>
 
-    <button class="voice-btn" id="btn-hey-andru" title="Dictar Comando (Hey Andru)" onclick="activarHeyAndru()">🎙️</button>
+    <button class="voice-btn" id="btn-hey-andru" title="Activar ANDRU AI (HUD de Voz)" onclick="activarHeyAndru()">🎙️</button>
     <button class="fab-btn" title="Nuevo Prospecto" onclick="abrirModalNuevo()">＋</button>
+
+    <!-- HUD HOLOGRÁFICO ANDRU AI (ESTILO J.A.R.V.I.S.) -->
+    <div class="jarvis-overlay" id="jarvis-hud-overlay">
+        <div class="jarvis-hud-card">
+            <div class="jarvis-top-bar">
+                <span>ANDRU AI • CORE v2.6</span>
+                <span id="jarvis-hud-clock">SYS ONLINE</span>
+            </div>
+
+            <div class="arc-reactor-wrap" onclick="reiniciarEscuchaJarvis()" title="Toca el núcleo para hablar de nuevo">
+                <div class="arc-ring-outer"></div>
+                <div class="arc-ring-middle"></div>
+                <div class="arc-core" id="jarvis-core-icon">🎙️</div>
+            </div>
+
+            <div class="jarvis-wave-bars" id="jarvis-waves">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+
+            <div class="jarvis-status-label" id="jarvis-status-label">INICIALIZANDO CANAL DE VOZ...</div>
+
+            <div class="jarvis-transcript-box" id="jarvis-transcript-box">
+                "A tus órdenes, Andru. Dime qué necesitas..."
+            </div>
+
+            <div class="jarvis-reply-box" id="jarvis-reply-box"></div>
+
+            <div class="jarvis-quick-chips">
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Dame el resumen del día')">📊 Resumen del día</button>
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Cómo voy de comisiones')">🌡️ Comisiones</button>
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Renovaciones de esta semana')">📆 Esta semana</button>
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Quiénes tienen saldo pendiente')">💸 Saldos</button>
+            </div>
+
+            <div class="jarvis-actions-row">
+                <button class="jarvis-btn-ctrl" onclick="reiniciarEscuchaJarvis()">🎙️ Escuchar</button>
+                <button class="jarvis-btn-close" onclick="cerrarHudJarvis()">✕ Cerrar HUD</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL PLANTILLAS DINÁMICAS DE WHATSAPP -->
     <div class="modal" id="modal-wpp-plantillas">
@@ -492,39 +741,30 @@
     <div class="modal" id="modal-comandos">
         <div class="modal-content">
             <div class="modal-title">
-                <span>🎙️ Comandos de Voz "Hey Andru"</span>
+                <span>🤖 Comandos Inteligentes "ANDRU AI"</span>
                 <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalComandos()">✕</span>
             </div>
             <div class="cmd-list">
                 <div class="cmd-item">
-                    <strong>📆 Renovaciones de Esta Semana (Sábado a Sábado):</strong>
-                    "Renovaciones de esta semana" / "Próximas a renovar"
+                    <strong>📊 Briefings y Métricas en Vivo:</strong>
+                    "Dame el resumen del día" / "Estado de la operación"<br>
+                    "¿Cómo voy de comisiones?" / "¿Cuánto me debe Marco Tulio?"
                 </div>
                 <div class="cmd-item">
-                    <strong>📝 Renovaciones Por Digitar:</strong>
-                    "Renovaciones por digitar" / "Por confirmar"
+                    <strong>⚡ Acciones Directas sin Tocar Pantalla:</strong>
+                    "Escríbele por WhatsApp a Marco Tulio"<br>
+                    "Llámame a María López"<br>
+                    "Cambia el día de cobro de Marco Tulio al 30"
                 </div>
                 <div class="cmd-item">
-                    <strong>📄 Reporte Oficial de Pagos:</strong>
-                    "Abrir reporte oficial" / "Reporte de pagos"
+                    <strong>📆 Renovaciones y Estados:</strong>
+                    "Renovaciones de esta semana" / "Renovaciones por digitar"<br>
+                    "Muéstrame las renovaciones de octubre"
                 </div>
                 <div class="cmd-item">
-                    <strong>👤 Buscar por nombre exacto en cualquier pestaña:</strong>
-                    "Muéstrame cliente que se llame Andrés"<br>
-                    "Muéstrame una renovación que se llame Andrés"<br>
-                    "Prospecto que se llame María"
-                </div>
-                <div class="cmd-item">
-                    <strong>📅 Renovaciones por mes y estado (Combinados):</strong>
-                    "Muéstrame las renovaciones de octubre"<br>
-                    "Renovaciones pendientes por renovar de octubre"<br>
-                    "Renovaciones que no se han renovado de noviembre"<br>
-                    "Renovadas o ventas logradas de octubre"
-                </div>
-                <div class="cmd-item">
-                    <strong>💰 Cobros y Saldos Pendientes:</strong>
-                    "Cobros de hoy" / "Cobros postergados" / "Todos los cobros"<br>
-                    "Quiénes tienen saldo pendiente" / "Clientes que deben"
+                    <strong>💰 Cobros y Búsquedas Rápidas:</strong>
+                    "Cobros de hoy" / "Cobros postergados" / "Quiénes tienen saldo pendiente"<br>
+                    "Muéstrame cliente que se llame Andrés"
                 </div>
             </div>
             <button class="btn-save" onclick="cerrarModalComandos()">Entendido</button>
@@ -592,7 +832,7 @@
                 badge.innerText = '🟢 Online';
                 badge.classList.remove('is-offline');
             } else {
-                badge.innerText = '🔴 Offline (Caché)';
+                badge.innerText = '🔴 Offline';
                 badge.classList.add('is-offline');
             }
         }
@@ -614,6 +854,117 @@
         let itemReporteEditandoIdx = -1;
         let listaFiltradaActual = [];
         let contextoWppActual = null;
+
+        // --- VARIABLES MOTOR DE VOZ ANDRU AI (HUD J.A.R.V.I.S.) ---
+        let reconocimientoActivo = null;
+        let jarvisAudioHabilitado = localStorage.getItem('andru_jarvis_audio') !== 'off';
+
+        function actualizarBotonAudioJarvis() {
+            const btn = document.getElementById('btn-voz-audio');
+            if (!btn) return;
+            if (jarvisAudioHabilitado) {
+                btn.innerText = '🔊';
+                btn.classList.remove('muted');
+            } else {
+                btn.innerText = '🔇';
+                btn.classList.add('muted');
+            }
+        }
+
+        function alternarAudioJarvis() {
+            jarvisAudioHabilitado = !jarvisAudioHabilitado;
+            localStorage.setItem('andru_jarvis_audio', jarvisAudioHabilitado ? 'on' : 'off');
+            actualizarBotonAudioJarvis();
+            if (!jarvisAudioHabilitado && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            } else if (jarvisAudioHabilitado) {
+                hablarJarvis("Audio activado, Andru.", false);
+            }
+        }
+        actualizarBotonAudioJarvis();
+
+        function reproducirTonoHud(tipo) {
+            if (!jarvisAudioHabilitado) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                const now = ctx.currentTime;
+
+                if (tipo === 'inicio') {
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(980, now + 0.16);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                } else {
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.exponentialRampToValueAtTime(460, now + 0.18);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                }
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.21);
+            } catch (e) {}
+        }
+
+        function hablarJarvis(texto, cerrarAlTerminar = false) {
+            const replyBox = document.getElementById('jarvis-reply-box');
+            const overlay = document.getElementById('jarvis-hud-overlay');
+            const statusLbl = document.getElementById('jarvis-status-label');
+
+            if (replyBox) {
+                replyBox.innerText = `🤖 ${texto}`;
+                replyBox.style.display = 'block';
+            }
+            if (statusLbl) statusLbl.innerText = "RESPUESTA DE ANDRU AI";
+
+            if (!jarvisAudioHabilitado || !('speechSynthesis' in window)) {
+                if (cerrarAlTerminar) {
+                    setTimeout(() => cerrarHudJarvis(), 1800);
+                }
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(texto);
+            utter.lang = 'es-CO';
+            utter.rate = 1.04;
+            utter.pitch = 0.98;
+
+            const voces = window.speechSynthesis.getVoices();
+            const vozPreferida = voces.find(v => v.lang.includes('es-CO'))
+                || voces.find(v => v.lang.includes('es-US'))
+                || voces.find(v => v.lang.startsWith('es'));
+            if (vozPreferida) utter.voice = vozPreferida;
+
+            utter.onstart = () => {
+                if (overlay) {
+                    overlay.classList.remove('state-listening');
+                    overlay.classList.add('state-speaking');
+                }
+            };
+            utter.onend = () => {
+                if (overlay) overlay.classList.remove('state-speaking');
+                if (cerrarAlTerminar) {
+                    setTimeout(() => cerrarHudJarvis(), 650);
+                }
+            };
+            utter.onerror = () => {
+                if (overlay) overlay.classList.remove('state-speaking');
+                if (cerrarAlTerminar) setTimeout(() => cerrarHudJarvis(), 1200);
+            };
+
+            window.speechSynthesis.speak(utter);
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
 
         function normalizarTexto(str) {
             return String(str || "")
@@ -1160,6 +1511,28 @@
             }
         }
 
+        function calcularComisionActualReporte() {
+            let sumaTotal = 0;
+            let comisionTotalNeta = 0;
+            itemsReporteCrudos.forEach(item => {
+                let susc = parsearNumeroMoneda(item.suscripcion);
+                let adic = parsearNumeroMoneda(item.adicional);
+                let prem = parsearNumeroMoneda(item.premiacion);
+                let ref = normalizarTexto(item.referencia);
+
+                sumaTotal += (susc + adic + prem);
+
+                let pct = ref === "bipersonal" ? 0.185 : ref === "premium" ? 0.31 : ref === "vip" ? 0.298 : ref === "diamante" ? 0.264 : 0.33;
+                let cServ = susc * pct;
+                let cSoc = susc * 0.06;
+                let cMov = susc * 0.02;
+                let cAlim = susc * 0.02;
+                let cAdicPrem = (adic * 0.15) + (prem * 0.15) + (prem > 0 ? 96600 : 0);
+                comisionTotalNeta += (cServ + cSoc + cMov + cAlim + cAdicPrem);
+            });
+            return { sumaTotal, comisionTotalNeta };
+        }
+
         function actualizarTotalesReportePDF() {
             if (vistaActual !== 'reporte') return;
             let seleccionados = listaFiltradaActual.filter(r => r._incluirEnPdf !== false);
@@ -1378,7 +1751,7 @@
                 'ganados': 'ventas'
             };
             let palabraVista = etiquetasVista[vistaActual] || 'registros';
-            contador.innerHTML = `<span style="background: #f59e0b; color: #0f172a; padding: 3px 9px; border-radius: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">${lista.length} ${palabraVista}</span>`;
+            contador.innerHTML = `<span style="background: #f59e0b; color: #0f172a; padding: 3px 8px; border-radius: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">${lista.length} ${palabraVista}</span>`;
 
             if (vistaActual === 'reporte') {
                 actualizarTotalesReportePDF();
@@ -1531,12 +1904,7 @@
                                 <span class="card-title">👤 ${nombre}</span>
                                 <button class="btn-edit-note" title="Editar Nota / Observación" onclick="editarNotaEspecial('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(notaCobro)}')">✏️</button>
                             </div>
-                            <span class="badge ${badgeClass}" id="badge-doc-${item.idDoc}" 
-      style="cursor:pointer;" 
-      title="Toca para cambiar el día de cobro"
-      onclick="editarDiaCobro('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(diaPago)}')">
-    ${badgeText} ✏️
-</span>
+                            <span class="badge ${badgeClass}" id="badge-doc-${item.idDoc}" style="cursor:pointer;" title="Toca para cambiar el día de cobro" onclick="editarDiaCobro('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(diaPago)}')">${badgeText} ✏️</span>
                         </div>
                         <div class="card-body">
                             <div>🪪 Cédula: <strong>${cedula}</strong></div>
@@ -2130,34 +2498,63 @@
         }
 
         async function cambiarEstadoCliente(idDoc, coleccion, nuevoValor) {
-    try {
-        let textoEstadoBD = "En lista";
-        if (nuevoValor === "por_digitar") textoEstadoBD = "Por digitar";
-        else if (nuevoValor === "no_renueva") textoEstadoBD = "No renueva";
-        else if (nuevoValor === "renovado") textoEstadoBD = "Afiliado / Renovado";
+            try {
+                let textoEstadoBD = "En lista";
+                if (nuevoValor === "por_digitar") textoEstadoBD = "Por digitar";
+                else if (nuevoValor === "no_renueva") textoEstadoBD = "No renueva";
+                else if (nuevoValor === "renovado") textoEstadoBD = "Afiliado / Renovado";
 
-        let datosActualizar = { estado: textoEstadoBD };
-        if (vistaActual === 'cobros' && nuevoValor === 'renovado') {
-            datosActualizar.estado_cobro = "Pagado";
+                let datosActualizar = { estado: textoEstadoBD };
+                if (vistaActual === 'cobros' && nuevoValor === 'renovado') {
+                    datosActualizar.estado_cobro = "Pagado";
+                }
+
+                await db.collection(coleccion).doc(idDoc).update(datosActualizar);
+
+                let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
+                if (registroLocal) {
+                    registroLocal.estado = textoEstadoBD;
+                    if (datosActualizar.estado_cobro) registroLocal.estado_cobro = datosActualizar.estado_cobro;
+                    registroLocal.yaRenovoComprado = (nuevoValor === "renovado");
+                    registroLocal.esNoRenuevaFlag = (nuevoValor === "no_renueva");
+                    registroLocal.esPorDigitarFlag = (nuevoValor === "por_digitar");
+                }
+
+                alert(`✅ Estado actualizado a: "${textoEstadoBD}". Sincronizado con la extensión.`);
+                filtrarLista();
+            } catch (err) {
+                alert("❌ Error al actualizar el estado: " + err.message);
+            }
         }
 
-        await db.collection(coleccion).doc(idDoc).update(datosActualizar);
+        async function editarDiaCobro(idDoc, coleccion, nombre, diaActual) {
+            let nuevoDia = prompt(`📅 Escribe el nuevo DÍA DE COBRO (1 al 31) para:\n👤 ${nombre}`, diaActual === "---" ? "" : diaActual);
+            if (nuevoDia === null) return;
 
-        let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
-        if (registroLocal) {
-            registroLocal.estado = textoEstadoBD;
-            if (datosActualizar.estado_cobro) registroLocal.estado_cobro = datosActualizar.estado_cobro;
-            registroLocal.yaRenovoComprado = (nuevoValor === "renovado");
-            registroLocal.esNoRenuevaFlag = (nuevoValor === "no_renueva");
-            registroLocal.esPorDigitarFlag = (nuevoValor === "por_digitar");
+            let diaLimpio = nuevoDia.trim();
+            let diaNum = parseInt(diaLimpio, 10);
+
+            if (isNaN(diaNum) || diaNum < 1 || diaNum > 31) {
+                alert("⚠️ Por favor ingresa un número de día válido entre 1 y 31.");
+                return;
+            }
+
+            try {
+                await db.collection(coleccion).doc(idDoc).update({
+                    dia_pago: String(diaNum)
+                });
+
+                let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
+                if (registroLocal) {
+                    registroLocal.dia_pago = String(diaNum);
+                }
+
+                alert(`✅ Día de cobro actualizado al día ${diaNum}.`);
+                filtrarLista();
+            } catch (err) {
+                alert("❌ Error al actualizar el día de cobro: " + err.message);
+            }
         }
-
-        alert(`✅ Estado actualizado a: "${textoEstadoBD}".`);
-        filtrarLista();
-    } catch (err) {
-        alert("❌ Error al actualizar el estado: " + err.message);
-    }
-}
 
         async function editarNotaEspecial(idDoc, coleccion, nombre, notaActual) {
             let nuevaNota = prompt(`📝 Escribe la nota o estado para:\n👤 ${nombre}`, notaActual);
@@ -2170,6 +2567,11 @@
 
                 await db.collection(coleccion).doc(idDoc).update(updateObj);
 
+                let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
+                if (registroLocal) {
+                    registroLocal[campoNota] = nuevaNota.trim();
+                }
+
                 let elNota = document.getElementById(`nota-text-${idDoc}`);
                 if (elNota) {
                     elNota.innerHTML = nuevaNota.trim() ? `📝 ${nuevaNota.trim()}` : '📝 Sin observaciones. (Toca el ✏️ para añadir)';
@@ -2180,34 +2582,7 @@
                 alert("❌ Error al actualizar la nota: " + err.message);
             }
         }
-async function editarDiaCobro(idDoc, coleccion, nombre, diaActual) {
-    let nuevoDia = prompt(`📅 Escribe el nuevo DÍA DE COBRO (1 al 31) para:\n👤 ${nombre}`, diaActual === "---" ? "" : diaActual);
-    if (nuevoDia === null) return;
 
-    let diaLimpio = nuevoDia.trim();
-    let diaNum = parseInt(diaLimpio, 10);
-
-    if (isNaN(diaNum) || diaNum < 1 || diaNum > 31) {
-        alert("⚠️ Por favor ingresa un número de día válido entre 1 y 31.");
-        return;
-    }
-
-    try {
-        await db.collection(coleccion).doc(idDoc).update({
-            dia_pago: String(diaNum)
-        });
-
-        let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
-        if (registroLocal) {
-            registroLocal.dia_pago = String(diaNum);
-        }
-
-        alert(`✅ Día de cobro actualizado al día ${diaNum}.`);
-        filtrarLista();
-    } catch (err) {
-        alert("❌ Error al actualizar el día de cobro: " + err.message);
-    }
-}
         const DICCIONARIO_MESES = {
             'enero': 'ene', 'ene': 'ene', 'febrero': 'feb', 'feb': 'feb', 'marzo': 'mar', 'mar': 'mar',
             'abril': 'abr', 'abr': 'abr', 'mayo': 'may', 'may': 'may', 'junio': 'jun', 'jun': 'jun',
@@ -2287,6 +2662,60 @@ async function editarDiaCobro(idDoc, coleccion, nombre, diaActual) {
             renderizarTarjetas(filtrados);
         }
 
+        // =========================================================================
+        // MOTOR DE VOZ HOLOGRÁFICO ANDRU AI (ESTILO J.A.R.V.I.S.)
+        // =========================================================================
+        function abrirHudJarvis() {
+            const overlay = document.getElementById('jarvis-hud-overlay');
+            const transcriptBox = document.getElementById('jarvis-transcript-box');
+            const replyBox = document.getElementById('jarvis-reply-box');
+            const statusLbl = document.getElementById('jarvis-status-label');
+            const clockLbl = document.getElementById('jarvis-hud-clock');
+
+            if (clockLbl) {
+                clockLbl.innerText = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            }
+            if (replyBox) {
+                replyBox.style.display = 'none';
+                replyBox.innerText = '';
+            }
+            if (statusLbl) statusLbl.innerText = "ESCUCHANDO COMANDO...";
+            if (transcriptBox) transcriptBox.innerText = "A tus órdenes, Andru. Te escucho...";
+            if (overlay) {
+                overlay.style.display = 'flex';
+                overlay.classList.add('state-listening');
+                overlay.classList.remove('state-speaking');
+            }
+        }
+
+        function cerrarHudJarvis() {
+            const overlay = document.getElementById('jarvis-hud-overlay');
+            const btnVoz = document.getElementById('btn-hey-andru');
+            if (reconocimientoActivo) {
+                try { reconocimientoActivo.abort(); } catch (e) {}
+                reconocimientoActivo = null;
+            }
+            if (overlay) {
+                overlay.style.display = 'none';
+                overlay.classList.remove('state-listening', 'state-speaking');
+            }
+            if (btnVoz) btnVoz.classList.remove('listening');
+        }
+
+        function reiniciarEscuchaJarvis() {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            activarHeyAndru();
+        }
+
+        function ejecutarComandoRapidoHUD(frase) {
+            if (reconocimientoActivo) {
+                try { reconocimientoActivo.abort(); } catch (e) {}
+                reconocimientoActivo = null;
+            }
+            document.getElementById('jarvis-transcript-box').innerText = `"${frase}"`;
+            procesarComandoDeVoz(frase);
+        }
+
         function activarHeyAndru() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -2294,44 +2723,271 @@ async function editarDiaCobro(idDoc, coleccion, nombre, diaActual) {
                 return;
             }
 
+            if (reconocimientoActivo) {
+                try { reconocimientoActivo.abort(); } catch (e) {}
+            }
+
+            abrirHudJarvis();
+            reproducirTonoHud('inicio');
+
             const recognition = new SpeechRecognition();
+            reconocimientoActivo = recognition;
             recognition.lang = 'es-CO';
-            recognition.interimResults = false;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
 
             const btnVoz = document.getElementById('btn-hey-andru');
+            const transcriptBox = document.getElementById('jarvis-transcript-box');
+            const statusLbl = document.getElementById('jarvis-status-label');
             btnVoz.classList.add('listening');
+
+            let textoCapturadoFinal = "";
 
             recognition.start();
 
             recognition.onresult = function(event) {
-                btnVoz.classList.remove('listening');
-                let rawTranscript = event.results[0][0].transcript;
-                procesarComandoDeVoz(rawTranscript);
+                let interim = "";
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const tr = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        textoCapturadoFinal += tr;
+                    } else {
+                        interim += tr;
+                    }
+                }
+                const visible = (textoCapturadoFinal || interim).trim();
+                if (visible && transcriptBox) {
+                    transcriptBox.innerText = `"${visible}"`;
+                }
+                if (textoCapturadoFinal.trim()) {
+                    btnVoz.classList.remove('listening');
+                    if (statusLbl) statusLbl.innerText = "PROCESANDO INSTRUCCIÓN...";
+                    reproducirTonoHud('fin');
+                    procesarComandoDeVoz(textoCapturadoFinal.trim());
+                }
             };
 
-            recognition.onerror = function() {
+            recognition.onerror = function(ev) {
                 btnVoz.classList.remove('listening');
+                if (ev.error !== 'aborted') {
+                    if (statusLbl) statusLbl.innerText = "CANAL EN ESPERA";
+                    if (transcriptBox) transcriptBox.innerText = "No alcancé a captar audio. Toca el núcleo para reintentar.";
+                }
             };
 
             recognition.onend = function() {
                 btnVoz.classList.remove('listening');
+                reconocimientoActivo = null;
             };
         }
 
-        function procesarComandoDeVoz(textoOriginal) {
+        async function buscarClienteEnNubePorNombre(nombreBuscado) {
+            const normBusq = normalizarTexto(nombreBuscado);
+            if (!normBusq) return null;
+
+            // 1. Buscar primero en memoria actual
+            let local = registrosGlobales.find(r => {
+                const nom = normalizarTexto(r.titular || r.nombre || r.nombreCompleto || r.cliente);
+                return nom.includes(normBusq);
+            });
+            if (local) return local;
+
+            // 2. Buscar en colecciones de Firebase (afiliados, renovaciones, prospectos)
+            const colecciones = ['afiliados', 'renovaciones', 'prospectos'];
+            for (const col of colecciones) {
+                try {
+                    const snap = await db.collection(col).get();
+                    let encontrado = null;
+                    snap.forEach(doc => {
+                        if (encontrado) return;
+                        const d = doc.data();
+                        const nom = normalizarTexto(d.titular || d.nombre || d.nombreCompleto || d.cliente);
+                        if (nom.includes(normBusq)) {
+                            encontrado = { ...d, idDoc: doc.id, coleccionOrigen: col };
+                        }
+                    });
+                    if (encontrado) return encontrado;
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        async function procesarComandoDeVoz(textoOriginal) {
             let cmd = normalizarTexto(textoOriginal);
             let inputBuscar = document.getElementById('input-buscar');
             let selectCriterio = document.getElementById('select-criterio');
             let banner = document.getElementById('voice-banner');
             let bannerText = document.getElementById('voice-banner-text');
 
+            // 1. BRIEFING: RESUMEN DEL DÍA / ESTADO DE OPERACIÓN
+            if (cmd.includes("resumen del dia") || cmd.includes("estado de la operacion") || cmd.includes("como esta el dia") || cmd.includes("reporte del dia")) {
+                try {
+                    const diaHoy = new Date().getDate();
+                    const snapAfil = await db.collection('afiliados').get();
+                    let cobrosHoy = 0;
+                    let totalDeuda = 0;
+                    snapAfil.forEach(doc => {
+                        const d = doc.data();
+                        const diaP = parseInt(limpiarTextoSeguro(d.dia_pago), 10);
+                        const estC = limpiarTextoSeguro(d.estado_cobro).toLowerCase();
+                        if (diaP === diaHoy && !estC.includes('pagado')) cobrosHoy++;
+                        const fin = extraerDatosFinancieros(d);
+                        const sal = parsearNumeroMoneda(fin.rawSaldo);
+                        if (sal > 0) totalDeuda += sal;
+                    });
+
+                    const snapRen = await db.collection('renovaciones').get();
+                    let renSemana = 0;
+                    snapRen.forEach(doc => {
+                        const d = doc.data();
+                        const est = limpiarTextoSeguro(d.estado).toLowerCase();
+                        const yaRen = est.includes('afiliado') || est.includes('renovado') || d.archivado === true;
+                        if (!yaRen && estaEnSemanaSabadoASabado(d)) renSemana++;
+                    });
+
+                    const snapRep = await db.collection('reportes_acumulados').doc('semana_actual').get();
+                    let comNet = 0;
+                    if (snapRep.exists && Array.isArray(snapRep.data().items)) {
+                        snapRep.data().items.forEach(it => {
+                            let s = parsearNumeroMoneda(it.suscripcion);
+                            let a = parsearNumeroMoneda(it.adicional);
+                            let p = parsearNumeroMoneda(it.premiacion);
+                            let ref = normalizarTexto(it.referencia);
+                            let pct = ref === "bipersonal" ? 0.185 : ref === "premium" ? 0.31 : ref === "vip" ? 0.298 : ref === "diamante" ? 0.264 : 0.33;
+                            comNet += (s * pct) + (s * 0.10) + (a * 0.15) + (p * 0.15) + (p > 0 ? 96600 : 0);
+                        });
+                    }
+                    const meta = parseFloat(localStorage.getItem('andru_meta_semanal')) || 1000000;
+                    const pctMeta = Math.round((comNet / meta) * 100);
+
+                    const respuesta = `Tienes ${cobrosHoy} cobros programados para hoy, ${renSemana} renovaciones pendientes esta semana y llevas ${Math.round(comNet).toLocaleString('es-CO')} pesos en comisiones, un ${pctMeta}% de tu meta semanal.`;
+                    hablarJarvis(respuesta, false);
+                } catch (e) {
+                    hablarJarvis("No pude consultar todas las métricas en este momento.", false);
+                }
+                return;
+            }
+
+            // 2. BRIEFING: COMISIONES ACUMULADAS
+            if (cmd.includes("como voy de comisiones") || cmd.includes("cuanto llevo en comisiones") || cmd.includes("mis comisiones") || cmd.includes("meta semanal")) {
+                try {
+                    const snapRep = await db.collection('reportes_acumulados').doc('semana_actual').get();
+                    let comNet = 0;
+                    let cant = 0;
+                    if (snapRep.exists && Array.isArray(snapRep.data().items)) {
+                        cant = snapRep.data().items.length;
+                        snapRep.data().items.forEach(it => {
+                            let s = parsearNumeroMoneda(it.suscripcion);
+                            let a = parsearNumeroMoneda(it.adicional);
+                            let p = parsearNumeroMoneda(it.premiacion);
+                            let ref = normalizarTexto(it.referencia);
+                            let pct = ref === "bipersonal" ? 0.185 : ref === "premium" ? 0.31 : ref === "vip" ? 0.298 : ref === "diamante" ? 0.264 : 0.33;
+                            comNet += (s * pct) + (s * 0.10) + (a * 0.15) + (p * 0.15) + (p > 0 ? 96600 : 0);
+                        });
+                    }
+                    const meta = parseFloat(localStorage.getItem('andru_meta_semanal')) || 1000000;
+                    const falta = Math.max(0, meta - comNet);
+                    const msg = falta > 0
+                        ? `Llevas ${cant} afiliaciones reportadas esta semana, con una comisión neta de ${Math.round(comNet).toLocaleString('es-CO')} pesos. Te faltan ${Math.round(falta).toLocaleString('es-CO')} pesos para cumplir tu meta.`
+                        : `¡Felicitaciones Andru! Ya superaste tu meta semanal con ${Math.round(comNet).toLocaleString('es-CO')} pesos en comisiones.`;
+                    cambiarVista('reporte', true);
+                    hablarJarvis(msg, false);
+                } catch (e) {
+                    hablarJarvis("Error consultando el reporte semanal.", false);
+                }
+                return;
+            }
+
+            // 3. CONSULTAR SALDO DE UN CLIENTE ESPECÍFICO ("¿Cuánto me debe Marco Tulio?")
+            let matchDeuda = cmd.match(/(?:cuanto me debe|cuanto debe|saldo de)\s+([a-zñáéíóú\s]+)$/i);
+            if (matchDeuda && matchDeuda[1]) {
+                const nomBusq = matchDeuda[1].trim();
+                const cli = await buscarClienteEnNubePorNombre(nomBusq);
+                if (cli) {
+                    const nomReal = limpiarTextoSeguro(cli.titular || cli.nombre || cli.cliente);
+                    const fin = extraerDatosFinancieros(cli);
+                    const sal = parsearNumeroMoneda(fin.rawSaldo);
+                    const diaP = limpiarTextoSeguro(cli.dia_pago);
+                    const resp = sal > 0
+                        ? `${nomReal} tiene un saldo pendiente de ${Math.round(sal).toLocaleString('es-CO')} pesos${diaP ? `, con fecha de cobro el día ${diaP}` : ''}.`
+                        : `${nomReal} no registra saldo pendiente en este momento.`;
+                    hablarJarvis(resp, false);
+                } else {
+                    hablarJarvis(`No encontré ningún cliente llamado ${nomBusq}.`, false);
+                }
+                return;
+            }
+
+            // 4. ACCIÓN DIRECTA: CAMBIAR DÍA DE COBRO POR VOZ ("Cambia el día de cobro de Marco Tulio al 30")
+            let matchCambioDia = cmd.match(/(?:cambia|cambiar|pon|poner|actualiza|actualizar)\s+(?:el\s+)?(?:dia\s+de\s+cobro|cobro|dia)\s+(?:de\s+)?([a-zñáéíóú\s]+?)\s+(?:al|a|el|para\s+el)\s+(\d{1,2})\b/i);
+            if (matchCambioDia && matchCambioDia[1] && matchCambioDia[2]) {
+                const nomBusq = matchCambioDia[1].trim();
+                const nuevoDiaNum = parseInt(matchCambioDia[2], 10);
+                if (nuevoDiaNum >= 1 && nuevoDiaNum <= 31) {
+                    const cli = await buscarClienteEnNubePorNombre(nomBusq);
+                    if (cli) {
+                        await db.collection(cli.coleccionOrigen).doc(cli.idDoc).update({ dia_pago: String(nuevoDiaNum) });
+                        const regLoc = registrosGlobales.find(r => r.idDoc === cli.idDoc);
+                        if (regLoc) regLoc.dia_pago = String(nuevoDiaNum);
+                        filtrarLista();
+                        const nomReal = limpiarTextoSeguro(cli.titular || cli.nombre || cli.cliente);
+                        hablarJarvis(`Listo, día de cobro de ${nomReal} actualizado al ${nuevoDiaNum}.`, true);
+                    } else {
+                        hablarJarvis(`No encontré a ${nomBusq} en la base de datos.`, false);
+                    }
+                    return;
+                }
+            }
+
+            // 5. ACCIÓN DIRECTA: ENVIAR WHATSAPP ("Escríbele por WhatsApp a Marco Tulio")
+            let matchWpp = cmd.match(/(?:escribele|escribe|mandale|enviale|whatsapp|mensaje)\s+(?:por\s+whatsapp\s+)?(?:a\s+)?([a-zñáéíóú\s]+)$/i);
+            if (matchWpp && matchWpp[1] && (cmd.includes("whatsapp") || cmd.includes("escrib") || cmd.includes("mensaje"))) {
+                const nomBusq = matchWpp[1].replace(/\b(por|whatsapp|un|mensaje)\b/g, '').trim();
+                const cli = await buscarClienteEnNubePorNombre(nomBusq);
+                if (cli) {
+                    if (!registrosGlobales.find(r => r.idDoc === cli.idDoc)) {
+                        registrosGlobales.push(cli);
+                    }
+                    const nomReal = limpiarTextoSeguro(cli.titular || cli.nombre || cli.cliente);
+                    hablarJarvis(`Abriendo WhatsApp para ${nomReal}.`, true);
+                    setTimeout(() => abrirModalPlantillasWpp(cli.idDoc), 600);
+                } else {
+                    hablarJarvis(`No encontré el contacto de ${nomBusq}.`, false);
+                }
+                return;
+            }
+
+            // 6. ACCIÓN DIRECTA: LLAMAR POR TELÉFONO ("Llámame a María López")
+            let matchCall = cmd.match(/(?:llamame|llama|llamar)\s+(?:a\s+)?([a-zñáéíóú\s]+)$/i);
+            if (matchCall && matchCall[1]) {
+                const nomBusq = matchCall[1].trim();
+                const cli = await buscarClienteEnNubePorNombre(nomBusq);
+                if (cli) {
+                    const tel = extraerTelefonoValido(cli);
+                    const nomReal = limpiarTextoSeguro(cli.titular || cli.nombre || cli.cliente);
+                    if (tel) {
+                        hablarJarvis(`Iniciando llamada con ${nomReal}.`, true);
+                        setTimeout(() => { window.location.href = `tel:${tel}`; }, 700);
+                    } else {
+                        hablarJarvis(`${nomReal} no tiene teléfono registrado.`, false);
+                    }
+                } else {
+                    hablarJarvis(`No encontré a ${nomBusq}.`, false);
+                }
+                return;
+            }
+
+            // 7. NUEVO PROSPECTO
             if (cmd.includes("nuevo prospecto") || cmd.includes("agregar prospecto") || cmd.includes("crear prospecto") || cmd.includes("registrar prospecto")) {
+                hablarJarvis("Abriendo formulario de nuevo prospecto.", true);
                 abrirModalNuevo();
                 return;
             }
 
+            // 8. LIMPIAR FILTROS
             if (cmd.includes("mostrar todo") || cmd.includes("limpiar busqueda") || cmd.includes("limpiar filtro") || cmd.includes("quitar filtro") || cmd.includes("ver todos")) {
                 limpiarFiltrosCompletos();
+                hablarJarvis("Filtros restablecidos.", true);
                 return;
             }
 
@@ -2464,10 +3120,11 @@ async function editarDiaCobro(idDoc, coleccion, nombre, diaActual) {
             if (targetSubRenovacion === 'RENOVADO') document.getElementById('btn-ren-renovado').classList.add('active');
             if (targetSubRenovacion === 'NO_RENUEVA') document.getElementById('btn-ren-norenueva').classList.add('active');
 
-            bannerText.innerText = `🎙️ "${textoOriginal}"`;
+            bannerText.innerText = `🤖 "${textoOriginal}"`;
             banner.style.display = 'flex';
 
             cambiarVista(targetVista, true);
+            hablarJarvis(`Filtro aplicado en ${targetVista}.`, true);
         }
 
         function abrirModalNuevo() {
