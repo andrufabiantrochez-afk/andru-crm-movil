@@ -98,9 +98,12 @@
         .tab-btn { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--brand-blue); color: #ffffff; border-color: var(--brand-blue); box-shadow: 0 2px 6px rgba(0, 68, 170, 0.3); }
         
-        .sub-nav { display: flex; gap: 6px; padding: 8px 15px; background: var(--bg-body); border-bottom: 1px solid var(--border-color); overflow-x: auto; }
+        .sub-nav { display: flex; gap: 6px; padding: 8px 15px; background: var(--bg-body); border-bottom: 1px solid var(--border-color); overflow-x: auto; align-items: center; }
         .sub-btn { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; }
         .sub-btn.active { background: #f59e0b; color: #0f172a; border-color: #d97706; font-weight: 800; }
+        .sub-btn.rezagada-btn.active { background: #dc2626; color: #ffffff; border-color: #991b1b; }
+
+        .select-mes-rapido { background: var(--bg-surface); color: var(--text-accent); border: 1.5px solid var(--brand-blue); border-radius: 12px; padding: 4px 8px; font-size: 11px; font-weight: 800; outline: none; cursor: pointer; white-space: nowrap; }
 
         .reporte-panel { display: none; background: var(--bg-surface); padding: 12px 15px; border-bottom: 2px solid #059669; flex-direction: column; gap: 8px; }
         .comision-box { background: linear-gradient(135deg, #003380 0%, #1e40af 100%); color: #ffffff; border-radius: 10px; padding: 10px 12px; border: 1.5px solid #f59e0b; display: flex; flex-direction: column; gap: 6px; }
@@ -124,6 +127,7 @@
         .card.estado-no-renueva { background: rgba(220, 38, 38, 0.08) !important; border: 1px solid #dc2626 !important; border-left: 4px solid #dc2626 !important; }
         .card.estado-renovado { background: rgba(16, 185, 129, 0.1) !important; border: 1px solid #059669 !important; border-left: 4px solid #059669 !important; }
         .card.estado-por-digitar { background: rgba(37, 99, 235, 0.12) !important; border: 1.5px solid #2563eb !important; border-left: 5px solid #2563eb !important; }
+        .card.estado-rezagada { border-left: 5px solid #dc2626; }
         .card.excluido-pdf { opacity: 0.55; border-left: 4px solid #94a3b8; }
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
@@ -131,6 +135,11 @@
         .card-title { font-size: 14px; font-weight: 800; color: var(--text-accent); word-break: break-word; }
         .btn-edit-note { background: none; border: none; cursor: pointer; font-size: 13px; padding: 2px; }
         .select-accion { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: bold; outline: none; cursor: pointer; }
+
+        .btn-intento-contacto { border-radius: 6px; padding: 4px 7px; font-size: 10.5px; font-weight: 800; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-secondary); white-space: nowrap; transition: 0.2s; }
+        .btn-intento-contacto.intento-1 { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+        .btn-intento-contacto.intento-2 { background: #ffedd5; color: #c2410c; border-color: #fdba74; }
+        .btn-intento-contacto.intento-3 { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
 
         .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 800; white-space: nowrap; }
         .badge-red { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
@@ -510,10 +519,26 @@
         </div>
     </div>
 
-    <!-- SUBMENÚ PARA ESTADOS DE RENOVACIONES -->
+    <!-- SUBMENÚ PARA ESTADOS Y MESES DE RENOVACIONES -->
     <div class="sub-nav" id="subnav-renovaciones" style="display: none;">
+        <select id="select-mes-renovaciones" class="select-mes-rapido" onchange="cambiarMesRapidoRenovaciones(this.value)">
+            <option value="">📆 Todos los meses</option>
+            <option value="enero">Enero</option>
+            <option value="febrero">Febrero</option>
+            <option value="marzo">Marzo</option>
+            <option value="abril">Abril</option>
+            <option value="mayo">Mayo</option>
+            <option value="junio">Junio</option>
+            <option value="julio">Julio</option>
+            <option value="agosto">Agosto</option>
+            <option value="septiembre">Septiembre</option>
+            <option value="octubre">Octubre</option>
+            <option value="noviembre">Noviembre</option>
+            <option value="diciembre">Diciembre</option>
+        </select>
         <button class="sub-btn active" id="btn-ren-todos" onclick="cambiarSubFiltroRenovaciones('TODOS')">📋 Todos</button>
-        <button class="sub-btn" id="btn-ren-semana" onclick="cambiarSubFiltroRenovaciones('ESTA_SEMANA')">📆 Esta Semana (Sáb-Sáb)</button>
+        <button class="sub-btn" id="btn-ren-semana" onclick="cambiarSubFiltroRenovaciones('ESTA_SEMANA')">📆 Esta Semana</button>
+        <button class="sub-btn rezagada-btn" id="btn-ren-rezagadas" onclick="cambiarSubFiltroRenovaciones('REZAGADAS')">⚠️ Rezagadas</button>
         <button class="sub-btn" id="btn-ren-pordigitar" onclick="cambiarSubFiltroRenovaciones('POR_DIGITAR')">📝 Por Digitar</button>
         <button class="sub-btn" id="btn-ren-lista" onclick="cambiarSubFiltroRenovaciones('LISTA')">⏳ En Gestión</button>
         <button class="sub-btn" id="btn-ren-renovado" onclick="cambiarSubFiltroRenovaciones('RENOVADO')">✅ Renovados</button>
@@ -537,7 +562,7 @@
     <div class="jarvis-overlay" id="jarvis-hud-overlay">
         <div class="jarvis-hud-card">
             <div class="jarvis-top-bar">
-                <span>ANDRU AI • CORE v2.6</span>
+                <span>ANDRU AI • CORE v2.7</span>
                 <span id="jarvis-hud-clock">SYS ONLINE</span>
             </div>
 
@@ -561,9 +586,9 @@
 
             <div class="jarvis-quick-chips">
                 <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Dame el resumen del día')">📊 Resumen del día</button>
-                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Cómo voy de comisiones')">🌡️ Comisiones</button>
                 <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Renovaciones de esta semana')">📆 Esta semana</button>
-                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Quiénes tienen saldo pendiente')">💸 Saldos</button>
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Renovaciones rezagadas')">⚠️ Rezagadas</button>
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Cómo voy de comisiones')">🌡️ Comisiones</button>
             </div>
 
             <div class="jarvis-actions-row">
@@ -589,6 +614,7 @@
                 <button class="chip-btn" data-tpl="promesa_hoy" onclick="seleccionarPlantillaWpp('promesa_hoy', this)">🤝 Acordado ("Recuérdame")</button>
                 <button class="chip-btn" data-tpl="mora_critica" onclick="seleccionarPlantillaWpp('mora_critica', this)">🚨 Aviso Preventivo / Mora</button>
                 <button class="chip-btn" data-tpl="renovacion" onclick="seleccionarPlantillaWpp('renovacion', this)">🔄 Renovación Plan</button>
+                <button class="chip-btn" data-tpl="ultimo_llamado_semana" onclick="seleccionarPlantillaWpp('ultimo_llamado_semana', this)">⏳ Último Llamado Semana</button>
                 <button class="chip-btn" data-tpl="medios_pago" onclick="seleccionarPlantillaWpp('medios_pago', this)">📲 12 Medios de Pago</button>
             </div>
 
@@ -758,8 +784,9 @@
                 </div>
                 <div class="cmd-item">
                     <strong>📆 Renovaciones y Estados:</strong>
-                    "Renovaciones de esta semana" / "Renovaciones por digitar"<br>
-                    "Muéstrame las renovaciones de octubre"
+                    "Muéstrame mis renovaciones de noviembre"<br>
+                    "Renovaciones de esta semana" / "Renovaciones rezagadas"<br>
+                    "Renovaciones por digitar"
                 </div>
                 <div class="cmd-item">
                     <strong>💰 Cobros y Búsquedas Rápidas:</strong>
@@ -1164,7 +1191,7 @@
             return "";
         }
 
-        // --- CÁLCULO AUTOMÁTICO DE SEMANA SÁBADO A SÁBADO PARA RENOVACIONES ---
+        // --- CÁLCULO AUTOMÁTICO DE SEMANA SÁBADO A SÁBADO Y DETECCIÓN DE REZAGADAS ---
         function obtenerRangoSemanaSabadoASabado() {
             const hoy = new Date();
             hoy.setHours(0, 0, 0, 0);
@@ -1182,8 +1209,8 @@
             return { sabadoInicio, sabadoFin };
         }
 
-        function estaEnSemanaSabadoASabado(item) {
-            const { sabadoInicio, sabadoFin } = obtenerRangoSemanaSabadoASabado();
+        function parsearFechaRenovacionItem(item) {
+            const { sabadoInicio } = obtenerRangoSemanaSabadoASabado();
             const MESES_MAP = {
                 'ene': 0, 'enero': 0, 'feb': 1, 'febrero': 1, 'mar': 2, 'marzo': 2,
                 'abr': 3, 'abril': 3, 'may': 4, 'mayo': 4, 'jun': 5, 'junio': 5,
@@ -1228,16 +1255,40 @@
                 }
             }
 
-            if (dia === null || mes === null || isNaN(dia) || isNaN(mes)) return false;
+            if (dia === null || mes === null || isNaN(dia) || isNaN(mes)) return null;
+            return { dia, mes };
+        }
 
+        function estaEnSemanaSabadoASabado(item) {
+            const parsed = parsearFechaRenovacionItem(item);
+            if (!parsed) return false;
+            const { sabadoInicio, sabadoFin } = obtenerRangoSemanaSabadoASabado();
             const candidatosAnio = [sabadoInicio.getFullYear(), sabadoFin.getFullYear()];
             for (const anio of candidatosAnio) {
-                const fechaEvaluar = new Date(anio, mes, dia, 12, 0, 0);
+                const fechaEvaluar = new Date(anio, parsed.mes, parsed.dia, 12, 0, 0);
                 if (fechaEvaluar >= sabadoInicio && fechaEvaluar <= sabadoFin) {
                     return true;
                 }
             }
             return false;
+        }
+
+        function esRenovacionRezagada(item) {
+            if (item.yaRenovoComprado || item.esNoRenuevaFlag || item.esPorDigitarFlag) return false;
+            const parsed = parsearFechaRenovacionItem(item);
+            if (!parsed) return false;
+
+            const { sabadoInicio } = obtenerRangoSemanaSabadoASabado();
+            const anioActual = sabadoInicio.getFullYear();
+            let fechaCiclo = new Date(anioActual, parsed.mes, parsed.dia, 12, 0, 0);
+
+            // Manejo de cruce de año (ej: estamos en enero y la renovación era de noviembre/diciembre)
+            if (sabadoInicio.getMonth() <= 1 && parsed.mes >= 9) {
+                fechaCiclo = new Date(anioActual - 1, parsed.mes, parsed.dia, 12, 0, 0);
+            }
+
+            const diffDias = (sabadoInicio - fechaCiclo) / (1000 * 60 * 60 * 24);
+            return diffDias > 0 && diffDias <= 120;
         }
 
         function actualizarBannerRangoRenovaciones() {
@@ -1252,6 +1303,9 @@
                 const finStr = sabadoFin.toLocaleDateString('es-CO', fmtOpts);
                 txt.innerText = `📆 Vencimientos: ${iniStr} ➔ ${finStr}`;
                 banner.style.display = 'flex';
+            } else if (vistaActual === 'renovaciones' && subFiltroRenovaciones === 'REZAGADAS') {
+                txt.innerText = `⚠️ Renovaciones de semanas pasadas sin cierre (ni sí, ni no)`;
+                banner.style.display = 'flex';
             } else {
                 banner.style.display = 'none';
             }
@@ -1263,6 +1317,9 @@
             filtroMesAdicional = '';
             subFiltroRenovaciones = 'TODOS';
             document.getElementById('voice-banner').style.display = 'none';
+
+            const selMes = document.getElementById('select-mes-renovaciones');
+            if (selMes) selMes.value = '';
             
             document.querySelectorAll('#subnav-renovaciones .sub-btn').forEach(btn => btn.classList.remove('active'));
             let btnTodos = document.getElementById('btn-ren-todos');
@@ -1286,6 +1343,8 @@
                 filtroMesAdicional = '';
                 document.getElementById('voice-banner').style.display = 'none';
                 document.getElementById('select-criterio').value = 'todo';
+                const selMes = document.getElementById('select-mes-renovaciones');
+                if (selMes) selMes.value = '';
             }
 
             actualizarBannerRangoRenovaciones();
@@ -1301,11 +1360,17 @@
             cargarDatosMovil();
         }
 
+        function cambiarMesRapidoRenovaciones(mesSeleccionado) {
+            filtroMesAdicional = mesSeleccionado || '';
+            filtrarLista();
+        }
+
         function cambiarSubFiltroRenovaciones(estadoFiltro) {
             subFiltroRenovaciones = estadoFiltro;
             document.querySelectorAll('#subnav-renovaciones .sub-btn').forEach(btn => btn.classList.remove('active'));
             if (estadoFiltro === 'TODOS') document.getElementById('btn-ren-todos').classList.add('active');
             if (estadoFiltro === 'ESTA_SEMANA') document.getElementById('btn-ren-semana').classList.add('active');
+            if (estadoFiltro === 'REZAGADAS') document.getElementById('btn-ren-rezagadas').classList.add('active');
             if (estadoFiltro === 'LISTA') document.getElementById('btn-ren-lista').classList.add('active');
             if (estadoFiltro === 'RENOVADO') document.getElementById('btn-ren-renovado').classList.add('active');
             if (estadoFiltro === 'NO_RENUEVA') document.getElementById('btn-ren-norenueva').classList.add('active');
@@ -1359,6 +1424,9 @@
         }
 
         function extraerDiaNum(item) {
+            let parsed = parsearFechaRenovacionItem(item);
+            if (parsed && parsed.dia) return parsed.dia;
+
             let dia = parseInt(item.dia_pago, 10);
             if (!isNaN(dia)) return dia;
 
@@ -1511,28 +1579,6 @@
             }
         }
 
-        function calcularComisionActualReporte() {
-            let sumaTotal = 0;
-            let comisionTotalNeta = 0;
-            itemsReporteCrudos.forEach(item => {
-                let susc = parsearNumeroMoneda(item.suscripcion);
-                let adic = parsearNumeroMoneda(item.adicional);
-                let prem = parsearNumeroMoneda(item.premiacion);
-                let ref = normalizarTexto(item.referencia);
-
-                sumaTotal += (susc + adic + prem);
-
-                let pct = ref === "bipersonal" ? 0.185 : ref === "premium" ? 0.31 : ref === "vip" ? 0.298 : ref === "diamante" ? 0.264 : 0.33;
-                let cServ = susc * pct;
-                let cSoc = susc * 0.06;
-                let cMov = susc * 0.02;
-                let cAlim = susc * 0.02;
-                let cAdicPrem = (adic * 0.15) + (prem * 0.15) + (prem > 0 ? 96600 : 0);
-                comisionTotalNeta += (cServ + cSoc + cMov + cAlim + cAdicPrem);
-            });
-            return { sumaTotal, comisionTotalNeta };
-        }
-
         function actualizarTotalesReportePDF() {
             if (vistaActual !== 'reporte') return;
             let seleccionados = listaFiltradaActual.filter(r => r._incluirEnPdf !== false);
@@ -1631,6 +1677,9 @@
                 case 'renovacion':
                     return `Hola, *${nombre}*. 😊 ¡Espero que te encuentres muy bien! Te deseo ${deseo}.\n\nEstaba revisando las afiliaciones próximas a renovar y quise escribirte con tiempo para ayudarte a continuar disfrutando de todos los beneficios, descuentos y auxilios de tu membresía Previser. 💙\n\nCuéntame: ¿tu grupo familiar continúa igual o deseas incluir algún cambio este año? Si quieres lo gestionamos por aquí mismo. 🤝`;
 
+                case 'ultimo_llamado_semana':
+                    return `Hola ${nombre} 👋, ${saludo}. Espero que todo marche muy bien.\n\nTe escribo un mensaje rápido porque hoy cerramos el reporte semanal de renovaciones en Previser y quería confirmar si deseas dejar activa tu membresía para que no pierdas continuidad ni beneficios médicos con tu familia. 💙\n\nDime con toda confianza si la renovamos hoy o para qué día la dejamos programada. ¡Quedo muy atento! 🙌`;
+
                 case 'medios_pago':
                     return `Hola ${nombre} 👋, con mucho gusto te comparto los *medios oficiales de pago de Previser*${textoSaldo}:\n\n🏢 *Titular:* Alianza Estratégica en Servicios Nacionales SAS\n🪪 *NIT:* 900.106.565-0\n\n🌐 *Pago en línea (PSE / ePayco):*\n👉 www.previser.com.co\n\n🏪 *Puntos con Número de Convenio:*\n• *Bancolombia:* Convenio 87099\n• *Gane:* Convenio 34625\n• *Efecty:* Convenio 113161\n• *Baloto:* Convenio 7400\n\n🏦 *Transferencia Bancaria:*\n• *Davivienda* (Ahorros): 016200653778\n• *Banco de Bogotá* (Corriente): 458462033\n• *AV Villas* (Corriente): 158017772\n• *BBVA* (Corriente): 690014097\n• *Colpatria* (Corriente): 5971006031\n\n💡 _Tip: Si transfieres desde el mismo banco, el pago llega de inmediato._\n\n📸 Apenas realices el pago, por favor envíame el comprobante por este chat para registrarlo en el sistema. ✅🙌`;
 
@@ -1672,7 +1721,10 @@
             document.getElementById('wpp-modal-cliente').innerText = nombreCompleto;
             document.getElementById('wpp-modal-tel').innerText = celularLimpioReal;
 
-            let plantillaSugerida = (vistaActual === 'renovaciones') ? 'renovacion' : 'cobro_amable';
+            let plantillaSugerida = 'cobro_amable';
+            if (vistaActual === 'renovaciones') {
+                plantillaSugerida = (subFiltroRenovaciones === 'REZAGADAS') ? 'ultimo_llamado_semana' : 'renovacion';
+            }
 
             const botones = document.querySelectorAll('#wpp-chips-container .chip-btn');
             botones.forEach(btn => {
@@ -1734,6 +1786,29 @@
             }
 
             window.open('https://tasks.google.com/embed/?origin=https://mail.google.com&fullWidth=1', '_blank');
+        }
+
+        // --- SEMÁFORO DE SEGUIMIENTO DE CONTACTO (0 -> 1 -> 2 -> 3 -> 0) ---
+        async function avanzarIntentoContacto(idDoc, coleccion) {
+            const reg = registrosGlobales.find(r => r.idDoc === idDoc);
+            if (!reg) return;
+
+            const actual = parseInt(reg.intentos_contacto, 10) || 0;
+            const siguiente = actual >= 3 ? 0 : actual + 1;
+            const hoyCorto = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' });
+
+            try {
+                await db.collection(coleccion).doc(idDoc).update({
+                    intentos_contacto: siguiente,
+                    ultimo_contacto_fecha: siguiente > 0 ? hoyCorto : ""
+                });
+
+                reg.intentos_contacto = siguiente;
+                reg.ultimo_contacto_fecha = siguiente > 0 ? hoyCorto : "";
+                filtrarLista();
+            } catch (err) {
+                alert("❌ Error al actualizar seguimiento: " + err.message);
+            }
         }
 
         function renderizarTarjetas(lista) {
@@ -1827,7 +1902,7 @@
                     }
 
                     let diaPago = limpiarTextoSeguro(item.dia_pago) || "---";
-                    let fechaVenta = limpiarTextoSeguro(item.fecha_venta || item.fec_vinc || item.fecha_compra || item.mes_compra);
+                    let fechaVenta = limpiarTextoSeguro(item.fecha_renovacion || item.fecha_vencimiento || item.fecha_venta || item.fec_vinc || item.fecha_compra || item.mes_compra);
                     let notaCobro = limpiarTextoSeguro(item.nota_cobro || item.nota_seguimiento || item.observaciones);
 
                     let fin = extraerDatosFinancieros(item);
@@ -1846,6 +1921,7 @@
                     let esPorDigitar = item.esPorDigitarFlag === true;
                     let esNoRenueva = item.esNoRenuevaFlag === true;
                     let esRenovado = !esPorDigitar && !esNoRenueva && item.yaRenovoComprado === true;
+                    let esRezagada = (vistaActual === 'renovaciones') && esRenovacionRezagada(item);
 
                     if (esPorDigitar) {
                         tarjetaEstiloClase = "estado-por-digitar";
@@ -1874,9 +1950,22 @@
                         badgeClass = "badge-purple";
                         badgeText = `🗂️ ESTADO / DÍA: ${diaPago.toUpperCase()}`;
                     } else if (vistaActual === 'renovaciones') {
-                        badgeClass = "badge-yellow";
-                        badgeText = fechaVenta ? `🗓️ COMPRA: ${fechaVenta.toUpperCase()}` : `⏳ RENOVACIÓN`;
+                        if (esRezagada) {
+                            tarjetaEstiloClase = "estado-rezagada";
+                            badgeClass = "badge-red";
+                            badgeText = fechaVenta ? `⚠️ REZAGADA: ${fechaVenta.toUpperCase()}` : `⚠️ REZAGADA`;
+                        } else {
+                            badgeClass = "badge-yellow";
+                            badgeText = fechaVenta ? `🗓️ VENCE: ${fechaVenta.toUpperCase()}` : `⏳ RENOVACIÓN`;
+                        }
                     }
+
+                    let intentos = parseInt(item.intentos_contacto, 10) || 0;
+                    let ultFecha = limpiarTextoSeguro(item.ultimo_contacto_fecha);
+                    let clsIntento = intentos === 1 ? 'intento-1' : intentos === 2 ? 'intento-2' : intentos >= 3 ? 'intento-3' : '';
+                    let txtIntento = intentos === 0
+                        ? '📩 Sin contactar'
+                        : `📲 ${intentos}° contacto${ultFecha ? ` (${ultFecha})` : ''}`;
 
                     let celularLimpioReal = extraerTelefonoValido(item);
 
@@ -1928,14 +2017,17 @@
                                 </div>
                             </div>
 
-                            <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-                                <span style="font-size:11px; font-weight:bold; color: var(--text-secondary);">Estado:</span>
-                                <select class="select-accion" onchange="cambiarEstadoCliente('${item.idDoc}', '${item.coleccionOrigen}', this.value)">
-                                    <option value="lista" ${valorSelectAccion === 'lista' ? 'selected' : ''}>📋 En Lista / Gestión</option>
-                                    <option value="por_digitar" ${valorSelectAccion === 'por_digitar' ? 'selected' : ''}>📝 Sí renueva (Por digitar)</option>
-                                    <option value="no_renueva" ${valorSelectAccion === 'no_renueva' ? 'selected' : ''}>❌ No Renueva</option>
-                                    <option value="renovado" ${valorSelectAccion === 'renovado' ? 'selected' : ''}>✅ Renovado / Venta</option>
-                                </select>
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:4px; flex-wrap:wrap;">
+                                <div style="display:flex; align-items:center; gap:5px;">
+                                    <span style="font-size:11px; font-weight:bold; color: var(--text-secondary);">Estado:</span>
+                                    <select class="select-accion" onchange="cambiarEstadoCliente('${item.idDoc}', '${item.coleccionOrigen}', this.value)">
+                                        <option value="lista" ${valorSelectAccion === 'lista' ? 'selected' : ''}>📋 En Gestión</option>
+                                        <option value="por_digitar" ${valorSelectAccion === 'por_digitar' ? 'selected' : ''}>📝 Por digitar</option>
+                                        <option value="no_renueva" ${valorSelectAccion === 'no_renueva' ? 'selected' : ''}>❌ No Renueva</option>
+                                        <option value="renovado" ${valorSelectAccion === 'renovado' ? 'selected' : ''}>✅ Renovado / Venta</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn-intento-contacto ${clsIntento}" title="Toca para registrar 1er, 2do o 3er intento de contacto" onclick="avanzarIntentoContacto('${item.idDoc}', '${item.coleccionOrigen}')">${txtIntento}</button>
                             </div>
 
                             <div id="nota-text-${item.idDoc}" style="color: var(--note-color); font-style:italic; margin-top:4px; font-weight: 500;">
@@ -2584,17 +2676,54 @@
         }
 
         const DICCIONARIO_MESES = {
-            'enero': 'ene', 'ene': 'ene', 'febrero': 'feb', 'feb': 'feb', 'marzo': 'mar', 'mar': 'mar',
-            'abril': 'abr', 'abr': 'abr', 'mayo': 'may', 'may': 'may', 'junio': 'jun', 'jun': 'jun',
-            'julio': 'jul', 'jul': 'jul', 'agosto': 'ago', 'ago': 'ago', 'septiembre': 'sep', 'sep': 'sep',
-            'octubre': 'oct', 'oct': 'oct', 'noviembre': 'nov', 'nov': 'nov', 'diciembre': 'dic', 'dic': 'dic'
+            'enero': { abrev: 'ene', num: '01' },
+            'ene': { abrev: 'ene', num: '01' },
+            'febrero': { abrev: 'feb', num: '02' },
+            'feb': { abrev: 'feb', num: '02' },
+            'marzo': { abrev: 'mar', num: '03' },
+            'mar': { abrev: 'mar', num: '03' },
+            'abril': { abrev: 'abr', num: '04' },
+            'abr': { abrev: 'abr', num: '04' },
+            'mayo': { abrev: 'may', num: '05' },
+            'may': { abrev: 'may', num: '05' },
+            'junio': { abrev: 'jun', num: '06' },
+            'jun': { abrev: 'jun', num: '06' },
+            'julio': { abrev: 'jul', num: '07' },
+            'jul': { abrev: 'jul', num: '07' },
+            'agosto': { abrev: 'ago', num: '08' },
+            'ago': { abrev: 'ago', num: '08' },
+            'septiembre': { abrev: 'sep', num: '09' },
+            'sep': { abrev: 'sep', num: '09' },
+            'octubre': { abrev: 'oct', num: '10' },
+            'oct': { abrev: 'oct', num: '10' },
+            'noviembre': { abrev: 'nov', num: '11' },
+            'nov': { abrev: 'nov', num: '11' },
+            'diciembre': { abrev: 'dic', num: '12' },
+            'dic': { abrev: 'dic', num: '12' }
         };
 
         function coincideMes(data, mesBuscado) {
             let mesNorm = normalizarTexto(mesBuscado);
-            let abrev = DICCIONARIO_MESES[mesNorm] || mesNorm;
-            let fechaVentaBD = normalizarTexto(data.fecha || data.fecha_venta || data.fec_vinc || data.fecha_compra || data.mes_compra);
-            return fechaVentaBD.includes(abrev) || fechaVentaBD.includes(mesNorm);
+            let infoMes = DICCIONARIO_MESES[mesNorm];
+            let fechaRaw = limpiarTextoSeguro(
+                data.fecha_renovacion || data.fecha_vencimiento || data.fecha || data.fecha_venta || data.fec_vinc || data.fecha_compra || data.mes_compra
+            );
+            let fechaNorm = normalizarTexto(fechaRaw);
+            if (!fechaNorm) return false;
+
+            if (!infoMes) return fechaNorm.includes(mesNorm);
+
+            // 1. Coincidencia por texto ("nov", "noviembre")
+            if (fechaNorm.includes(infoMes.abrev) || fechaNorm.includes(mesNorm)) return true;
+
+            // 2. Coincidencia por formato numérico DD/MM/AAAA o AAAA-MM-DD
+            let mIso = fechaRaw.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+            if (mIso && mIso[2].padStart(2, '0') === infoMes.num) return true;
+
+            let mLatam = fechaRaw.match(/^(\d{1,2})[-\/](\d{1,2})(?:[-\/]\d{2,4})?/);
+            if (mLatam && mLatam[2].padStart(2, '0') === infoMes.num) return true;
+
+            return false;
         }
 
         function filtrarLista() {
@@ -2605,6 +2734,7 @@
             let filtrados = registrosGlobales.filter(data => {
                 if (vistaActual === 'renovaciones') {
                     if (subFiltroRenovaciones === 'ESTA_SEMANA' && (!estaEnSemanaSabadoASabado(data) || data.yaRenovoComprado)) return false;
+                    if (subFiltroRenovaciones === 'REZAGADAS' && !esRenovacionRezagada(data)) return false;
                     if (subFiltroRenovaciones === 'POR_DIGITAR' && !data.esPorDigitarFlag) return false;
                     if (subFiltroRenovaciones === 'RENOVADO' && !data.yaRenovoComprado) return false;
                     if (subFiltroRenovaciones === 'NO_RENUEVA' && !data.esNoRenuevaFlag) return false;
@@ -2785,14 +2915,12 @@
             const normBusq = normalizarTexto(nombreBuscado);
             if (!normBusq) return null;
 
-            // 1. Buscar primero en memoria actual
             let local = registrosGlobales.find(r => {
                 const nom = normalizarTexto(r.titular || r.nombre || r.nombreCompleto || r.cliente);
                 return nom.includes(normBusq);
             });
             if (local) return local;
 
-            // 2. Buscar en colecciones de Firebase (afiliados, renovaciones, prospectos)
             const colecciones = ['afiliados', 'renovaciones', 'prospectos'];
             for (const col of colecciones) {
                 try {
@@ -2825,24 +2953,27 @@
                     const diaHoy = new Date().getDate();
                     const snapAfil = await db.collection('afiliados').get();
                     let cobrosHoy = 0;
-                    let totalDeuda = 0;
                     snapAfil.forEach(doc => {
                         const d = doc.data();
                         const diaP = parseInt(limpiarTextoSeguro(d.dia_pago), 10);
                         const estC = limpiarTextoSeguro(d.estado_cobro).toLowerCase();
                         if (diaP === diaHoy && !estC.includes('pagado')) cobrosHoy++;
-                        const fin = extraerDatosFinancieros(d);
-                        const sal = parsearNumeroMoneda(fin.rawSaldo);
-                        if (sal > 0) totalDeuda += sal;
                     });
 
                     const snapRen = await db.collection('renovaciones').get();
                     let renSemana = 0;
+                    let renRezagadas = 0;
                     snapRen.forEach(doc => {
                         const d = doc.data();
                         const est = limpiarTextoSeguro(d.estado).toLowerCase();
-                        const yaRen = est.includes('afiliado') || est.includes('renovado') || d.archivado === true;
+                        const esPD = est.includes("por digitar") || est.includes("confirmar");
+                        const esNR = est.includes("no renueva") || est.includes("no interesado") || est.includes("cancelado") || est.includes("❌");
+                        const yaRen = !esPD && !esNR && (est.includes('afiliado') || est.includes('renovado') || d.archivado === true);
+                        d.yaRenovoComprado = yaRen;
+                        d.esPorDigitarFlag = esPD;
+                        d.esNoRenuevaFlag = esNR;
                         if (!yaRen && estaEnSemanaSabadoASabado(d)) renSemana++;
+                        if (esRenovacionRezagada(d)) renRezagadas++;
                     });
 
                     const snapRep = await db.collection('reportes_acumulados').doc('semana_actual').get();
@@ -2860,7 +2991,7 @@
                     const meta = parseFloat(localStorage.getItem('andru_meta_semanal')) || 1000000;
                     const pctMeta = Math.round((comNet / meta) * 100);
 
-                    const respuesta = `Tienes ${cobrosHoy} cobros programados para hoy, ${renSemana} renovaciones pendientes esta semana y llevas ${Math.round(comNet).toLocaleString('es-CO')} pesos en comisiones, un ${pctMeta}% de tu meta semanal.`;
+                    const respuesta = `Tienes ${cobrosHoy} cobros hoy, ${renSemana} renovaciones de esta semana, ${renRezagadas} rezagadas sin cerrar y llevas ${Math.round(comNet).toLocaleString('es-CO')} pesos en comisiones, un ${pctMeta}% de tu meta.`;
                     hablarJarvis(respuesta, false);
                 } catch (e) {
                     hablarJarvis("No pude consultar todas las métricas en este momento.", false);
@@ -2898,7 +3029,7 @@
                 return;
             }
 
-            // 3. CONSULTAR SALDO DE UN CLIENTE ESPECÍFICO ("¿Cuánto me debe Marco Tulio?")
+            // 3. CONSULTAR SALDO DE UN CLIENTE ESPECÍFICO
             let matchDeuda = cmd.match(/(?:cuanto me debe|cuanto debe|saldo de)\s+([a-zñáéíóú\s]+)$/i);
             if (matchDeuda && matchDeuda[1]) {
                 const nomBusq = matchDeuda[1].trim();
@@ -2918,7 +3049,7 @@
                 return;
             }
 
-            // 4. ACCIÓN DIRECTA: CAMBIAR DÍA DE COBRO POR VOZ ("Cambia el día de cobro de Marco Tulio al 30")
+            // 4. ACCIÓN DIRECTA: CAMBIAR DÍA DE COBRO POR VOZ
             let matchCambioDia = cmd.match(/(?:cambia|cambiar|pon|poner|actualiza|actualizar)\s+(?:el\s+)?(?:dia\s+de\s+cobro|cobro|dia)\s+(?:de\s+)?([a-zñáéíóú\s]+?)\s+(?:al|a|el|para\s+el)\s+(\d{1,2})\b/i);
             if (matchCambioDia && matchCambioDia[1] && matchCambioDia[2]) {
                 const nomBusq = matchCambioDia[1].trim();
@@ -2939,7 +3070,7 @@
                 }
             }
 
-            // 5. ACCIÓN DIRECTA: ENVIAR WHATSAPP ("Escríbele por WhatsApp a Marco Tulio")
+            // 5. ACCIÓN DIRECTA: ENVIAR WHATSAPP
             let matchWpp = cmd.match(/(?:escribele|escribe|mandale|enviale|whatsapp|mensaje)\s+(?:por\s+whatsapp\s+)?(?:a\s+)?([a-zñáéíóú\s]+)$/i);
             if (matchWpp && matchWpp[1] && (cmd.includes("whatsapp") || cmd.includes("escrib") || cmd.includes("mensaje"))) {
                 const nomBusq = matchWpp[1].replace(/\b(por|whatsapp|un|mensaje)\b/g, '').trim();
@@ -2957,7 +3088,7 @@
                 return;
             }
 
-            // 6. ACCIÓN DIRECTA: LLAMAR POR TELÉFONO ("Llámame a María López")
+            // 6. ACCIÓN DIRECTA: LLAMAR POR TELÉFONO
             let matchCall = cmd.match(/(?:llamame|llama|llamar)\s+(?:a\s+)?([a-zñáéíóú\s]+)$/i);
             if (matchCall && matchCall[1]) {
                 const nomBusq = matchCall[1].trim();
@@ -3023,6 +3154,9 @@
             if (cmd.includes("esta semana") || cmd.includes("proxima semana") || cmd.includes("proximas a renovar") || cmd.includes("proximo sabado")) {
                 targetVista = 'renovaciones';
                 targetSubRenovacion = 'ESTA_SEMANA';
+            } else if (cmd.includes("rezagada") || cmd.includes("rezagadas") || cmd.includes("atrasada") || cmd.includes("sin respuesta")) {
+                targetVista = 'renovaciones';
+                targetSubRenovacion = 'REZAGADAS';
             } else if (cmd.includes("por digitar") || cmd.includes("por confirmar")) {
                 targetVista = 'renovaciones';
                 targetSubRenovacion = 'POR_DIGITAR';
@@ -3083,15 +3217,16 @@
             }
 
             if (mesDetectado) {
-                if (targetTexto && targetCriterio === 'titular') {
-                    filtroMesAdicional = mesDetectado;
-                } else if (!targetTexto && targetCriterio !== 'con_saldo') {
-                    targetCriterio = 'mes_compra';
-                    targetTexto = mesDetectado;
+                filtroMesAdicional = mesDetectado;
+                const selMes = document.getElementById('select-mes-renovaciones');
+                if (selMes) selMes.value = mesDetectado;
+                if (!targetTexto && targetCriterio !== 'con_saldo') {
+                    targetCriterio = 'todo';
+                    targetTexto = '';
                 }
             }
 
-            if (!targetVista && !targetTexto && targetCriterio === 'todo') {
+            if (!targetVista && !targetTexto && targetCriterio === 'todo' && !mesDetectado) {
                 let limpio = cmd
                     .replace(/hey andrew|hey andru|andrew|andru/g, '')
                     .replace(/muestrame|muestra|busca|buscar|filtra|filtrar|mis|los|las|que|se|llame|llamen/g, '')
@@ -3115,6 +3250,7 @@
             document.querySelectorAll('#subnav-renovaciones .sub-btn').forEach(btn => btn.classList.remove('active'));
             if (targetSubRenovacion === 'TODOS') document.getElementById('btn-ren-todos').classList.add('active');
             if (targetSubRenovacion === 'ESTA_SEMANA') document.getElementById('btn-ren-semana').classList.add('active');
+            if (targetSubRenovacion === 'REZAGADAS') document.getElementById('btn-ren-rezagadas').classList.add('active');
             if (targetSubRenovacion === 'POR_DIGITAR') document.getElementById('btn-ren-pordigitar').classList.add('active');
             if (targetSubRenovacion === 'LISTA') document.getElementById('btn-ren-lista').classList.add('active');
             if (targetSubRenovacion === 'RENOVADO') document.getElementById('btn-ren-renovado').classList.add('active');
@@ -3124,7 +3260,11 @@
             banner.style.display = 'flex';
 
             cambiarVista(targetVista, true);
-            hablarJarvis(`Filtro aplicado en ${targetVista}.`, true);
+            setTimeout(() => {
+                const totalEnc = listaFiltradaActual.length;
+                const detalleMes = mesDetectado ? ` de ${mesDetectado}` : '';
+                hablarJarvis(`Encontré ${totalEnc} registros en ${targetVista}${detalleMes}.`, true);
+            }, 450);
         }
 
         function abrirModalNuevo() {
@@ -3227,7 +3367,7 @@
                     ];
                 });
             } else {
-                encabezados = ["Nombre_Titular", "Cedula", "Telefono", "Empresa_Convenio", "Ciudad", "Direccion", "Dia_Pago", "Pagado", "Saldo", "Estado", "Nota"];
+                encabezados = ["Nombre_Titular", "Cedula", "Telefono", "Empresa_Convenio", "Ciudad", "Direccion", "Dia_Pago", "Pagado", "Saldo", "Estado", "Intentos_Contacto", "Nota"];
                 filas = listaFiltradaActual.map(it => {
                     let fin = extraerDatosFinancieros(it);
                     return [
@@ -3241,6 +3381,7 @@
                         parsearNumeroMoneda(fin.rawPagado),
                         parsearNumeroMoneda(fin.rawSaldo),
                         limpiarTextoSeguro(it.estado || it.estado_cobro),
+                        parseInt(it.intentos_contacto, 10) || 0,
                         limpiarTextoSeguro(it.nota_cobro || it.nota_seguimiento)
                     ];
                 });
@@ -3365,7 +3506,7 @@
                         semanasCount++;
                         totalComisionQuincena += (docQ.data().comision_neta || 0) + (docQ.data().comision_externa || 0);
                     });
-                    alert(`🎉 ¡QUINCENA CERRADA (${semanasCount} semanas)!\n\n💵 Comisión acumulada en tus reportes: $ ${Math.round(totalComisionQuincena).toLocaleString('es-CO')}\n\n💡 Cuando te pasen el dato de pagos por empresas o cobradores, entra a "📚 Histórico" y toca "➕ Comisión Extra" para sumarlo automático.`);
+                    alert(`🎉 ¡QUINCENA CERRADA (${semanasCount} semanas)!\n\n💵 Comisión acumulada en tus reportes: $ ${Math.round(totalComisionQuincena).toLocaleString('es-CO')}\n\n💡 Cuando te pasen el dato de pagos por empresas o cobradores, entra a "📚 Histórico" y toca "➕ Com. Extra" para sumarlo automático.`);
                 } else {
                     localStorage.setItem('andru_quincena_abierta_id', idQuincenaActiva);
                     alert(`✅ Semana guardada en la quincena abierta.\n💵 Comisión acumulada esta semana: $ ${Math.round(comisionNeta).toLocaleString('es-CO')}`);
@@ -3422,7 +3563,6 @@
                     return;
                 }
 
-                // Agrupar totales por quincena_id
                 const totalesQuincena = {};
                 const docs = [];
                 snap.forEach(doc => {
