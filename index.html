@@ -501,6 +501,10 @@
                     "Renovaciones de esta semana" / "Próximas a renovar"
                 </div>
                 <div class="cmd-item">
+                    <strong>📝 Renovaciones Por Digitar:</strong>
+                    "Renovaciones por digitar" / "Por confirmar"
+                </div>
+                <div class="cmd-item">
                     <strong>📄 Reporte Oficial de Pagos:</strong>
                     "Abrir reporte oficial" / "Reporte de pagos"
                 </div>
@@ -1466,7 +1470,6 @@
                     let badgeText = "EN GESTIÓN";
                     let tarjetaEstiloClase = "";
 
-                    let esNoRenueva = item.esNoRenuevaFlag === true;
                     let esPorDigitar = item.esPorDigitarFlag === true;
                     let esNoRenueva = item.esNoRenuevaFlag === true;
                     let esRenovado = !esPorDigitar && !esNoRenueva && item.yaRenovoComprado === true;
@@ -2124,7 +2127,8 @@
         async function cambiarEstadoCliente(idDoc, coleccion, nuevoValor) {
             try {
                 let textoEstadoBD = "En lista";
-                if (nuevoValor === "no_renueva") textoEstadoBD = "No renueva";
+                if (nuevoValor === "por_digitar") textoEstadoBD = "Por digitar";
+                else if (nuevoValor === "no_renueva") textoEstadoBD = "No renueva";
                 else if (nuevoValor === "renovado") textoEstadoBD = "Afiliado / Renovado";
 
                 await db.collection(coleccion).doc(idDoc).update({
@@ -2136,12 +2140,15 @@
                     registroLocal.estado = textoEstadoBD;
                     registroLocal.yaRenovoComprado = (nuevoValor === "renovado");
                     registroLocal.esNoRenuevaFlag = (nuevoValor === "no_renueva");
+                    registroLocal.esPorDigitarFlag = (nuevoValor === "por_digitar");
                 }
 
                 let tarjeta = document.getElementById(`card-doc-${idDoc}`);
                 if (tarjeta) {
-                    tarjeta.classList.remove('estado-no-renueva', 'estado-renovado');
-                    if (nuevoValor === "no_renueva") {
+                    tarjeta.classList.remove('estado-no-renueva', 'estado-renovado', 'estado-por-digitar');
+                    if (nuevoValor === "por_digitar") {
+                        tarjeta.classList.add('estado-por-digitar');
+                    } else if (nuevoValor === "no_renueva") {
                         tarjeta.classList.add('estado-no-renueva');
                     } else if (nuevoValor === "renovado") {
                         tarjeta.classList.add('estado-renovado');
@@ -2338,6 +2345,9 @@
             if (cmd.includes("esta semana") || cmd.includes("proxima semana") || cmd.includes("proximas a renovar") || cmd.includes("proximo sabado")) {
                 targetVista = 'renovaciones';
                 targetSubRenovacion = 'ESTA_SEMANA';
+            } else if (cmd.includes("por digitar") || cmd.includes("por confirmar")) {
+                targetVista = 'renovaciones';
+                targetSubRenovacion = 'POR_DIGITAR';
             } else if (cmd.includes("no se han renovado") || cmd.includes("no renovado") || cmd.includes("no renueva") || cmd.includes("no renuevan")) {
                 targetVista = 'renovaciones';
                 targetSubRenovacion = 'NO_RENUEVA';
@@ -2427,6 +2437,7 @@
             document.querySelectorAll('#subnav-renovaciones .sub-btn').forEach(btn => btn.classList.remove('active'));
             if (targetSubRenovacion === 'TODOS') document.getElementById('btn-ren-todos').classList.add('active');
             if (targetSubRenovacion === 'ESTA_SEMANA') document.getElementById('btn-ren-semana').classList.add('active');
+            if (targetSubRenovacion === 'POR_DIGITAR') document.getElementById('btn-ren-pordigitar').classList.add('active');
             if (targetSubRenovacion === 'LISTA') document.getElementById('btn-ren-lista').classList.add('active');
             if (targetSubRenovacion === 'RENOVADO') document.getElementById('btn-ren-renovado').classList.add('active');
             if (targetSubRenovacion === 'NO_RENUEVA') document.getElementById('btn-ren-norenueva').classList.add('active');
@@ -2448,6 +2459,9 @@
         }
         function cerrarModalComandos() {
             document.getElementById('modal-comandos').style.display = 'none';
+        }
+        function cerrarModalHistorico() {
+            document.getElementById('modal-historico-semanas').style.display = 'none';
         }
 
         async function guardarProspecto() {
@@ -2568,6 +2582,50 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        // --- EXPORTAR CIERRE HISTÓRICO A CSV ---
+        async function exportarCierreHistoricoCSV(docId) {
+            try {
+                const snap = await db.collection('reportes_historico').doc(docId).get();
+                if (!snap.exists) return;
+                const d = snap.data();
+                const items = Array.isArray(d.items) ? d.items : [];
+                if (items.length === 0) {
+                    alert("⚠️ Este cierre no contiene ítems.");
+                    return;
+                }
+
+                const encabezados = ["Fecha", "Membresia", "Titular", "Referencia", "Suscripcion", "Adicional", "Premiacion", "Saldo", "Total_Fila"];
+                const escaparCSV = val => `"${String(val ?? "").replace(/"/g, '""')}"`;
+                let csv = "\uFEFF" + encabezados.map(escaparCSV).join(";") + "\n";
+
+                items.forEach(it => {
+                    let s = parsearNumeroMoneda(it.suscripcion);
+                    let a = parsearNumeroMoneda(it.adicional);
+                    let p = parsearNumeroMoneda(it.premiacion);
+                    let sal = parsearNumeroMoneda(it.saldo);
+                    csv += [
+                        limpiarTextoSeguro(it.fecha),
+                        limpiarTextoSeguro(it.membresia),
+                        limpiarTextoSeguro(it.titular),
+                        limpiarTextoSeguro(it.referencia),
+                        s, a, p, sal, (s + a + p)
+                    ].map(escaparCSV).join(";") + "\n";
+                });
+
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `Cierre_${limpiarTextoSeguro(d.etiqueta).replace(/\s+/g, '_')}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                alert("❌ Error al exportar CSV histórico: " + err.message);
+            }
         }
 
         // --- CIERRE DE SEMANA CON HISTÓRICO ---
