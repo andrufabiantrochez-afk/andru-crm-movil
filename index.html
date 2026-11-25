@@ -92,7 +92,12 @@
         .search-input { flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 13px; outline: none; }
         .search-input:focus, .filter-select:focus { border-color: var(--brand-blue); }
 
-        .btn-orden { background: var(--btn-orden-bg); color: var(--btn-orden-text); border: 1px solid var(--btn-orden-border); padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; }
+        .btn-orden { background: var(--btn-orden-bg); color: var(--btn-orden-text); border: 1px solid var(--btn-orden-border); padding: 7px 8px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; white-space: nowrap; }
+        .btn-black-days { background: #0f172a; color: #fbbf24; border: 1.5px solid #f59e0b; padding: 7px 9px; border-radius: 8px; font-size: 11px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; white-space: nowrap; }
+        .btn-black-days.active { background: linear-gradient(135deg, #000000 0%, #1e293b 100%); color: #fde047; border-color: #fde047; box-shadow: 0 0 12px rgba(245, 158, 11, 0.55); }
+
+        .black-days-banner { display: none; background: linear-gradient(90deg, #090d16 0%, #1e293b 60%, #78350f 100%); color: #fde047; padding: 9px 14px; font-size: 11.5px; font-weight: 800; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 2px solid #f59e0b; }
+        .black-days-banner button { background: #f59e0b; color: #0f172a; border: none; padding: 4px 9px; border-radius: 6px; font-size: 10.5px; font-weight: 900; cursor: pointer; white-space: nowrap; }
 
         .nav-tabs { display: flex; background: var(--bg-surface); padding: 8px 15px; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--border-color); }
         .tab-btn { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.2s; }
@@ -128,6 +133,7 @@
         .card.estado-renovado { background: rgba(16, 185, 129, 0.1) !important; border: 1px solid #059669 !important; border-left: 4px solid #059669 !important; }
         .card.estado-por-digitar { background: rgba(37, 99, 235, 0.12) !important; border: 1.5px solid #2563eb !important; border-left: 5px solid #2563eb !important; }
         .card.estado-rezagada { border-left: 5px solid #dc2626; }
+        .card.estado-inc { background: rgba(245, 158, 11, 0.11) !important; border: 1px solid #d97706 !important; border-left: 5px solid #d97706 !important; }
         .card.excluido-pdf { opacity: 0.55; border-left: 4px solid #94a3b8; }
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
@@ -147,6 +153,7 @@
         .badge-yellow { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
         .badge-green { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
         .badge-purple { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .badge-origen { background: #0f172a; color: #fbbf24; font-size: 9px; padding: 2px 6px; border-radius: 5px; font-weight: 800; }
         
         body.dark-mode .badge-red { background: rgba(239,68,68,0.2); color: #f87171; border-color: rgba(239,68,68,0.4); }
         body.dark-mode .badge-orange { background: rgba(249,115,22,0.2); color: #fb923c; border-color: rgba(249,115,22,0.4); }
@@ -403,6 +410,8 @@
         .chips-grid { display: flex; flex-wrap: wrap; gap: 6px; }
         .chip-btn { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 16px; padding: 6px 10px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.15s; }
         .chip-btn.active { background: #16a34a; color: #ffffff; border-color: #15803d; }
+        .chip-btn.black-chip { border-color: #f59e0b; }
+        .chip-btn.black-chip.active { background: #0f172a; color: #fde047; border-color: #f59e0b; }
         .wpp-textarea { width: 100%; min-height: 150px; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 12.5px; line-height: 1.45; resize: vertical; outline: none; }
 
         .plan-card-item { background: var(--bg-input); border: 1px solid var(--border-color); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -425,11 +434,17 @@
         <div style="display: flex; align-items: center; gap: 4px;">
             <span id="total-registros" style="font-size:10.5px;">Cargando...</span>
             <button id="btn-voz-audio" class="theme-btn" title="Activar / Silenciar Voz de Andru AI" onclick="alternarAudioJarvis()">🔊</button>
-            <button class="theme-btn" title="Tarjeta Digital y Catálogo" onclick="abrirModalTarjetaCatalogo()">🪪</button>
+            <button class="theme-btn" title="Tarjeta Digital y Catálogo Black Days" onclick="abrirModalTarjetaCatalogo()">🪪</button>
             <button class="theme-btn" title="Ver Comandos de Voz" onclick="abrirModalComandos()">?</button>
             <button id="btn-toggle-tema" class="theme-btn" title="Cambiar Modo Claro / Oscuro" onclick="alternarTemaVisual()">🌙</button>
         </div>
     </header>
+
+    <!-- BANNER DE CAMPAÑA BLACK DAYS -->
+    <div class="black-days-banner" id="black-days-banner">
+        <span id="black-days-banner-text">🖤 MODO BLACK DAYS (-20% OFF) • 27 Nov al 4 Dic</span>
+        <button onclick="alternarModoBlackDays(false)">✕ Salir</button>
+    </div>
 
     <!-- BANNER DE FILTRO POR VOZ ACTIVO -->
     <div class="voice-banner" id="voice-banner">
@@ -441,6 +456,7 @@
         <div class="search-row">
             <select id="select-criterio" class="filter-select" onchange="filtrarLista()">
                 <option value="todo">🔍 Todo (General)</option>
+                <option value="inc">⚠️ Inconvenientes (INC)</option>
                 <option value="con_saldo">💸 Con Saldo Pendiente</option>
                 <option value="mes_compra">📅 Mes de Compra</option>
                 <option value="titular">👤 Titular / Nombre</option>
@@ -448,14 +464,17 @@
                 <option value="empresa">🏢 Empresa / Convenio</option>
                 <option value="ciudad">📍 Ciudad / Dir.</option>
             </select>
-            <input type="text" id="input-buscar" class="search-input" placeholder="Escribe para buscar..." oninput="filtrarLista()">
+            <input type="text" id="input-buscar" class="search-input" placeholder="Buscar nombre, INC, nómina..." oninput="filtrarLista()">
         </div>
-        <div style="display: flex; gap: 6px;">
+        <div style="display: flex; gap: 5px; overflow-x: auto;">
+            <button id="btn-black-days" class="btn-black-days" onclick="alternarModoBlackDays()">
+                🖤 Black Days -20%
+            </button>
             <button id="btn-ordenar-dia" class="btn-orden" style="flex: 1;" onclick="alternarOrdenVencimiento()">
                 📅 Día (1-31)
             </button>
             <button id="btn-ordenar-nombre" class="btn-orden" style="flex: 1; background: var(--btn-orden-inactive-bg); border-color: var(--border-color); color: var(--btn-orden-inactive-text);" onclick="alternarOrdenNombre()">
-                🔤 Nombre (A-Z)
+                🔤 A-Z
             </button>
             <button class="btn-orden" style="background: #ecfdf5; color: #065f46; border-color: #6ee7b7;" onclick="exportarVistaExcel()">
                 📥 Excel
@@ -562,7 +581,7 @@
     <div class="jarvis-overlay" id="jarvis-hud-overlay">
         <div class="jarvis-hud-card">
             <div class="jarvis-top-bar">
-                <span>ANDRU AI • CORE v2.7</span>
+                <span>ANDRU AI • CORE v2.8</span>
                 <span id="jarvis-hud-clock">SYS ONLINE</span>
             </div>
 
@@ -585,10 +604,10 @@
             <div class="jarvis-reply-box" id="jarvis-reply-box"></div>
 
             <div class="jarvis-quick-chips">
-                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Dame el resumen del día')">📊 Resumen del día</button>
-                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Renovaciones de esta semana')">📆 Esta semana</button>
-                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Renovaciones rezagadas')">⚠️ Rezagadas</button>
-                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Cómo voy de comisiones')">🌡️ Comisiones</button>
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Activa modo Black Days')">🖤 Black Days</button>
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Muéstrame los inconvenientes')">⚠️ Ver INC</button>
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Dame el resumen del día')">📊 Resumen</button>
+                <button class="jarvis-chip" onclick="ejecutarComandoRapidoHUD('Renovaciones de esta semana')">📆 Semana</button>
             </div>
 
             <div class="jarvis-actions-row">
@@ -610,7 +629,8 @@
             </div>
             
             <div class="chips-grid" id="wpp-chips-container">
-                <button class="chip-btn active" data-tpl="cobro_amable" onclick="seleccionarPlantillaWpp('cobro_amable', this)">💰 Recordatorio Amable</button>
+                <button class="chip-btn black-chip" data-tpl="black_days" onclick="seleccionarPlantillaWpp('black_days', this)">🖤 Promo Black Days (-20%)</button>
+                <button class="chip-btn active" data-tpl="cobro_amable" onclick="seleccionarPlantillaWpp('cobro_amable', this)">💰 Recordatorio Hoy</button>
                 <button class="chip-btn" data-tpl="promesa_hoy" onclick="seleccionarPlantillaWpp('promesa_hoy', this)">🤝 Acordado ("Recuérdame")</button>
                 <button class="chip-btn" data-tpl="mora_critica" onclick="seleccionarPlantillaWpp('mora_critica', this)">🚨 Aviso Preventivo / Mora</button>
                 <button class="chip-btn" data-tpl="renovacion" onclick="seleccionarPlantillaWpp('renovacion', this)">🔄 Renovación Plan</button>
@@ -725,11 +745,11 @@
         </div>
     </div>
 
-    <!-- MODAL TARJETA DIGITAL Y CATÁLOGO DE PLANES PREVISER -->
+    <!-- MODAL TARJETA DIGITAL Y CATÁLOGO DE PLANES PREVISER + BLACK DAYS -->
     <div class="modal" id="modal-tarjeta-catalogo">
         <div class="modal-content">
             <div class="modal-title">
-                <span>🪪 Tarjeta Digital y Catálogo</span>
+                <span>🪪 Tarjeta Digital y Tarifas Black Days</span>
                 <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalTarjetaCatalogo()">✕</span>
             </div>
 
@@ -743,10 +763,15 @@
                 </div>
             </div>
 
-            <div style="font-size:12px; font-weight:800; color:var(--text-accent); margin-top:2px;">📦 Catálogo de Membresías (1 toque para enviar):</div>
+            <div style="background:#0f172a; color:#fde047; padding:7px 10px; border-radius:8px; font-size:11px; font-weight:800; border:1px solid #f59e0b;">
+                🖤 Tarifas Particulares con 20% OFF (27 Nov al 4 Dic):
+            </div>
             <div id="lista-planes-catalogo" style="display:flex; flex-direction:column; gap:6px;"></div>
 
-            <button onclick="compartirCatalogoCompletoWpp()" class="btn-save" style="background:#059669;">📲 Enviar Catálogo Completo por WhatsApp</button>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button onclick="compartirCatalogoBlackDaysWpp()" class="btn-save" style="background:#0f172a; color:#fde047; border:1px solid #f59e0b; font-size:11.5px;">🖤 Catálogo Black Days</button>
+                <button onclick="compartirCatalogoCompletoWpp()" class="btn-save" style="background:#059669; font-size:11.5px;">📲 Catálogo Normal</button>
+            </div>
         </div>
     </div>
 
@@ -772,6 +797,11 @@
             </div>
             <div class="cmd-list">
                 <div class="cmd-item">
+                    <strong>🖤 Campaña Black Days & Inconvenientes:</strong>
+                    "Activa modo Black Days" / "Clientes para Black Days"<br>
+                    "Muéstrame los inconvenientes" / "Filtrar INC"
+                </div>
+                <div class="cmd-item">
                     <strong>📊 Briefings y Métricas en Vivo:</strong>
                     "Dame el resumen del día" / "Estado de la operación"<br>
                     "¿Cómo voy de comisiones?" / "¿Cuánto me debe Marco Tulio?"
@@ -783,15 +813,10 @@
                     "Cambia el día de cobro de Marco Tulio al 30"
                 </div>
                 <div class="cmd-item">
-                    <strong>📆 Renovaciones y Estados:</strong>
+                    <strong>📆 Renovaciones y Cobros:</strong>
                     "Muéstrame mis renovaciones de noviembre"<br>
                     "Renovaciones de esta semana" / "Renovaciones rezagadas"<br>
-                    "Renovaciones por digitar"
-                </div>
-                <div class="cmd-item">
-                    <strong>💰 Cobros y Búsquedas Rápidas:</strong>
-                    "Cobros de hoy" / "Cobros postergados" / "Quiénes tienen saldo pendiente"<br>
-                    "Muéstrame cliente que se llame Andrés"
+                    "Cobros de hoy" / "Cobros postergados" / "Quiénes tienen saldo pendiente"
                 </div>
             </div>
             <button class="btn-save" onclick="cerrarModalComandos()">Entendido</button>
@@ -871,6 +896,7 @@
         let subFiltroCobros = 'DIA_ACTUAL';
         let subFiltroRenovaciones = 'TODOS';
         let filtroMesAdicional = '';
+        let modoBlackDaysActivo = false;
         let registrosGlobales = [];
         let tipoOrdenActual = 'dia';
         let ordenVencimientoAsc = true;
@@ -1033,6 +1059,18 @@
             let num = parseFloat(valorInput) || 0;
             if (num <= 0) return 0;
             return num < 1000 ? Math.round(num * 1000) : Math.round(num);
+        }
+
+        // --- DETECCIÓN DE INCONVENIENTES (INC) COMO EN LA EXTENSIÓN ---
+        function tieneInconvenienteINC(item) {
+            if (!item || typeof item !== "object") return false;
+            const diaNorm = normalizarTexto(item.dia_pago);
+            const estNorm = normalizarTexto(item.estado);
+            const estCobroNorm = normalizarTexto(item.estado_cobro);
+            const notaNorm = normalizarTexto(item.nota_cobro || item.nota_seguimiento);
+
+            const regexInc = /\binc\b|inconveniente/;
+            return regexInc.test(diaNorm) || regexInc.test(estNorm) || regexInc.test(estCobroNorm) || regexInc.test(notaNorm);
         }
 
         function extraerTelefonoValido(item) {
@@ -1282,7 +1320,6 @@
             const anioActual = sabadoInicio.getFullYear();
             let fechaCiclo = new Date(anioActual, parsed.mes, parsed.dia, 12, 0, 0);
 
-            // Manejo de cruce de año (ej: estamos en enero y la renovación era de noviembre/diciembre)
             if (sabadoInicio.getMonth() <= 1 && parsed.mes >= 9) {
                 fechaCiclo = new Date(anioActual - 1, parsed.mes, parsed.dia, 12, 0, 0);
             }
@@ -1311,12 +1348,63 @@
             }
         }
 
+        // --- MODO CAMPAÑA BLACK DAYS (27 NOV AL 4 DIC - 20% OFF) ---
+        function obtenerTextoCuentaRegresivaBlackDays() {
+            const hoy = new Date();
+            const anio = hoy.getFullYear();
+            const inicio = new Date(anio, 10, 27, 0, 0, 0); // 27 Nov
+            const fin = new Date(anio, 11, 4, 23, 59, 59);   // 4 Dic
+
+            if (hoy < inicio) {
+                const diasFaltan = Math.ceil((inicio - hoy) / (1000 * 60 * 60 * 24));
+                return `🖤 BLACK DAYS (-20% OFF) • Arranca en ${diasFaltan} día(s) (27 Nov - 4 Dic)`;
+            } else if (hoy <= fin) {
+                const diasRestan = Math.max(1, Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24)));
+                return `🔥 BLACK DAYS ACTIVO (-20% OFF) • ¡Quedan ${diasRestan} día(s) hasta el 4 Dic!`;
+            }
+            return `🖤 MODO BLACK DAYS (-20% OFF) • Prospectos, Rezagados e INC`;
+        }
+
+        function alternarModoBlackDays(forzarEstado = null) {
+            modoBlackDaysActivo = (forzarEstado !== null) ? Boolean(forzarEstado) : !modoBlackDaysActivo;
+            const btn = document.getElementById('btn-black-days');
+            const banner = document.getElementById('black-days-banner');
+            const bannerTxt = document.getElementById('black-days-banner-text');
+
+            if (modoBlackDaysActivo) {
+                if (btn) btn.classList.add('active');
+                if (banner) {
+                    bannerTxt.innerText = obtenerTextoCuentaRegresivaBlackDays();
+                    banner.style.display = 'flex';
+                }
+                document.getElementById('subnav-cobros').style.display = 'none';
+                document.getElementById('subnav-renovaciones').style.display = 'none';
+                document.getElementById('panel-reporte-oficial').style.display = 'none';
+                document.getElementById('banner-rango-renovaciones').style.display = 'none';
+            } else {
+                if (btn) btn.classList.remove('active');
+                if (banner) banner.style.display = 'none';
+                cambiarVista(vistaActual, true);
+                return;
+            }
+
+            cargarDatosMovil();
+        }
+
         function limpiarFiltrosCompletos() {
             document.getElementById('input-buscar').value = '';
             document.getElementById('select-criterio').value = 'todo';
             filtroMesAdicional = '';
             subFiltroRenovaciones = 'TODOS';
             document.getElementById('voice-banner').style.display = 'none';
+
+            if (modoBlackDaysActivo) {
+                modoBlackDaysActivo = false;
+                const btnBD = document.getElementById('btn-black-days');
+                const bannerBD = document.getElementById('black-days-banner');
+                if (btnBD) btnBD.classList.remove('active');
+                if (bannerBD) bannerBD.style.display = 'none';
+            }
 
             const selMes = document.getElementById('select-mes-renovaciones');
             if (selMes) selMes.value = '';
@@ -1326,11 +1414,19 @@
             if (btnTodos) btnTodos.classList.add('active');
             actualizarBannerRangoRenovaciones();
 
-            filtrarLista();
+            cargarDatosMovil();
         }
 
         function cambiarVista(vista, mantenerFiltrosVoz = false) {
             vistaActual = vista;
+            if (modoBlackDaysActivo) {
+                modoBlackDaysActivo = false;
+                const btnBD = document.getElementById('btn-black-days');
+                const bannerBD = document.getElementById('black-days-banner');
+                if (btnBD) btnBD.classList.remove('active');
+                if (bannerBD) bannerBD.style.display = 'none';
+            }
+
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             let btnActivo = document.getElementById(`tab-btn-${vista}`);
             if (btnActivo) btnActivo.classList.add('active');
@@ -1412,7 +1508,7 @@
                 btnNom.style.background = 'var(--btn-orden-bg)';
                 btnNom.style.color = 'var(--btn-orden-text)';
                 btnNom.style.borderColor = 'var(--btn-orden-border)';
-                btnNom.innerText = ordenNombreAsc ? '🔤 Nombre (A-Z)' : '🔤 Nombre (Z-A)';
+                btnNom.innerText = ordenNombreAsc ? '🔤 A-Z' : '🔤 Z-A';
             }
             if (btnDia) {
                 btnDia.style.background = 'var(--btn-orden-inactive-bg)';
@@ -1427,8 +1523,11 @@
             let parsed = parsearFechaRenovacionItem(item);
             if (parsed && parsed.dia) return parsed.dia;
 
-            let dia = parseInt(item.dia_pago, 10);
-            if (!isNaN(dia)) return dia;
+            let rawDia = limpiarTextoSeguro(item.dia_pago);
+            if (/^\d{1,2}$/.test(rawDia)) {
+                let dia = parseInt(rawDia, 10);
+                if (!isNaN(dia)) return dia;
+            }
 
             let fechaStr = limpiarTextoSeguro(item.fecha || item.fecha_venta || item.fec_vinc || item.fecha_compra || "");
             let match = fechaStr.match(/\b([0-2]?[0-9]|3[01])\b/);
@@ -1440,6 +1539,70 @@
         async function cargarDatosMovil() {
             const contenedor = document.getElementById('lista-tarjetas');
             contenedor.innerHTML = `<div class="loading">⏳ Consultando datos de Firebase...</div>`;
+
+            // --- VISTA UNIFICADA MODO BLACK DAYS (-20%): PROSPECTOS + RENOVACIONES INDECISAS + INC ---
+            if (modoBlackDaysActivo) {
+                try {
+                    const [snapPros, snapRen, snapAfil] = await Promise.all([
+                        db.collection('prospectos').get(),
+                        db.collection('renovaciones').get(),
+                        db.collection('afiliados').get()
+                    ]);
+
+                    registrosGlobales = [];
+                    const vistosKeys = new Set();
+
+                    // 1. Todos los prospectos abiertos
+                    snapPros.forEach(doc => {
+                        let d = doc.data();
+                        d.idDoc = doc.id;
+                        d.coleccionOrigen = 'prospectos';
+                        d._origenEtiqueta = '👤 PROSPECTO';
+                        let est = limpiarTextoSeguro(d.estado).toLowerCase();
+                        if (!est.includes('afiliado') && !est.includes('renovado')) {
+                            registrosGlobales.push(d);
+                            vistosKeys.add(doc.id);
+                        }
+                    });
+
+                    // 2. Renovaciones que aún no se deciden (En Gestión, Rezagadas, No Renueva o INC)
+                    snapRen.forEach(doc => {
+                        let d = doc.data();
+                        d.idDoc = doc.id;
+                        d.coleccionOrigen = 'renovaciones';
+                        d._origenEtiqueta = '⏳ RENOVACIÓN';
+                        let est = limpiarTextoSeguro(d.estado).toLowerCase();
+                        let esPD = est.includes("por digitar") || est.includes("confirmar");
+                        let esNR = est.includes("no renueva") || est.includes("no interesado") || est.includes("cancelado") || est.includes("❌");
+                        let yaRen = !esPD && !esNR && (d.archivado === true || est.includes("afiliado") || est.includes("exitosa") || est.includes("renovado"));
+                        d.yaRenovoComprado = yaRen;
+                        d.esPorDigitarFlag = esPD;
+                        d.esNoRenuevaFlag = esNR;
+
+                        if (!yaRen && !esPD) {
+                            registrosGlobales.push(d);
+                            vistosKeys.add(doc.id);
+                        }
+                    });
+
+                    // 3. Afiliados marcados con INC / Inconveniente
+                    snapAfil.forEach(doc => {
+                        let d = doc.data();
+                        d.idDoc = doc.id;
+                        d.coleccionOrigen = 'afiliados';
+                        d._origenEtiqueta = '⚠️ AFILIADO INC';
+                        if (tieneInconvenienteINC(d) && !vistosKeys.has(doc.id)) {
+                            registrosGlobales.push(d);
+                        }
+                    });
+
+                    filtrarLista();
+                } catch (err) {
+                    console.error(err);
+                    contenedor.innerHTML = `<div class="loading" style="color:#dc2626;">❌ Error en modo Black Days: ${err.message}</div>`;
+                }
+                return;
+            }
 
             if (vistaActual === 'reporte') {
                 try {
@@ -1545,7 +1708,8 @@
 
                     if (vistaActual === 'cobros') {
                         let rawDia = limpiarTextoSeguro(d.dia_pago);
-                        let diaCobroNum = parseInt(rawDia, 10);
+                        let esSoloNumero = /^\d{1,2}$/.test(rawDia);
+                        let diaCobroNum = esSoloNumero ? parseInt(rawDia, 10) : NaN;
                         let esNumeroValido = !isNaN(diaCobroNum) && diaCobroNum >= 1 && diaCobroNum <= 31;
                         let estadoCobro = limpiarTextoSeguro(d.estado_cobro).toLowerCase();
 
@@ -1665,11 +1829,14 @@
             const textoSaldo = tieneSaldo ? ` por valor de *${ctx.saldoFmt}*` : "";
 
             switch (tipo) {
+                case 'black_days':
+                    return `Hola ${nombre} 👋, ¡muy ${saludo}! Te deseo ${deseo}.\n\n🖤 ¡Llegaron los *BLACK DAYS de Previser*! Solo del *27 de noviembre al 4 de diciembre* tenemos autorizado un *20% DE DESCUENTO* en todas nuestras membresías particulares y renovaciones. 🔥\n\nMira cómo quedan los planes con el *20% OFF*:\n🔹 *Bipersonal:* ~$270.000~ ➔ *$216.000*\n🔹 *Clásica Familiar/Especial:* ~$420.000~ ➔ *$336.000*\n🔹 *Premium:* ~$520.000~ ➔ *$416.000*\n🔹 *VIP:* ~$620.000~ ➔ *$496.000*\n🔹 *Diamante:* ~$1.070.000~ ➔ *$856.000*\n\nComo tenías pendiente definir tu afiliación, quise avisarte de primero para que aproveches este descuento especial antes del *4 de diciembre*. 💙 ¿Cuál de los planes te gustaría dejar asegurado? 🤝`;
+
                 case 'cobro_amable':
-                    return `Hola ${nombre} 👋, espero que estés teniendo ${deseo}.\n\nPaso por aquí para recordarte amablemente el pago de tu membresía Previser del día ${ctx.diaPago || diaHoy}${textoSaldo}.\n\nSi deseas realizarlo por transferencia o convenio y necesitas que te envíe los medios de pago o te oriente, me avisas por aquí. ¡Quedo atento! 🙌`;
+                    return `Hola ${nombre} 👋, espero que estés teniendo ${deseo}.\n\nPaso por aquí para recordarte amablemente el pago de tu membresía Previser del día de hoy *${diaHoy}*${textoSaldo}.\n\nSi deseas realizarlo por transferencia o convenio y necesitas que te envíe los medios de pago o te oriente, me avisas por aquí. ¡Quedo atento! 🙌`;
 
                 case 'promesa_hoy':
-                    return `Hola ${nombre} 👋, muy ${saludo}. ¿Cómo vas?\n\nTal como habíamos acordado, paso a recordarte hoy el pago pendiente de tu membresía Previser${textoSaldo}.\n\nConfírmame por favor si lo realizas hoy para dejarte el soporte aplicado de una vez. ¡Gracias! 🤝`;
+                    return `Hola ${nombre} 👋, muy ${saludo}. ¿Cómo vas?\n\nTal como habíamos acordado, paso a recordarte hoy *${diaHoy}* el pago pendiente de tu membresía Previser${textoSaldo}.\n\nConfírmame por favor si lo realizas hoy para dejarte el soporte aplicado de una vez. ¡Gracias! 🤝`;
 
                 case 'mora_critica':
                     return `Hola ${nombre}, ${saludo}. 👋\n\nTe escribo de manera preventiva respecto a tu membresía Previser, ya que registramos un saldo pendiente${textoSaldo}.\n\nQueremos evitar que se presente alguna novedad o suspensión en la cobertura y descuentos para ti y tu grupo familiar. 💙 Cuéntame por favor para qué día exacto lo programamos y así ayudarte a mantenerla al día. 🤝`;
@@ -1722,7 +1889,9 @@
             document.getElementById('wpp-modal-tel').innerText = celularLimpioReal;
 
             let plantillaSugerida = 'cobro_amable';
-            if (vistaActual === 'renovaciones') {
+            if (modoBlackDaysActivo) {
+                plantillaSugerida = 'black_days';
+            } else if (vistaActual === 'renovaciones') {
                 plantillaSugerida = (subFiltroRenovaciones === 'REZAGADAS') ? 'ultimo_llamado_semana' : 'renovacion';
             }
 
@@ -1825,10 +1994,10 @@
                 'prospectos': 'prospectos',
                 'ganados': 'ventas'
             };
-            let palabraVista = etiquetasVista[vistaActual] || 'registros';
+            let palabraVista = modoBlackDaysActivo ? 'potenciales' : (etiquetasVista[vistaActual] || 'registros');
             contador.innerHTML = `<span style="background: #f59e0b; color: #0f172a; padding: 3px 8px; border-radius: 12px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">${lista.length} ${palabraVista}</span>`;
 
-            if (vistaActual === 'reporte') {
+            if (vistaActual === 'reporte' && !modoBlackDaysActivo) {
                 actualizarTotalesReportePDF();
             }
 
@@ -1837,7 +2006,7 @@
                 return;
             }
 
-            if (vistaActual === 'reporte') {
+            if (vistaActual === 'reporte' && !modoBlackDaysActivo) {
                 lista.forEach(item => {
                     let idx = item._idxArray;
                     let membresia = limpiarTextoSeguro(item.membresia) || "---";
@@ -1921,9 +2090,15 @@
                     let esPorDigitar = item.esPorDigitarFlag === true;
                     let esNoRenueva = item.esNoRenuevaFlag === true;
                     let esRenovado = !esPorDigitar && !esNoRenueva && item.yaRenovoComprado === true;
-                    let esRezagada = (vistaActual === 'renovaciones') && esRenovacionRezagada(item);
+                    let esRezagada = (vistaActual === 'renovaciones' || modoBlackDaysActivo) && esRenovacionRezagada(item);
+                    let esInc = tieneInconvenienteINC(item);
+                    let esSoloNumeroDia = /^\d{1,2}$/.test(diaPago);
 
-                    if (esPorDigitar) {
+                    if (esInc) {
+                        tarjetaEstiloClase = "estado-inc";
+                        badgeClass = "badge-orange";
+                        badgeText = `⚠️ ${diaPago !== "---" ? diaPago.toUpperCase() : "INC"}`;
+                    } else if (esPorDigitar) {
                         tarjetaEstiloClase = "estado-por-digitar";
                         badgeClass = "badge-purple";
                         badgeText = "📝 POR DIGITAR / CONFIRMAR";
@@ -1935,8 +2110,8 @@
                         tarjetaEstiloClase = "estado-renovado";
                         badgeClass = "badge-green";
                         badgeText = "✅ RENOVADO / LOGRADO";
-                    } else if (vistaActual === 'cobros') {
-                        let diaNum = parseInt(diaPago, 10);
+                    } else if (vistaActual === 'cobros' && !modoBlackDaysActivo) {
+                        let diaNum = esSoloNumeroDia ? parseInt(diaPago, 10) : NaN;
                         let esDelDia = !isNaN(diaNum) && diaNum === diaActualNum;
 
                         if (esDelDia) {
@@ -1946,14 +2121,17 @@
                             badgeClass = "badge-orange";
                             badgeText = `💳 DÍA DE COBRO: ${diaPago}`;
                         }
-                    } else if (vistaActual === 'afiliados') {
+                    } else if (vistaActual === 'afiliados' && !modoBlackDaysActivo) {
                         badgeClass = "badge-purple";
-                        badgeText = `🗂️ ESTADO / DÍA: ${diaPago.toUpperCase()}`;
-                    } else if (vistaActual === 'renovaciones') {
+                        badgeText = esSoloNumeroDia ? `💳 DÍA COBRO: ${diaPago}` : `🗂️ ESTADO: ${diaPago.toUpperCase()}`;
+                    } else if (vistaActual === 'renovaciones' || modoBlackDaysActivo) {
                         if (esRezagada) {
                             tarjetaEstiloClase = "estado-rezagada";
                             badgeClass = "badge-red";
                             badgeText = fechaVenta ? `⚠️ REZAGADA: ${fechaVenta.toUpperCase()}` : `⚠️ REZAGADA`;
+                        } else if (!esSoloNumeroDia && diaPago !== "---") {
+                            badgeClass = "badge-purple";
+                            badgeText = `🗂️ ${diaPago.toUpperCase()}`;
                         } else {
                             badgeClass = "badge-yellow";
                             badgeText = fechaVenta ? `🗓️ VENCE: ${fechaVenta.toUpperCase()}` : `⏳ RENOVACIÓN`;
@@ -1993,9 +2171,10 @@
                                 <span class="card-title">👤 ${nombre}</span>
                                 <button class="btn-edit-note" title="Editar Nota / Observación" onclick="editarNotaEspecial('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(notaCobro)}')">✏️</button>
                             </div>
-                            <span class="badge ${badgeClass}" id="badge-doc-${item.idDoc}" style="cursor:pointer;" title="Toca para cambiar el día de cobro" onclick="editarDiaCobro('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(diaPago)}')">${badgeText} ✏️</span>
+                            <span class="badge ${badgeClass}" id="badge-doc-${item.idDoc}" style="cursor:pointer;" title="Toca para cambiar día de cobro (1-31) o estado (INC, Nómina, Cancelado...)" onclick="editarDiaCobro('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(diaPago)}')">${badgeText} ✏️</span>
                         </div>
                         <div class="card-body">
+                            ${modoBlackDaysActivo && item._origenEtiqueta ? `<div><span class="badge-origen">${item._origenEtiqueta}</span></div>` : ''}
                             <div>🪪 Cédula: <strong>${cedula}</strong></div>
                             <div>📞 <strong>${celular || celularLimpioReal || 'Sin celular registrado'}</strong></div>
                             <div>🏢 ${empresa} | 📍 ${ciudad}</div>
@@ -2035,7 +2214,7 @@
                             </div>
                         </div>
                         <div class="card-actions">
-                            <button type="button" onclick="abrirModalPlantillasWpp('${item.idDoc}')" class="btn btn-wpp">💬 Wpp</button>
+                            <button type="button" onclick="abrirModalPlantillasWpp('${item.idDoc}')" class="btn btn-wpp">${modoBlackDaysActivo ? '🖤 Oferta' : '💬 Wpp'}</button>
                             <a href="tel:${celularLimpioReal}" class="btn btn-call">📞 Llamar</a>
                             <a href="${urlMaps}" id="btn-maps-${item.idDoc}" target="_blank" class="btn btn-maps" title="Abrir ruta en Google Maps">📍 Ir</a>
                             <button type="button" onclick="agendarTareaRecordatorio('${item.idDoc}')" class="btn btn-cal">☑️ Tarea</button>
@@ -2519,7 +2698,7 @@
             if (!item) return;
             let resumen = [];
             for (let [k, v] of Object.entries(item)) {
-                if (k !== '_cruzadoAfiliado' && k !== '_incluirEnPdf' && k !== 'idDoc' && k !== 'coleccionOrigen' && typeof v !== 'object') {
+                if (k !== '_cruzadoAfiliado' && k !== '_incluirEnPdf' && k !== '_origenEtiqueta' && k !== 'idDoc' && k !== 'coleccionOrigen' && typeof v !== 'object') {
                     resumen.push(`${k}: ${v}`);
                 }
             }
@@ -2619,32 +2798,44 @@
             }
         }
 
+        // --- ACEPTA TANTO DÍA (1-31) COMO ESTADO DE TEXTO LIBRE (INC, Nómina, Cancelado, Finanzas...) ---
         async function editarDiaCobro(idDoc, coleccion, nombre, diaActual) {
-            let nuevoDia = prompt(`📅 Escribe el nuevo DÍA DE COBRO (1 al 31) para:\n👤 ${nombre}`, diaActual === "---" ? "" : diaActual);
-            if (nuevoDia === null) return;
+            let valorIngresado = prompt(
+                `💳 Escribe el DÍA DE COBRO (1 al 31) o ESTADO (INC, Nómina, Cancelado, Finanzas, etc.) para:\n👤 ${nombre}`,
+                diaActual === "---" ? "" : diaActual
+            );
+            if (valorIngresado === null) return;
 
-            let diaLimpio = nuevoDia.trim();
-            let diaNum = parseInt(diaLimpio, 10);
-
-            if (isNaN(diaNum) || diaNum < 1 || diaNum > 31) {
-                alert("⚠️ Por favor ingresa un número de día válido entre 1 y 31.");
+            let valorLimpio = valorIngresado.trim();
+            if (!valorLimpio) {
+                alert("⚠️ El campo no puede quedar vacío. Escribe un número del 1 al 31 o un estado como INC o Nómina.");
                 return;
+            }
+
+            // Si es puramente numérico, validar rango 1-31
+            if (/^\d+$/.test(valorLimpio)) {
+                let diaNum = parseInt(valorLimpio, 10);
+                if (diaNum < 1 || diaNum > 31) {
+                    alert("⚠️ Si escribes un número de día, debe estar entre 1 y 31.");
+                    return;
+                }
+                valorLimpio = String(diaNum);
             }
 
             try {
                 await db.collection(coleccion).doc(idDoc).update({
-                    dia_pago: String(diaNum)
+                    dia_pago: valorLimpio
                 });
 
                 let registroLocal = registrosGlobales.find(r => r.idDoc === idDoc);
                 if (registroLocal) {
-                    registroLocal.dia_pago = String(diaNum);
+                    registroLocal.dia_pago = valorLimpio;
                 }
 
-                alert(`✅ Día de cobro actualizado al día ${diaNum}.`);
+                alert(`✅ Actualizado a "${valorLimpio}". Sincronizado con la extensión.`);
                 filtrarLista();
             } catch (err) {
-                alert("❌ Error al actualizar el día de cobro: " + err.message);
+                alert("❌ Error al actualizar en Firebase: " + err.message);
             }
         }
 
@@ -2713,10 +2904,8 @@
 
             if (!infoMes) return fechaNorm.includes(mesNorm);
 
-            // 1. Coincidencia por texto ("nov", "noviembre")
             if (fechaNorm.includes(infoMes.abrev) || fechaNorm.includes(mesNorm)) return true;
 
-            // 2. Coincidencia por formato numérico DD/MM/AAAA o AAAA-MM-DD
             let mIso = fechaRaw.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
             if (mIso && mIso[2].padStart(2, '0') === infoMes.num) return true;
 
@@ -2732,7 +2921,7 @@
             let campo = document.getElementById('select-criterio').value;
 
             let filtrados = registrosGlobales.filter(data => {
-                if (vistaActual === 'renovaciones') {
+                if (vistaActual === 'renovaciones' && !modoBlackDaysActivo) {
                     if (subFiltroRenovaciones === 'ESTA_SEMANA' && (!estaEnSemanaSabadoASabado(data) || data.yaRenovoComprado)) return false;
                     if (subFiltroRenovaciones === 'REZAGADAS' && !esRenovacionRezagada(data)) return false;
                     if (subFiltroRenovaciones === 'POR_DIGITAR' && !data.esPorDigitarFlag) return false;
@@ -2743,6 +2932,13 @@
 
                 if (filtroMesAdicional) {
                     if (!coincideMes(data, filtroMesAdicional)) return false;
+                }
+
+                if (campo === "inc") {
+                    if (!tieneInconvenienteINC(data)) return false;
+                    if (!valorNorm) return true;
+                    let textoCompleto = Object.values(data).filter(v => typeof v === 'string' || typeof v === 'number').join(' ');
+                    return normalizarTexto(textoCompleto).includes(valorNorm);
                 }
 
                 if (campo === "con_saldo") {
@@ -2947,17 +3143,46 @@
             let banner = document.getElementById('voice-banner');
             let bannerText = document.getElementById('voice-banner-text');
 
+            // 0. COMANDO BLACK DAYS (-20%)
+            if (cmd.includes("black day") || cmd.includes("black days") || cmd.includes("viernes negro") || cmd.includes("descuento del 20")) {
+                if (cmd.includes("desactiva") || cmd.includes("apaga") || cmd.includes("salir")) {
+                    alternarModoBlackDays(false);
+                    hablarJarvis("Modo Black Days desactivado.", true);
+                } else {
+                    alternarModoBlackDays(true);
+                    setTimeout(() => {
+                        hablarJarvis(`Modo Black Days activado. Tienes ${listaFiltradaActual.length} clientes potenciales listos para la oferta del 20% de descuento.`, true);
+                    }, 500);
+                }
+                return;
+            }
+
+            // 0.5 FILTRAR INCONVENIENTES (INC)
+            if (cmd.includes("inconveniente") || /\binc\b/.test(cmd)) {
+                selectCriterio.value = 'inc';
+                inputBuscar.value = '';
+                bannerText.innerText = `🤖 "${textoOriginal}"`;
+                banner.style.display = 'flex';
+                cambiarVista('afiliados', true);
+                setTimeout(() => {
+                    hablarJarvis(`Mostrando ${listaFiltradaActual.length} clientes con inconveniente INC.`, true);
+                }, 450);
+                return;
+            }
+
             // 1. BRIEFING: RESUMEN DEL DÍA / ESTADO DE OPERACIÓN
             if (cmd.includes("resumen del dia") || cmd.includes("estado de la operacion") || cmd.includes("como esta el dia") || cmd.includes("reporte del dia")) {
                 try {
                     const diaHoy = new Date().getDate();
                     const snapAfil = await db.collection('afiliados').get();
                     let cobrosHoy = 0;
+                    let totalInc = 0;
                     snapAfil.forEach(doc => {
                         const d = doc.data();
                         const diaP = parseInt(limpiarTextoSeguro(d.dia_pago), 10);
                         const estC = limpiarTextoSeguro(d.estado_cobro).toLowerCase();
                         if (diaP === diaHoy && !estC.includes('pagado')) cobrosHoy++;
+                        if (tieneInconvenienteINC(d)) totalInc++;
                     });
 
                     const snapRen = await db.collection('renovaciones').get();
@@ -2991,7 +3216,7 @@
                     const meta = parseFloat(localStorage.getItem('andru_meta_semanal')) || 1000000;
                     const pctMeta = Math.round((comNet / meta) * 100);
 
-                    const respuesta = `Tienes ${cobrosHoy} cobros hoy, ${renSemana} renovaciones de esta semana, ${renRezagadas} rezagadas sin cerrar y llevas ${Math.round(comNet).toLocaleString('es-CO')} pesos en comisiones, un ${pctMeta}% de tu meta.`;
+                    const respuesta = `Tienes ${cobrosHoy} cobros hoy, ${renSemana} renovaciones esta semana, ${renRezagadas} rezagadas, ${totalInc} con inconveniente INC y llevas ${Math.round(comNet).toLocaleString('es-CO')} pesos en comisiones, un ${pctMeta}% de tu meta.`;
                     hablarJarvis(respuesta, false);
                 } catch (e) {
                     hablarJarvis("No pude consultar todas las métricas en este momento.", false);
@@ -3040,7 +3265,7 @@
                     const sal = parsearNumeroMoneda(fin.rawSaldo);
                     const diaP = limpiarTextoSeguro(cli.dia_pago);
                     const resp = sal > 0
-                        ? `${nomReal} tiene un saldo pendiente de ${Math.round(sal).toLocaleString('es-CO')} pesos${diaP ? `, con fecha de cobro el día ${diaP}` : ''}.`
+                        ? `${nomReal} tiene un saldo pendiente de ${Math.round(sal).toLocaleString('es-CO')} pesos${diaP ? `, con estado o día de cobro ${diaP}` : ''}.`
                         : `${nomReal} no registra saldo pendiente en este momento.`;
                     hablarJarvis(resp, false);
                 } else {
@@ -3049,25 +3274,34 @@
                 return;
             }
 
-            // 4. ACCIÓN DIRECTA: CAMBIAR DÍA DE COBRO POR VOZ
-            let matchCambioDia = cmd.match(/(?:cambia|cambiar|pon|poner|actualiza|actualizar)\s+(?:el\s+)?(?:dia\s+de\s+cobro|cobro|dia)\s+(?:de\s+)?([a-zñáéíóú\s]+?)\s+(?:al|a|el|para\s+el)\s+(\d{1,2})\b/i);
+            // 4. ACCIÓN DIRECTA: CAMBIAR DÍA DE COBRO O ESTADO POR VOZ
+            let matchCambioDia = cmd.match(/(?:cambia|cambiar|pon|poner|actualiza|actualizar)\s+(?:el\s+)?(?:dia\s+de\s+cobro|cobro|dia|estado)\s+(?:de\s+)?([a-zñáéíóú\s]+?)\s+(?:al|a|el|para\s+el|como)\s+([a-z0-9ñáéíóú\s]+)$/i);
             if (matchCambioDia && matchCambioDia[1] && matchCambioDia[2]) {
                 const nomBusq = matchCambioDia[1].trim();
-                const nuevoDiaNum = parseInt(matchCambioDia[2], 10);
-                if (nuevoDiaNum >= 1 && nuevoDiaNum <= 31) {
-                    const cli = await buscarClienteEnNubePorNombre(nomBusq);
-                    if (cli) {
-                        await db.collection(cli.coleccionOrigen).doc(cli.idDoc).update({ dia_pago: String(nuevoDiaNum) });
-                        const regLoc = registrosGlobales.find(r => r.idDoc === cli.idDoc);
-                        if (regLoc) regLoc.dia_pago = String(nuevoDiaNum);
-                        filtrarLista();
-                        const nomReal = limpiarTextoSeguro(cli.titular || cli.nombre || cli.cliente);
-                        hablarJarvis(`Listo, día de cobro de ${nomReal} actualizado al ${nuevoDiaNum}.`, true);
-                    } else {
-                        hablarJarvis(`No encontré a ${nomBusq} en la base de datos.`, false);
+                let nuevoValor = matchCambioDia[2].trim();
+                if (/^\d+$/.test(nuevoValor)) {
+                    let n = parseInt(nuevoValor, 10);
+                    if (n < 1 || n > 31) {
+                        hablarJarvis("El número de día debe estar entre 1 y 31.", false);
+                        return;
                     }
-                    return;
+                    nuevoValor = String(n);
+                } else {
+                    nuevoValor = nuevoValor.toUpperCase();
                 }
+
+                const cli = await buscarClienteEnNubePorNombre(nomBusq);
+                if (cli) {
+                    await db.collection(cli.coleccionOrigen).doc(cli.idDoc).update({ dia_pago: nuevoValor });
+                    const regLoc = registrosGlobales.find(r => r.idDoc === cli.idDoc);
+                    if (regLoc) regLoc.dia_pago = nuevoValor;
+                    filtrarLista();
+                    const nomReal = limpiarTextoSeguro(cli.titular || cli.nombre || cli.cliente);
+                    hablarJarvis(`Listo, actualizado ${nomReal} a ${nuevoValor}.`, true);
+                } else {
+                    hablarJarvis(`No encontré a ${nomBusq} en la base de datos.`, false);
+                }
+                return;
             }
 
             // 5. ACCIÓN DIRECTA: ENVIAR WHATSAPP
@@ -3317,7 +3551,7 @@
                 document.getElementById('nuevo-nota').value = '';
                 cerrarModalNuevo();
 
-                if (vistaActual === 'prospectos') {
+                if (vistaActual === 'prospectos' || modoBlackDaysActivo) {
                     cargarDatosMovil();
                 }
             } catch (err) {
@@ -3351,7 +3585,7 @@
             let encabezados = [];
             let filas = [];
 
-            if (vistaActual === 'reporte') {
+            if (vistaActual === 'reporte' && !modoBlackDaysActivo) {
                 encabezados = ["Fecha", "Membresia", "Titular", "Referencia", "Suscripcion", "Adicional", "Premiacion", "Saldo", "Total_Fila"];
                 filas = listaFiltradaActual.map(it => {
                     let s = parsearNumeroMoneda(it.suscripcion);
@@ -3367,7 +3601,7 @@
                     ];
                 });
             } else {
-                encabezados = ["Nombre_Titular", "Cedula", "Telefono", "Empresa_Convenio", "Ciudad", "Direccion", "Dia_Pago", "Pagado", "Saldo", "Estado", "Intentos_Contacto", "Nota"];
+                encabezados = ["Nombre_Titular", "Cedula", "Telefono", "Empresa_Convenio", "Ciudad", "Direccion", "Dia_Pago_Estado", "Pagado", "Saldo", "Estado", "Intentos_Contacto", "Nota"];
                 filas = listaFiltradaActual.map(it => {
                     let fin = extraerDatosFinancieros(it);
                     return [
@@ -3397,7 +3631,8 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `Andru_CRM_${vistaActual}_${new Date().toISOString().split('T')[0]}.csv`;
+            const sufijo = modoBlackDaysActivo ? 'Black_Days' : vistaActual;
+            a.download = `Andru_CRM_${sufijo}_${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -3609,13 +3844,13 @@
             }
         }
 
-        // --- TARJETA DIGITAL Y CATÁLOGO DE PLANES PREVISER ---
+        // --- TARJETA DIGITAL Y CATÁLOGO DE PLANES PREVISER CON PRECIOS PARTICULARES + 20% BLACK DAYS ---
         const PLANES_PREVISER_CATALOGO = [
-            { nombre: "Membresía Clásica", detalle: "Cobertura básica familiar + red de descuentos médicos y odontológicos." },
-            { nombre: "Membresía Bipersonal", detalle: "Ideal para 2 personas (titular + 1 beneficiario) con tarifas preferenciales." },
-            { nombre: "Membresía Premium", detalle: "Mayor cobertura en especialistas, exámenes diagnósticos y asistencias." },
-            { nombre: "Membresía VIP Gold", detalle: "Atención preferencial ampliada, especialistas y beneficios exclusivos." },
-            { nombre: "Membresía Diamante Plus", detalle: "Nuestro plan más completo con máximos topes y cobertura integral." }
+            { nombre: "Plan Bipersonal", precioNormal: 270000, detalle: "Cobertura para 2 personas (titular + 1 beneficiario)." },
+            { nombre: "Plan Clásica Familiar / Especial", precioNormal: 420000, detalle: "Cobertura básica familiar + red de descuentos médicos y odontológicos." },
+            { nombre: "Plan Premium", precioNormal: 520000, detalle: "Mayor cobertura en especialistas, exámenes diagnósticos y asistencias." },
+            { nombre: "Plan VIP", precioNormal: 620000, detalle: "Atención preferencial ampliada, especialistas y beneficios exclusivos." },
+            { nombre: "Plan Diamante", precioNormal: 1070000, detalle: "Nuestro plan más completo con máximos topes y cobertura integral." }
         ];
 
         function generarTextoTarjetaDigital() {
@@ -3626,14 +3861,21 @@
             const cont = document.getElementById('lista-planes-catalogo');
             cont.innerHTML = '';
             PLANES_PREVISER_CATALOGO.forEach((p, i) => {
+                const precioDesc = Math.round(p.precioNormal * 0.80);
+                const ahorro = p.precioNormal - precioDesc;
                 const div = document.createElement('div');
                 div.className = 'plan-card-item';
                 div.innerHTML = `
-                    <div>
+                    <div style="flex:1;">
                         <strong style="font-size:12px; color:var(--text-accent);">${p.nombre}</strong>
-                        <div style="font-size:10.5px; color:var(--text-secondary);">${p.detalle}</div>
+                        <div style="font-size:11px; margin-top:2px;">
+                            <span style="text-decoration:line-through; color:#94a3b8;">$ ${p.precioNormal.toLocaleString('es-CO')}</span>
+                            <strong style="color:#059669; margin-left:4px;">$ ${precioDesc.toLocaleString('es-CO')}</strong>
+                            <span style="font-size:9.5px; background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:4px; font-weight:800; margin-left:3px;">Ahorras $ ${ahorro.toLocaleString('es-CO')}</span>
+                        </div>
+                        <div style="font-size:10px; color:var(--text-secondary); margin-top:2px;">${p.detalle}</div>
                     </div>
-                    <button onclick="enviarPlanIndividualWpp(${i})" style="background:#16a34a; color:#fff; border:none; padding:6px 9px; border-radius:6px; font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap;">💬 Enviar</button>
+                    <button onclick="enviarPlanBlackDaysWpp(${i})" style="background:#0f172a; color:#fde047; border:1px solid #f59e0b; padding:6px 8px; border-radius:6px; font-size:10.5px; font-weight:800; cursor:pointer; white-space:nowrap;">🖤 -20% Wpp</button>
                 `;
                 cont.appendChild(div);
             });
@@ -3653,15 +3895,26 @@
             window.open(url, '_blank');
         }
 
-        function enviarPlanIndividualWpp(idx) {
+        function enviarPlanBlackDaysWpp(idx) {
             const p = PLANES_PREVISER_CATALOGO[idx];
             if (!p) return;
-            const msg = `Hola 👋, te comparto la información de nuestra *${p.nombre} de Previser*:\n\n✅ ${p.detalle}\n\nSi deseas que revisemos las personas de tu grupo familiar y te envíe la cotización exacta, dime por aquí. 🤝\n\n*Andru Trochez* - Ejecutivo Comercial Previser\n📱 318 796 8389`;
+            const precioDesc = Math.round(p.precioNormal * 0.80);
+            const ahorro = p.precioNormal - precioDesc;
+            const msg = `Hola 👋, ¡aprovecha los *BLACK DAYS de Previser* (27 Nov al 4 Dic)! 🖤🔥\n\nTe comparto la tarifa especial con el *20% DE DESCUENTO* en nuestro *${p.nombre}*:\n\n💰 *Valor Normal:* ~$ ${p.precioNormal.toLocaleString('es-CO')}~\n✅ *Valor Black Days (-20%):* *$ ${precioDesc.toLocaleString('es-CO')}*\n🎉 *Te ahorras:* *$ ${ahorro.toLocaleString('es-CO')}*\n\n🔹 ${p.detalle}\n\nSi deseas dejar asegurado este descuento antes del *4 de diciembre*, dime por aquí y lo gestionamos de una vez. 🤝💙\n\n*Andru Trochez* - Ejecutivo Comercial Previser\n📱 318 796 8389`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function compartirCatalogoBlackDaysWpp() {
+            let listado = PLANES_PREVISER_CATALOGO.map(p => {
+                const desc = Math.round(p.precioNormal * 0.80);
+                return `🔹 *${p.nombre}:* ~$ ${p.precioNormal.toLocaleString('es-CO')}~ ➔ *$ ${desc.toLocaleString('es-CO')}*`;
+            }).join('\n');
+            const msg = `🖤🔥 *BLACK DAYS PREVISER (27 Nov al 4 Dic) - 20% OFF* 🔥🖤\n\n¡Todas nuestras membresías particulares tienen el *20% de descuento* por tiempo limitado!\n\n${listado}\n\n🌐 Más info: www.previser.com.co\n📱 *Asesoría directa:* Andru Trochez - 318 796 8389\n\n¿Cuál de estos planes te gustaría separar con el 20% de descuento? 🤝💙`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function compartirCatalogoCompletoWpp() {
-            let listado = PLANES_PREVISER_CATALOGO.map(p => `🔹 *${p.nombre}:* ${p.detalle}`).join('\n');
+            let listado = PLANES_PREVISER_CATALOGO.map(p => `🔹 *${p.nombre} ($ ${p.precioNormal.toLocaleString('es-CO')}):* ${p.detalle}`).join('\n');
             const msg = `Hola 👋, te presento el *Portafolio Oficial de Membresías Previser* 💙:\n\n${listado}\n\n🌐 Más info en: www.previser.com.co\n📱 *Asesoría directa:* Andru Trochez - 318 796 8389\n\n¿Cuál de estos planes te gustaría cotizar para ti o tu familia? 🤝`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
         }
