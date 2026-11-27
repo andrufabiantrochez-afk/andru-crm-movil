@@ -21,7 +21,8 @@
     <!-- jsPDF + AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    
+    <!-- SheetJS para leer Excel (.xlsx, .xls, .csv) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --bg-body: #f1f5f9;
@@ -479,6 +480,9 @@
             <button class="btn-orden" style="background: #ecfdf5; color: #065f46; border-color: #6ee7b7;" onclick="exportarVistaExcel()">
                 📥 Excel
             </button>
+            <button class="btn-orden" style="background: #f3e8ff; color: #6b21a8; border-color: #d8b4fe;" onclick="abrirModalImportarSlack()">
+                📤 Base Slack
+            </button>
         </div>
     </div>
 
@@ -789,6 +793,54 @@
     </div>
 
     <!-- MODAL GUÍA DE COMANDOS DE VOZ -->
+    <!-- MODAL IMPORTAR BASE DE DATOS (SLACK / EXCEL / DIFUSIÓN WHATSAPP) -->
+    <div class="modal" id="modal-importar-slack">
+        <div class="modal-content">
+            <div class="modal-title">
+                <span>📤 Inyectar Base Slack / Excel</span>
+                <span style="cursor:pointer; font-size:18px;" onclick="cerrarModalImportarSlack()">✕</span>
+            </div>
+            <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.4;">
+                Sube tu archivo Excel (<strong>.xlsx, .xls, .csv</strong>). El sistema organizará nombres, teléfonos (10 dígitos) y ciudades automáticamente para difusión.
+            </div>
+            
+            <div class="form-group">
+                <label>1. Selecciona el archivo de la base de datos:</label>
+                <input type="file" id="input-archivo-slack" accept=".xlsx,.xls,.csv" class="form-input" onchange="procesarArchivoBaseSlack(event)">
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label>Etiqueta / Campaña:</label>
+                    <input type="text" id="slack-etiqueta-lote" class="form-input" value="Base Slack" placeholder="Ej: Base Slack Nov">
+                </div>
+                <div class="form-group">
+                    <label>Ciudad por defecto:</label>
+                    <input type="text" id="slack-ciudad-default" class="form-input" value="Palmira" placeholder="Si viene vacía">
+                </div>
+            </div>
+
+            <div id="slack-preview-box" style="display:none; background:var(--finance-box-bg); border:1px solid var(--border-color); border-radius:8px; padding:10px; font-size:11.5px;">
+                <div id="slack-resumen-conteo" style="font-weight:800; color:#059669; margin-bottom:6px;"></div>
+                <div id="slack-ciudades-chips" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;"></div>
+                <div style="max-height:130px; overflow-y:auto; font-size:11px; color:var(--text-primary);" id="slack-lista-muestra"></div>
+            </div>
+
+            <div class="form-group" id="slack-webhook-group" style="display:none;">
+                <label>Webhook de Slack (Opcional - para enviar resumen al canal):</label>
+                <input type="url" id="slack-webhook-url" class="form-input" placeholder="https://hooks.slack.com/services/...">
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+                <button id="btn-guardar-base-slack" class="btn-save" style="display:none; background:#003380;" onclick="guardarBaseSlackEnFirebase()">
+                    💾 Inyectar en CRM y Abrir Difusión
+                </button>
+                <button id="btn-enviar-webhook-slack" class="btn-save" style="display:none; background:#4a154b;" onclick="enviarResumenASlack()">
+                    🚀 Enviar Notificación a Slack
+                </button>
+            </div>
+        </div>
+    </div>
     <div class="modal" id="modal-comandos">
         <div class="modal-content">
             <div class="modal-title">
@@ -3918,7 +3970,213 @@
             const msg = `Hola 👋, te presento el *Portafolio Oficial de Membresías Previser* 💙:\n\n${listado}\n\n🌐 Más info en: www.previser.com.co\n📱 *Asesoría directa:* Andru Trochez - 318 796 8389\n\n¿Cuál de estos planes te gustaría cotizar para ti o tu familia? 🤝`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
         }
+// =========================================================================
+        // MÓDULO DE INYECCIÓN AUTOMÁTICA DE BASE SLACK + DIFUSIÓN WHATSAPP
+        // =========================================================================
+        let registrosSlackProcesados = [];
 
+        function abrirModalImportarSlack() {
+            registrosSlackProcesados = [];
+            document.getElementById('input-archivo-slack').value = '';
+            document.getElementById('slack-preview-box').style.display = 'none';
+            document.getElementById('btn-guardar-base-slack').style.display = 'none';
+            document.getElementById('btn-enviar-webhook-slack').style.display = 'none';
+            document.getElementById('slack-webhook-group').style.display = 'none';
+            document.getElementById('slack-webhook-url').value = localStorage.getItem('andru_slack_webhook') || '';
+            document.getElementById('modal-importar-slack').style.display = 'flex';
+        }
+
+        function cerrarModalImportarSlack() {
+            document.getElementById('modal-importar-slack').style.display = 'none';
+        }
+
+        function detectarColumnaFlexible(filaObj, palabrasClave) {
+            const keys = Object.keys(filaObj);
+            for (const k of keys) {
+                const kNorm = normalizarTexto(k);
+                if (palabrasClave.some(p => kNorm.includes(p))) {
+                    return limpiarTextoSeguro(filaObj[k]);
+                }
+            }
+            return "";
+        }
+
+        function procesarArchivoBaseSlack(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (typeof XLSX === 'undefined') {
+                alert("⏳ Cargando lector de Excel, intenta de nuevo en 2 segundos.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const primeraHoja = workbook.SheetNames[0];
+                    const filasCrudas = XLSX.utils.sheet_to_json(workbook.Sheets[primeraHoja], { defval: "" });
+
+                    const ciudadDef = document.getElementById('slack-ciudad-default').value.trim() || "Palmira";
+                    const telefonosVistos = new Set();
+                    registrosSlackProcesados = [];
+
+                    filasCrudas.forEach(fila => {
+                        let nombre = detectarColumnaFlexible(fila, ['nombre', 'titular', 'cliente', 'usuario', 'completo']);
+                        let telRaw = detectarColumnaFlexible(fila, ['cel', 'tel', 'movil', 'whatsapp', 'contacto', 'numero']);
+                        let ciudad = detectarColumnaFlexible(fila, ['ciudad', 'municipio', 'ubicacion', 'zona']) || ciudadDef;
+                        let empresa = detectarColumnaFlexible(fila, ['empresa', 'convenio', 'entidad', 'fondo', 'trabajo']) || "Base Slack";
+                        let cedula = detectarColumnaFlexible(fila, ['cedula', 'documento', 'cc', 'identificacion']);
+                        let direccion = detectarColumnaFlexible(fila, ['direccion', 'barrio', 'domicilio']);
+                        let nota = detectarColumnaFlexible(fila, ['nota', 'observacion', 'detalle', 'comentario']);
+
+                        // Limpiar teléfono a 10 dígitos Colombia
+                        let soloDigitos = telRaw.split(/[\/,;]/)[0].replace(/\D/g, '');
+                        if (soloDigitos.startsWith('57') && soloDigitos.length >= 12) {
+                            soloDigitos = soloDigitos.slice(2);
+                        }
+                        soloDigitos = soloDigitos.slice(0, 10);
+
+                        if (soloDigitos.length >= 7 && !telefonosVistos.has(soloDigitos)) {
+                            telefonosVistos.add(soloDigitos);
+                            registrosSlackProcesados.push({
+                                nombre: (nombre || "Contacto Slack").toUpperCase(),
+                                celular: soloDigitos,
+                                cedula: cedula,
+                                ciudad_prospecto: ciudad.charAt(0).toUpperCase() + ciudad.slice(1).toLowerCase(),
+                                empresa_interes: empresa,
+                                direccion: direccion,
+                                nota_seguimiento: nota
+                            });
+                        }
+                    });
+
+                    // Ordenar automáticamente por Ciudad y luego por Nombre
+                    registrosSlackProcesados.sort((a, b) => {
+                        const cmpCiudad = a.ciudad_prospecto.localeCompare(b.ciudad_prospecto);
+                        return cmpCiudad !== 0 ? cmpCiudad : a.nombre.localeCompare(b.nombre);
+                    });
+
+                    mostrarVistaPreviaSlack();
+                } catch (err) {
+                    alert("❌ Error leyendo el archivo: " + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function mostrarVistaPreviaSlack() {
+            const box = document.getElementById('slack-preview-box');
+            const resumen = document.getElementById('slack-resumen-conteo');
+            const chips = document.getElementById('slack-ciudades-chips');
+            const muestra = document.getElementById('slack-lista-muestra');
+
+            if (registrosSlackProcesados.length === 0) {
+                alert("⚠️ No se encontraron registros con números de teléfono válidos en el archivo.");
+                return;
+            }
+
+            // Contar por ciudad
+            const conteoCiudades = {};
+            registrosSlackProcesados.forEach(r => {
+                conteoCiudades[r.ciudad_prospecto] = (conteoCiudades[r.ciudad_prospecto] || 0) + 1;
+            });
+
+            resumen.innerText = `✅ ${registrosSlackProcesados.length} contactos únicos listos y organizados`;
+            chips.innerHTML = Object.entries(conteoCiudades)
+                .map(([ciu, cant]) => `<span class="badge badge-purple">📍 ${ciu}: ${cant}</span>`)
+                .join('');
+
+            muestra.innerHTML = registrosSlackProcesados.slice(0, 8)
+                .map(r => `• <strong>${r.nombre}</strong> | 📞 ${r.celular} | 📍 ${r.ciudad_prospecto}`)
+                .join('<br>') + (registrosSlackProcesados.length > 8 ? `<br><em>...y ${registrosSlackProcesados.length - 8} más</em>` : '');
+
+            box.style.display = 'block';
+            document.getElementById('slack-webhook-group').style.display = 'flex';
+            document.getElementById('btn-guardar-base-slack').style.display = 'block';
+            document.getElementById('btn-enviar-webhook-slack').style.display = 'block';
+        }
+
+        async function guardarBaseSlackEnFirebase() {
+            if (registrosSlackProcesados.length === 0) return;
+
+            const btn = document.getElementById('btn-guardar-base-slack');
+            const etiquetaLote = document.getElementById('slack-etiqueta-lote').value.trim() || "Base Slack";
+            btn.disabled = true;
+            btn.innerText = "⏳ Inyectando en Firebase...";
+
+            try {
+                // Escritura en lotes (Batch de Firestore soporta hasta 500 por envío)
+                const tamanoLote = 400;
+                for (let i = 0; i < registrosSlackProcesados.length; i += tamanoLote) {
+                    const batch = db.batch();
+                    const bloque = registrosSlackProcesados.slice(i, i + tamanoLote);
+
+                    bloque.forEach(reg => {
+                        const docRef = db.collection("prospectos").doc();
+                        batch.set(docRef, {
+                            nombre: reg.nombre,
+                            celular: reg.celular,
+                            cedula_prospecto: reg.cedula || "",
+                            ciudad_prospecto: reg.ciudad_prospecto,
+                            empresa_interes: reg.empresa_interes,
+                            direccion: reg.direccion || "",
+                            nota_seguimiento: `[${etiquetaLote}] ${reg.nota_seguimiento || "Importado para difusión"}`.trim(),
+                            fecha_registro: new Date().toISOString(),
+                            origen: etiquetaLote,
+                            estado: "En gestión"
+                        });
+                    });
+
+                    await batch.commit();
+                }
+
+                alert(`🎉 ¡Listo! Se inyectaron ${registrosSlackProcesados.length} contactos organizados en Prospectos.\n\nAhora te llevo a la pestaña Prospectos filtrado por "${etiquetaLote}" para que envíes WhatsApp.`);
+                cerrarModalImportarSlack();
+
+                // Ir directo a Prospectos y filtrar por la etiqueta recién subida para difusión
+                document.getElementById('select-criterio').value = 'todo';
+                document.getElementById('input-buscar').value = etiquetaLote;
+                cambiarVista('prospectos', true);
+
+            } catch (err) {
+                alert("❌ Error al guardar en Firebase: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "💾 Inyectar en CRM y Abrir Difusión";
+            }
+        }
+
+        async function enviarResumenASlack() {
+            const url = document.getElementById('slack-webhook-url').value.trim();
+            if (!url) {
+                alert("⚠️ Pega primero la URL del Incoming Webhook de tu canal de Slack.");
+                return;
+            }
+            localStorage.setItem('andru_slack_webhook', url);
+
+            const etiqueta = document.getElementById('slack-etiqueta-lote').value.trim() || "Base Slack";
+            const listadoTexto = registrosSlackProcesados.slice(0, 30)
+                .map((r, i) => `${i + 1}. *${r.nombre}* | Tel: ${r.celular} | Ciudad: ${r.ciudad_prospecto}`)
+                .join('\n');
+
+            const payload = {
+                text: `📊 *Nueva Base Inyectada (${etiqueta})*\nTotal registros organizados: *${registrosSlackProcesados.length}*\n\n${listadoTexto}`
+            };
+
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                alert("🚀 Base enviada al canal de Slack correctamente.");
+            } catch (err) {
+                alert("❌ Error enviando a Slack: " + err.message);
+            }
+        }
         cargarDatosMovil();
     </script>
 </body>
