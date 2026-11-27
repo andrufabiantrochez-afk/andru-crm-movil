@@ -496,6 +496,7 @@
         <button class="tab-btn" id="tab-btn-afiliados" onclick="cambiarVista('afiliados')">🗂️ Base Afiliados</button>
         <button class="tab-btn" id="tab-btn-renovaciones" onclick="cambiarVista('renovaciones')">⏳ Renovaciones</button>
         <button class="tab-btn" id="tab-btn-prospectos" onclick="cambiarVista('prospectos')">👤 Prospectos</button>
+        <button class="tab-btn" id="tab-btn-datos_black" onclick="cambiarVista('datos_black')" style="border-color:#f59e0b;">🖤 Datos Black</button>
         <button class="tab-btn" id="tab-btn-ganados" onclick="cambiarVista('ganados')">✅ Ventas Logradas</button>
     </div>
 
@@ -1721,7 +1722,7 @@
 
             let coleccion = 'afiliados';
             if (vistaActual === 'renovaciones' || vistaActual === 'ganados') coleccion = 'renovaciones';
-            else if (vistaActual === 'prospectos') coleccion = 'prospectos';
+            else if (vistaActual === 'prospectos' || vistaActual === 'datos_black') coleccion = 'prospectos';
 
             try {
                 let mapaDatosAfiliados = {};
@@ -1786,9 +1787,14 @@
                         registrosGlobales.push(d);
 
                     } else {
+                        let origenNorm = normalizarTexto(d.origen);
+                        let notaNorm = normalizarTexto(d.nota_seguimiento);
+                        let esCargaBlack = origenNorm.includes('black') || origenNorm.includes('slack') || notaNorm.includes('[black]');
+
                         if (vistaActual === 'ganados' && yaRenovo) registrosGlobales.push(d);
                         else if (vistaActual === 'renovaciones') registrosGlobales.push(d);
-                        else if (vistaActual === 'prospectos') registrosGlobales.push(d);
+                        else if (vistaActual === 'datos_black' && esCargaBlack) registrosGlobales.push(d);
+                        else if (vistaActual === 'prospectos' && !esCargaBlack) registrosGlobales.push(d);
                     }
                 });
 
@@ -1946,7 +1952,7 @@
             document.getElementById('wpp-modal-tel').innerText = celularLimpioReal;
 
             let plantillaSugerida = 'cobro_amable';
-            if (modoBlackDaysActivo) {
+            if (modoBlackDaysActivo || vistaActual === 'datos_black') {
                 plantillaSugerida = 'black_days';
             } else if (vistaActual === 'renovaciones') {
                 plantillaSugerida = (subFiltroRenovaciones === 'REZAGADAS') ? 'ultimo_llamado_semana' : 'renovacion';
@@ -2075,6 +2081,7 @@
                 'afiliados': 'afiliados',
                 'renovaciones': 'renovaciones',
                 'prospectos': 'prospectos',
+                'datos_black': 'datos Black',
                 'ganados': 'ventas'
             };
             let palabraVista = modoBlackDaysActivo ? 'potenciales' : (etiquetasVista[vistaActual] || 'registros');
@@ -4183,12 +4190,16 @@
                     await batch.commit();
                 }
 
-                alert(`🎉 ¡Listo! Se inyectaron ${registrosSlackProcesados.length} contactos organizados en Prospectos.\n\nAhora te llevo a la pestaña Prospectos filtrado por "${etiquetaLote}" para que envíes WhatsApp.`);
+                const esLoteBlack = normalizarTexto(etiquetaLote).includes('black') || normalizarTexto(etiquetaLote).includes('slack');
+                const vistaDestino = esLoteBlack ? 'datos_black' : 'prospectos';
+                const nombreDestino = esLoteBlack ? 'Datos Black' : 'Prospectos';
+
+                alert(`🎉 ¡Listo! Se inyectaron ${registrosSlackProcesados.length} contactos organizados en ${nombreDestino}.\n\nAhora te llevo directo a la pestaña ${nombreDestino} para que envíes WhatsApp.`);
                 cerrarModalImportarSlack();
 
                 document.getElementById('select-criterio').value = 'todo';
-                document.getElementById('input-buscar').value = etiquetaLote;
-                cambiarVista('prospectos', true);
+                document.getElementById('input-buscar').value = esLoteBlack ? '' : etiquetaLote;
+                cambiarVista(vistaDestino, true);
 
             } catch (err) {
                 alert("❌ Error al guardar en Firebase: " + err.message);
