@@ -23,6 +23,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <!-- SheetJS para leer Excel (.xlsx, .xls, .csv) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
         :root {
             --bg-body: #f1f5f9;
@@ -136,6 +137,7 @@
         .card.estado-rezagada { border-left: 5px solid #dc2626; }
         .card.estado-inc { background: rgba(245, 158, 11, 0.11) !important; border: 1px solid #d97706 !important; border-left: 5px solid #d97706 !important; }
         .card.excluido-pdf { opacity: 0.55; border-left: 4px solid #94a3b8; }
+        .card.estado-contactado { border-left: 5px solid #10b981 !important; background: rgba(16, 185, 129, 0.04); }
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
         .card-title-group { display: flex; align-items: center; gap: 6px; flex: 1; }
@@ -457,6 +459,8 @@
         <div class="search-row">
             <select id="select-criterio" class="filter-select" onchange="filtrarLista()">
                 <option value="todo">🔍 Todo (General)</option>
+                <option value="sin_contactar">📭 Sin Contactar (Faltan)</option>
+                <option value="ya_contactados">✅ Ya Contactados (Wpp)</option>
                 <option value="inc">⚠️ Inconvenientes (INC)</option>
                 <option value="con_saldo">💸 Con Saldo Pendiente</option>
                 <option value="mes_compra">📅 Mes de Compra</option>
@@ -792,7 +796,6 @@
         </div>
     </div>
 
-    <!-- MODAL GUÍA DE COMANDOS DE VOZ -->
     <!-- MODAL IMPORTAR BASE DE DATOS (SLACK / EXCEL / DIFUSIÓN WHATSAPP) -->
     <div class="modal" id="modal-importar-slack">
         <div class="modal-content">
@@ -841,6 +844,8 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL GUÍA DE COMANDOS DE VOZ -->
     <div class="modal" id="modal-comandos">
         <div class="modal-content">
             <div class="modal-title">
@@ -1976,13 +1981,39 @@
             });
         }
 
-        function enviarMensajeWppConfirmado() {
+        async function enviarMensajeWppConfirmado() {
             if (!contextoWppActual) return;
             const texto = document.getElementById('wpp-mensaje-texto').value.trim();
             const prefijo = contextoWppActual.telefono.length === 10 ? '57' : '';
             const url = `https://api.whatsapp.com/send?phone=${prefijo}${contextoWppActual.telefono}&text=${encodeURIComponent(texto)}`;
+
             window.open(url, '_blank');
+
+            const reg = registrosGlobales.find(r => r.idDoc === contextoWppActual.idDoc);
+            if (reg && reg.coleccionOrigen) {
+                const ahora = new Date();
+                const fechaCorta = ahora.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' });
+                const horaCorta = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const marcaTiempo = `${fechaCorta} ${horaCorta}`;
+                const intentosNuevos = (parseInt(reg.intentos_contacto, 10) || 0) + 1;
+
+                reg.intentos_contacto = intentosNuevos;
+                reg.ultimo_contacto_fecha = fechaCorta;
+                reg.ultimo_wpp_enviado = marcaTiempo;
+
+                try {
+                    await db.collection(reg.coleccionOrigen).doc(reg.idDoc).update({
+                        intentos_contacto: intentosNuevos,
+                        ultimo_contacto_fecha: fechaCorta,
+                        ultimo_wpp_enviado: marcaTiempo
+                    });
+                } catch (e) {
+                    console.warn("No se pudo guardar marca de WPP en nube:", e);
+                }
+            }
+
             cerrarModalWpp();
+            filtrarLista();
         }
 
         function cerrarModalWpp() {
@@ -2192,10 +2223,21 @@
 
                     let intentos = parseInt(item.intentos_contacto, 10) || 0;
                     let ultFecha = limpiarTextoSeguro(item.ultimo_contacto_fecha);
+                    let ultWpp = limpiarTextoSeguro(item.ultimo_wpp_enviado);
+                    let yaContactado = intentos > 0 || Boolean(ultWpp);
+
+                    if (yaContactado && !tarjetaEstiloClase) {
+                        tarjetaEstiloClase = "estado-contactado";
+                    }
+
                     let clsIntento = intentos === 1 ? 'intento-1' : intentos === 2 ? 'intento-2' : intentos >= 3 ? 'intento-3' : '';
                     let txtIntento = intentos === 0
                         ? '📩 Sin contactar'
                         : `📲 ${intentos}° contacto${ultFecha ? ` (${ultFecha})` : ''}`;
+
+                    let badgeWppEnviadoHtml = yaContactado
+                        ? `<span class="badge badge-green" style="margin-left:4px;">✅ WPP ENVIADO${ultWpp ? ` (${ultWpp})` : ''}</span>`
+                        : '';
 
                     let celularLimpioReal = extraerTelefonoValido(item);
 
@@ -2226,7 +2268,7 @@
                             <span class="badge ${badgeClass}" id="badge-doc-${item.idDoc}" style="cursor:pointer;" title="Toca para cambiar día de cobro (1-31) o estado (INC, Nómina, Cancelado...)" onclick="editarDiaCobro('${item.idDoc}', '${item.coleccionOrigen}', '${escaparComillasJS(nombre)}', '${escaparComillasJS(diaPago)}')">${badgeText} ✏️</span>
                         </div>
                         <div class="card-body">
-                            ${modoBlackDaysActivo && item._origenEtiqueta ? `<div><span class="badge-origen">${item._origenEtiqueta}</span></div>` : ''}
+                            ${(modoBlackDaysActivo && item._origenEtiqueta) || yaContactado ? `<div>${modoBlackDaysActivo && item._origenEtiqueta ? `<span class="badge-origen">${item._origenEtiqueta}</span>` : ''}${badgeWppEnviadoHtml}</div>` : ''}
                             <div>🪪 Cédula: <strong>${cedula}</strong></div>
                             <div>📞 <strong>${celular || celularLimpioReal || 'Sin celular registrado'}</strong></div>
                             <div>🏢 ${empresa} | 📍 ${ciudad}</div>
@@ -2266,7 +2308,7 @@
                             </div>
                         </div>
                         <div class="card-actions">
-                            <button type="button" onclick="abrirModalPlantillasWpp('${item.idDoc}')" class="btn btn-wpp">${modoBlackDaysActivo ? '🖤 Oferta' : '💬 Wpp'}</button>
+                            <button type="button" onclick="abrirModalPlantillasWpp('${item.idDoc}')" class="btn btn-wpp" style="${yaContactado ? 'background:#0f766e;' : ''}">${yaContactado ? '✅ Reenviar' : (modoBlackDaysActivo ? '🖤 Oferta' : '💬 Wpp')}</button>
                             <a href="tel:${celularLimpioReal}" class="btn btn-call">📞 Llamar</a>
                             <a href="${urlMaps}" id="btn-maps-${item.idDoc}" target="_blank" class="btn btn-maps" title="Abrir ruta en Google Maps">📍 Ir</a>
                             <button type="button" onclick="agendarTareaRecordatorio('${item.idDoc}')" class="btn btn-cal">☑️ Tarea</button>
@@ -2984,6 +3026,18 @@
 
                 if (filtroMesAdicional) {
                     if (!coincideMes(data, filtroMesAdicional)) return false;
+                }
+
+                if (campo === "sin_contactar") {
+                    let yaCont = (parseInt(data.intentos_contacto, 10) || 0) > 0 || Boolean(limpiarTextoSeguro(data.ultimo_wpp_enviado));
+                    if (yaCont) return false;
+                    if (!valorNorm) return true;
+                }
+
+                if (campo === "ya_contactados") {
+                    let yaCont = (parseInt(data.intentos_contacto, 10) || 0) > 0 || Boolean(limpiarTextoSeguro(data.ultimo_wpp_enviado));
+                    if (!yaCont) return false;
+                    if (!valorNorm) return true;
                 }
 
                 if (campo === "inc") {
@@ -3970,7 +4024,8 @@
             const msg = `Hola 👋, te presento el *Portafolio Oficial de Membresías Previser* 💙:\n\n${listado}\n\n🌐 Más info en: www.previser.com.co\n📱 *Asesoría directa:* Andru Trochez - 318 796 8389\n\n¿Cuál de estos planes te gustaría cotizar para ti o tu familia? 🤝`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
         }
-// =========================================================================
+
+        // =========================================================================
         // MÓDULO DE INYECCIÓN AUTOMÁTICA DE BASE SLACK + DIFUSIÓN WHATSAPP
         // =========================================================================
         let registrosSlackProcesados = [];
@@ -4031,7 +4086,6 @@
                         let direccion = detectarColumnaFlexible(fila, ['direccion', 'barrio', 'domicilio']);
                         let nota = detectarColumnaFlexible(fila, ['nota', 'observacion', 'detalle', 'comentario']);
 
-                        // Limpiar teléfono a 10 dígitos Colombia
                         let soloDigitos = telRaw.split(/[\/,;]/)[0].replace(/\D/g, '');
                         if (soloDigitos.startsWith('57') && soloDigitos.length >= 12) {
                             soloDigitos = soloDigitos.slice(2);
@@ -4052,7 +4106,6 @@
                         }
                     });
 
-                    // Ordenar automáticamente por Ciudad y luego por Nombre
                     registrosSlackProcesados.sort((a, b) => {
                         const cmpCiudad = a.ciudad_prospecto.localeCompare(b.ciudad_prospecto);
                         return cmpCiudad !== 0 ? cmpCiudad : a.nombre.localeCompare(b.nombre);
@@ -4077,7 +4130,6 @@
                 return;
             }
 
-            // Contar por ciudad
             const conteoCiudades = {};
             registrosSlackProcesados.forEach(r => {
                 conteoCiudades[r.ciudad_prospecto] = (conteoCiudades[r.ciudad_prospecto] || 0) + 1;
@@ -4107,7 +4159,6 @@
             btn.innerText = "⏳ Inyectando en Firebase...";
 
             try {
-                // Escritura en lotes (Batch de Firestore soporta hasta 500 por envío)
                 const tamanoLote = 400;
                 for (let i = 0; i < registrosSlackProcesados.length; i += tamanoLote) {
                     const batch = db.batch();
@@ -4135,7 +4186,6 @@
                 alert(`🎉 ¡Listo! Se inyectaron ${registrosSlackProcesados.length} contactos organizados en Prospectos.\n\nAhora te llevo a la pestaña Prospectos filtrado por "${etiquetaLote}" para que envíes WhatsApp.`);
                 cerrarModalImportarSlack();
 
-                // Ir directo a Prospectos y filtrar por la etiqueta recién subida para difusión
                 document.getElementById('select-criterio').value = 'todo';
                 document.getElementById('input-buscar').value = etiquetaLote;
                 cambiarVista('prospectos', true);
@@ -4177,6 +4227,7 @@
                 alert("❌ Error enviando a Slack: " + err.message);
             }
         }
+
         cargarDatosMovil();
     </script>
 </body>
